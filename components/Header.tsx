@@ -1,6 +1,8 @@
 'use client';
 
 import Image from "next/image";
+import { useEffect, useState } from "react";
+import { Menu, X } from "lucide-react";
 import { PhoneIcon } from "./icons";
 
 const NAV_ITEMS: Array<{ label: string; href: string }> = [
@@ -14,9 +16,21 @@ const NAV_ITEMS: Array<{ label: string; href: string }> = [
 ];
 
 export function Header() {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur">
-      <div className="border-b border-black/10">
+      {/* Top utility bar — desktop only */}
+      <div className="hidden border-b border-black/10 md:block">
         <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 py-3">
           <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
             {NAV_ITEMS.map((item, i) => (
@@ -58,7 +72,8 @@ export function Header() {
         </div>
       </div>
 
-      <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 pt-5 pb-5">
+      {/* Main brand bar */}
+      <div className="mx-auto flex max-w-[1360px] items-center gap-3 px-5 py-4 md:gap-5 md:py-5">
         <a href="/" className="flex items-center">
           <Image
             src="/bookup-logo.png"
@@ -69,7 +84,7 @@ export function Header() {
             className="h-5 w-auto"
           />
         </a>
-        <div className="ml-3 flex items-center gap-2 text-sm">
+        <div className="ml-3 hidden items-center gap-2 text-sm md:flex">
           <button className="rounded-full bg-[var(--accent)] px-5 py-2 font-medium text-white">
             Biznes uchun
           </button>
@@ -77,13 +92,81 @@ export function Header() {
             Mijozlar uchun
           </button>
         </div>
-        <div className="ml-auto">
-          <button className="inline-flex items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-white px-5 py-2.5 text-sm font-medium text-gray-900 transition hover:bg-[var(--accent)]/5">
+        <div className="ml-auto flex items-center gap-2">
+          <button className="hidden items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-white px-5 py-2.5 text-sm font-medium text-gray-900 transition hover:bg-[var(--accent)]/5 md:inline-flex">
             <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
             Biznesni ulash
           </button>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-label={open ? "Menyu yopish" : "Menyu ochish"}
+            aria-expanded={open}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-700 transition hover:bg-gray-100 md:hidden"
+          >
+            {open ? (
+              <X className="size-5" strokeWidth={2.25} />
+            ) : (
+              <Menu className="size-5" strokeWidth={2.25} />
+            )}
+          </button>
         </div>
       </div>
+
+      {/* Mobile drawer */}
+      {open && (
+        <>
+          <div
+            className="fixed inset-x-0 bottom-0 top-[var(--header-h,72px)] z-20 bg-black/30 md:hidden"
+            style={{ top: "72px" }}
+            onClick={() => setOpen(false)}
+            aria-hidden
+          />
+          <div className="relative z-30 border-t border-black/10 bg-white md:hidden">
+            <nav className="mx-auto flex max-w-[1360px] flex-col gap-1 px-5 py-4">
+              {NAV_ITEMS.map((item, i) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  onClick={() => setOpen(false)}
+                  className={
+                    i === 0
+                      ? "inline-flex items-center gap-2 rounded-full px-4 py-3 text-base font-semibold text-[var(--accent)]"
+                      : "rounded-full px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
+                  }
+                >
+                  {i === 0 && (
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+                  )}
+                  {item.label}
+                </a>
+              ))}
+
+              <div className="mt-3 flex gap-2">
+                <button className="flex-1 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
+                  Biznes uchun
+                </button>
+                <button className="flex-1 rounded-full bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-700">
+                  Mijozlar uchun
+                </button>
+              </div>
+
+              <a
+                href="tel:+998883634020"
+                className="mt-2 inline-flex items-center justify-center gap-2 rounded-full bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-900"
+              >
+                <PhoneIcon />
+                +998 88 363 40 20
+              </a>
+
+              <button className="mt-2 inline-flex items-center justify-center gap-2 rounded-full border-2 border-[var(--accent)] bg-white px-5 py-3 text-sm font-semibold text-gray-900">
+                <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+                Biznesni ulash
+              </button>
+            </nav>
+          </div>
+        </>
+      )}
     </header>
   );
 }

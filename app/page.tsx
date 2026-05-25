@@ -45,7 +45,7 @@ function HeroGrid() {
   return (
     <section className="grid gap-4 md:grid-cols-3 md:grid-rows-2 md:gap-5">
       {/* Big card top-left: spans 2 cols, row 1 */}
-      <article className="group relative grid items-center gap-6 overflow-hidden rounded-3xl bg-gray-50 p-8 transition-shadow duration-300 hover:shadow-sm md:col-span-2 md:grid-cols-[1fr_minmax(0,46%)] md:p-10">
+      <article className="group relative grid items-center gap-6 overflow-hidden rounded-3xl bg-gray-50 p-6 transition-shadow duration-300 hover:shadow-sm sm:p-8 md:col-span-2 md:grid-cols-[1fr_minmax(0,46%)] md:p-10">
         <div className="flex flex-col justify-center">
           <h1 className="text-2xl font-extrabold leading-tight tracking-tight md:text-3xl">
             Biznesingiz uchun<br /><span className="text-gray-500">onlayn band qilish</span>
@@ -59,7 +59,7 @@ function HeroGrid() {
             Hoziroq boshlash
           </button>
         </div>
-        <div className="ml-auto h-72 w-full rounded-3xl bg-gray-50 p-2">
+        <div className="ml-auto h-56 w-full rounded-3xl bg-gray-50 p-2 sm:h-72">
           <div className="relative h-full w-full overflow-hidden rounded-[1.25rem]">
             <Image
               src="/schedule-photo.jpg"
@@ -103,7 +103,7 @@ function HeroGrid() {
       </article>
 
       {/* Bottom-left small card */}
-      <article className="relative flex flex-col overflow-hidden rounded-3xl bg-gray-50 p-8 transition-shadow duration-300 hover:shadow-sm">
+      <article className="relative flex flex-col overflow-hidden rounded-3xl bg-gray-50 p-6 transition-shadow duration-300 hover:shadow-sm sm:p-8">
         <div className="flex items-start justify-between">
           <h3 className="text-2xl font-extrabold leading-tight tracking-tight md:text-3xl">
             <span className="text-gray-500">Aqlli onlayn</span><br />jadval va kalendar
