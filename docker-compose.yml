@@ -1,0 +1,12 @@
+services:
+  web:
+    build: .
+    image: bookup-landing:latest
+    container_name: bookup-landing
+    restart: unless-stopped
+    ports:
+      - "58777:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
