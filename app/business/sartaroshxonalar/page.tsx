@@ -62,7 +62,7 @@ function Hero() {
               <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
               Sartaroshxonalar uchun
             </p>
-            <h1 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-tight text-white md:text-5xl lg:text-6xl">
+            <h1 className="mt-4 text-3xl font-extrabold leading-[1.05] tracking-tight text-white md:text-4xl lg:text-5xl">
               Sartaroshxonangizni
               <br />
               <span className="text-white/60">onlayn boshqaring.</span>
@@ -298,7 +298,7 @@ function ClosingCta() {
         />
         <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between md:gap-12">
           <div className="max-w-xl">
-            <h2 className="text-3xl font-extrabold leading-[1.05] tracking-tight md:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-extrabold leading-[1.1] tracking-tight md:text-3xl lg:text-4xl">
               Sartaroshxonangizni bugun{" "}
               <span className="text-gray-500">Bookup&apos;ga ulang.</span>
             </h2>
