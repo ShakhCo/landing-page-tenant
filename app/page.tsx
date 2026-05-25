@@ -219,7 +219,7 @@ function SolutionsSection() {
         Kim uchun
       </p>
       <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-        Harqanday qanday biznes uchun
+        Har qanday biznes uchun
       </h2>
       <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3">
         {items.map(({ title, description, image }) => (
@@ -743,7 +743,7 @@ function IntegrationsSection() {
   }, [carouselApi]);
 
   return (
-    <section className="relative mt-24 bg-white lg:pt-24 2xl:pt-32 pb-24 lg:rounded-t-[5rem] 2xl:rounded-t-[10rem] shadow-[0_-10px_25px_rgba(0,0,0,0.1)]">
+    <section className="relative mt-24 rounded-t-[2rem] bg-white pt-14 pb-24 shadow-[0_-10px_25px_rgba(0,0,0,0.1)] md:rounded-t-[3rem] md:pt-20 lg:rounded-t-[5rem] lg:pt-24 2xl:rounded-t-[10rem] 2xl:pt-32">
       <div className="container mx-auto max-w-[1360px] px-5">
         <div className="mb-10 flex items-end justify-between gap-6 md:mb-14 lg:mb-16">
           <div className="flex max-w-3xl flex-col gap-4">
@@ -984,29 +984,29 @@ function ProSection() {
             ))}
           </ul>
 
-          <div className="mt-9 flex flex-wrap gap-3">
+          <div className="mt-9 flex flex-wrap gap-2 md:gap-3">
             <a
               href="#"
-              className="group inline-flex items-center gap-3 rounded-2xl bg-white px-5 py-3 text-gray-900 transition hover:bg-gray-50"
+              className="group inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-gray-900 transition hover:bg-gray-50 md:gap-3 md:rounded-2xl md:px-5 md:py-3"
             >
               <PlatformIconIOS />
               <div className="text-left leading-tight">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                <p className="text-[9px] uppercase tracking-wider text-gray-500 md:text-[10px]">
                   Yuklash
                 </p>
-                <p className="text-base font-semibold">iOS uchun</p>
+                <p className="text-sm font-semibold md:text-base">iOS uchun</p>
               </div>
             </a>
             <a
               href="#"
-              className="group inline-flex items-center gap-3 rounded-2xl bg-white px-5 py-3 text-gray-900 transition hover:bg-gray-50"
+              className="group inline-flex items-center gap-2 rounded-xl bg-white px-3.5 py-2 text-gray-900 transition hover:bg-gray-50 md:gap-3 md:rounded-2xl md:px-5 md:py-3"
             >
               <PlatformIconAndroid />
               <div className="text-left leading-tight">
-                <p className="text-[10px] uppercase tracking-wider text-gray-500">
+                <p className="text-[9px] uppercase tracking-wider text-gray-500 md:text-[10px]">
                   Yuklash
                 </p>
-                <p className="text-base font-semibold">Android uchun</p>
+                <p className="text-sm font-semibold md:text-base">Android uchun</p>
               </div>
             </a>
           </div>
@@ -1044,7 +1044,7 @@ function CheckIcon() {
 
 function PlatformIconIOS() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px] md:size-[22px]">
       <path d="M14.94 5.19A4.38 4.38 0 0 0 16 2c-1 .07-2.25.74-2.97 1.52-.65.69-1.22 1.81-1.07 2.94 1.13.09 2.3-.6 2.98-1.27Zm2.52 6.16a4.41 4.41 0 0 1 2.1-3.7 4.5 4.5 0 0 0-3.55-1.92c-1.49-.15-2.92.88-3.68.88-.78 0-1.94-.86-3.2-.84-1.64.02-3.16.95-4.01 2.41-1.71 2.96-.44 7.34 1.22 9.75.81 1.18 1.78 2.5 3.04 2.45 1.22-.05 1.68-.78 3.16-.78 1.47 0 1.88.78 3.17.75 1.31-.02 2.14-1.19 2.95-2.38a10.5 10.5 0 0 0 1.34-2.73 4.27 4.27 0 0 1-2.54-3.89Z" />
     </svg>
   );
@@ -1052,7 +1052,7 @@ function PlatformIconIOS() {
 
 function PlatformIconAndroid() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+    <svg viewBox="0 0 24 24" fill="currentColor" className="size-[18px] md:size-[22px]">
       <path d="M17.6 9.48 19.16 6.8a.3.3 0 0 0-.52-.3l-1.59 2.75a10.27 10.27 0 0 0-9.1 0L6.36 6.5a.3.3 0 1 0-.52.3L7.4 9.48a8.66 8.66 0 0 0-4.52 7.04h18.24a8.66 8.66 0 0 0-4.52-7.04ZM7.7 14.45a.85.85 0 1 1 0-1.7.85.85 0 0 1 0 1.7Zm8.6 0a.85.85 0 1 1 0-1.7.85.85 0 0 1 0 1.7Z" />
     </svg>
   );
@@ -1104,7 +1104,7 @@ function FaqSection() {
           <p className="text-sm font-medium uppercase tracking-wider text-gray-500">
             FAQ
           </p>
-          <h2 className="mt-4 text-4xl font-extrabold leading-[1.05] tracking-tight text-gray-900 md:text-5xl">
+          <h2 className="mt-3 text-3xl font-semibold leading-[1.1] tracking-tight text-gray-900 md:text-4xl">
             Savollar bormi?
             <br />
             <span className="text-[var(--accent)]">

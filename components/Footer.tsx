@@ -53,7 +53,7 @@ const COLS = [
 
 export function Footer() {
   return (
-    <footer className="mt-24 rounded-t-[3rem] bg-gray-950 text-white">
+    <footer className="mt-24 rounded-t-[2rem] bg-gray-950 text-white md:rounded-t-[3rem] lg:rounded-t-[5rem] 2xl:rounded-t-[10rem]">
       {/* Top CTA strip */}
       <div className="mx-auto max-w-[1360px] px-5 pt-20 pb-14 md:pt-24">
         <div className="flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between md:gap-12">
