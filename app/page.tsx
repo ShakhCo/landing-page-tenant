@@ -23,7 +23,7 @@ export default function Home() {
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[oklch(0.18_0_0)]">
       <Header />
-      <main className="pb-24">
+      <main className="pb-8 md:pb-24">
         <div className="mx-auto max-w-[1360px] px-5">
           <HeroGrid />
           <SolutionsSection />

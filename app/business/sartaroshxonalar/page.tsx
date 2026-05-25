@@ -8,7 +8,7 @@ export default function SartaroshxonalarPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[oklch(0.18_0_0)]">
       <Header />
-      <main>
+      <main className="pb-8 md:pb-24">
         <Hero />
         <div className="mx-auto max-w-[1360px] px-5">
           <PainPoints />
@@ -176,7 +176,7 @@ function Features() {
         <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">
           Imkoniyatlar
         </p>
-        <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">
           Sartaroshxonangiz uchun{" "}
           <span className="text-gray-500">to&apos;liq tizim.</span>
         </h2>
@@ -240,13 +240,13 @@ const STEPS: Array<{
 
 function HowItWorks() {
   return (
-    <section className="lg:rounded-t-[5rem] lg:pt-24 2xl:pt-32 pb-12 2xl:rounded-t-[10rem] shadow-[0_-10px_25px_rgba(0,0,0,0.1)] mt-20 md:mt-28">
+    <section className="mt-20 rounded-t-[2rem] bg-white pt-14 pb-12 shadow-[0_-10px_25px_rgba(0,0,0,0.1)] md:mt-28 md:rounded-t-[3rem] md:pt-20 lg:rounded-t-[5rem] lg:pt-24 2xl:rounded-t-[10rem] 2xl:pt-32">
       <div className="mx-auto max-w-[1360px] px-5">
         <div className="mx-auto max-w-2xl text-center">
         <p className="text-sm font-semibold uppercase tracking-wider text-gray-500">
           Qanday ishlaydi
         </p>
-        <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">
           <span className="text-[var(--accent)]">5 daqiqada.</span>{" "}
           <span className="text-gray-500">3 ta oddiy qadam.</span>
         </h2>
