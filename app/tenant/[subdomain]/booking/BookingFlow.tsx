@@ -85,6 +85,7 @@ export function BookingFlow({
   const totalPrice = selected.reduce((s, x) => s + (x.price ?? 0), 0);
   const totalMin = selected.reduce((s, x) => s + (x.durationMinutes ?? 0), 0);
   const futureSlots = (avail?.slots ?? []).filter((s) => new Date(s.startAt).getTime() > Date.now());
+  const selDate = dates.find((x) => x.iso === date);
 
   useEffect(() => {
     if (step !== 'time' || !staffId || !date) return;
@@ -151,7 +152,6 @@ export function BookingFlow({
 
   // ---- success ----
   if (step === 'done') {
-    const d = dates.find((x) => x.iso === date);
     return (
       <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-6">
         <motion.div
@@ -163,12 +163,10 @@ export function BookingFlow({
           <Check size={48} strokeWidth={3} />
         </motion.div>
         <h1 className="mt-7 text-2xl font-extrabold text-foreground">Band qilindi!</h1>
-        <p className="mt-1.5 text-center text-muted-foreground">
-          Tafsilotlarni SMS orqali tasdiqlaymiz.
-        </p>
+        <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
         <div className="mt-7 w-full rounded-3xl border border-border bg-card p-5">
           <SummaryRow icon={<User size={16} />} text={selectedStaff?.name ?? '—'} />
-          <SummaryRow icon={<Calendar size={16} />} text={`${d?.day} ${d?.mon} · ${slot}`} />
+          <SummaryRow icon={<Calendar size={16} />} text={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
           <div className="mt-3 border-t border-border pt-3">
             {selected.map((s) => (
               <div key={s.id} className="flex justify-between py-0.5 text-sm">
@@ -182,281 +180,341 @@ export function BookingFlow({
             </div>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => router.push('/')}
-          className="mt-6 h-[54px] w-full rounded-2xl bg-accent text-base font-bold text-accent-foreground active:scale-[0.99]"
-        >
+        <PrimaryBtn onClick={() => router.push('/')} className="mt-6">
           Tayyor
-        </button>
+        </PrimaryBtn>
       </div>
     );
   }
 
   const idx = FLOW.indexOf(step);
   const progress = ((idx + 1) / FLOW.length) * 100;
-  const showBottom = step === 'services' || step === 'contact';
+
+  // Context-aware primary action (drives both the desktop summary and mobile bar)
+  const action =
+    step === 'services'
+      ? { label: 'Davom etish', disabled: selected.length === 0, onClick: goFromServices }
+      : step === 'staff'
+        ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
+        : step === 'time'
+          ? { label: 'Davom etish', disabled: !slot, onClick: () => { setError(null); setStep('contact'); } }
+          : otpSent
+            ? { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: code.length < 4 || busy, onClick: confirm }
+            : { label: busy ? 'Yuborilmoqda…' : 'Kod yuborish', disabled: phone.length !== 9 || busy, onClick: sendCode };
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-32">
+    <div className="mx-auto min-h-screen max-w-6xl px-4 pb-32 lg:pb-12">
       {/* Header + progress */}
-      <div className="sticky top-0 z-20 border-b border-border bg-background/90 backdrop-blur">
-        <div className="flex items-center gap-2 px-3 py-3">
+      <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/90 px-4 backdrop-blur">
+        <div className="flex items-center gap-2 py-3">
           <button type="button" onClick={back} className="grid size-10 place-items-center rounded-full hover:bg-foreground/5">
             <ChevronLeft size={22} className="text-foreground" />
           </button>
           <div className="-mt-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              {idx + 1}/{FLOW.length}
-            </p>
+            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{idx + 1}/{FLOW.length}</p>
             <h1 className="text-lg font-extrabold leading-tight text-foreground">{STEP_TITLE[step]}</h1>
           </div>
         </div>
-        <div className="h-1 bg-foreground/5">
-          <div className="h-full rounded-r-full bg-accent transition-all duration-300" style={{ width: `${progress}%` }} />
+        <div className="-mx-4 h-1 bg-foreground/5">
+          <div className="h-full rounded-r-full bg-foreground transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={step}
-          initial={{ opacity: 0, x: 16 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -16 }}
-          transition={{ duration: 0.18 }}
-          className="px-5 pt-5"
-        >
-          {/* context summary on later steps */}
-          {step !== 'services' && selected.length > 0 && (
-            <div className="mb-5 rounded-2xl bg-foreground/[0.03] p-4">
-              <div className="flex flex-wrap gap-1.5">
-                {selected.map((s) => (
-                  <span key={s.id} className="rounded-full bg-card px-3 py-1 text-xs font-semibold text-foreground shadow-sm">
-                    {localized(s.name as LocalizedText)}
-                  </span>
-                ))}
-              </div>
-              <p className="mt-2 text-sm text-muted-foreground">
-                {dur(totalMin)} · <span className="font-bold text-foreground">{money(totalPrice, business.currency)}</span>
-              </p>
-            </div>
-          )}
-
-          {/* ---- services ---- */}
-          {step === 'services' && (
-            <div className="flex flex-col gap-2.5">
-              {services.map((s) => {
-                const on = selectedIds.includes(s.id);
-                const price =
-                  s.pricingMode === 'time_rate'
-                    ? s.ratePerHour != null
-                      ? `${money(s.ratePerHour, business.currency)}/soat`
-                      : ''
-                    : s.price != null
-                      ? money(s.price, business.currency)
-                      : '';
-                return (
-                  <button
-                    key={s.id}
-                    type="button"
-                    onClick={() => toggleService(s.id)}
-                    className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${on ? 'border-accent bg-accent/5' : 'border-border bg-card'}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">
-                        {s.durationMinutes ? `${dur(s.durationMinutes)}${price ? ' · ' : ''}` : ''}
-                        {price}
-                      </p>
-                    </div>
-                    <span
-                      className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}
-                    >
-                      {on && <Check size={16} strokeWidth={3} />}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* ---- staff ---- */}
-          {step === 'staff' && (
-            <div className="flex flex-col gap-2.5">
-              {eligibleStaff.map((st) => (
-                <button
-                  key={st.id}
-                  type="button"
-                  onClick={() => { setStaffId(st.id); setStep('time'); }}
-                  className="flex items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 text-left transition-colors active:border-accent"
-                >
-                  {st.photoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
-                  ) : (
-                    <span className="grid size-12 place-items-center rounded-full bg-accent/10 text-lg font-bold text-accent">
-                      {st.name.charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                  <span className="font-semibold text-foreground">{st.name}</span>
-                  <ChevronLeft size={18} className="ml-auto rotate-180 text-muted-foreground" />
-                </button>
-              ))}
-            </div>
-          )}
-
-          {/* ---- time ---- */}
-          {step === 'time' && (
-            <div>
-              <div className="scrollbar-hide -mx-5 flex gap-2.5 overflow-x-auto px-5 pb-1">
-                {dates.map((d) => {
-                  const on = date === d.iso;
-                  return (
-                    <button
-                      key={d.iso}
-                      type="button"
-                      onClick={() => setDate(d.iso)}
-                      className={`flex w-[58px] shrink-0 flex-col items-center rounded-2xl py-2.5 transition-colors ${on ? 'bg-accent text-accent-foreground' : 'bg-foreground/[0.04] text-foreground'}`}
-                    >
-                      <span className="text-[11px] font-medium opacity-70">{d.wd}</span>
-                      <span className="text-xl font-extrabold leading-tight">{d.day}</span>
-                      <span className="text-[10px] opacity-60">{d.mon}</span>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="mt-6">
-                {availLoading ? (
-                  <div className="grid grid-cols-4 gap-2">
-                    {Array.from({ length: 12 }).map((_, i) => (
-                      <span key={i} className="h-11 animate-pulse rounded-xl bg-foreground/5" />
-                    ))}
-                  </div>
-                ) : futureSlots.length === 0 ? (
-                  <div className="py-14 text-center">
-                    <Clock size={28} className="mx-auto text-muted-foreground/40" />
-                    <p className="mt-3 text-sm text-muted-foreground">Bu kunga bo&apos;sh vaqt yo&apos;q.</p>
-                  </div>
-                ) : (
-                  PERIODS.map((p) => {
-                    const items = futureSlots.filter((s) => {
-                      const h = Number(s.start.slice(0, 2));
-                      return h >= p.from && h < p.to;
-                    });
-                    if (items.length === 0) return null;
+      <div className="pt-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
+        {/* ===== LEFT: choices ===== */}
+        <div className="lg:order-1">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step}
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -16 }}
+              transition={{ duration: 0.18 }}
+            >
+              {/* ---- services ---- */}
+              {step === 'services' && (
+                <div className="flex flex-col gap-2.5">
+                  {services.map((s) => {
+                    const on = selectedIds.includes(s.id);
+                    const price =
+                      s.pricingMode === 'time_rate'
+                        ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
+                        : s.price != null ? money(s.price, business.currency) : '';
                     return (
-                      <div key={p.label} className="mb-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.label}</p>
-                        <div className="grid grid-cols-4 gap-2">
-                          {items.map((s) => (
-                            <button
-                              key={s.start}
-                              type="button"
-                              onClick={() => { setSlot(s.start); setStep('contact'); }}
-                              className="h-11 rounded-xl border border-border bg-card text-sm font-semibold text-foreground transition-colors hover:border-accent active:bg-accent active:text-accent-foreground"
-                            >
-                              {s.start}
-                            </button>
-                          ))}
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => toggleService(s.id)}
+                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${on ? 'border-accent bg-accent/5' : 'border-border bg-card hover:border-foreground/20'}`}
+                      >
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                          <p className="mt-0.5 text-sm text-muted-foreground">
+                            {s.durationMinutes ? `${dur(s.durationMinutes)}${price ? ' · ' : ''}` : ''}
+                            {price}
+                          </p>
                         </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* ---- contact + OTP ---- */}
-          {step === 'contact' && (
-            <div>
-              <div className="mb-5 rounded-2xl border border-border bg-card p-4">
-                <SummaryRow icon={<User size={16} />} text={selectedStaff?.name ?? '—'} />
-                <SummaryRow icon={<Calendar size={16} />} text={`${dates.find((x) => x.iso === date)?.day} ${dates.find((x) => x.iso === date)?.mon} · ${slot}`} />
-              </div>
-
-              <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Ism"
-                className="mb-4 h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-accent"
-              />
-
-              <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-              <div className="flex h-14 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-accent">
-                <Phone size={16} className="mr-2 text-muted-foreground" />
-                <span className="font-bold text-foreground/80">+998</span>
-                <input
-                  value={fmtPhone(phone)}
-                  onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                  inputMode="numeric"
-                  placeholder="90 123 45 67"
-                  className="ml-2 h-full w-full bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                />
-              </div>
-
-              <AnimatePresence>
-                {otpSent && (
-                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
-                    <div className="mt-4">
-                      <label className="mb-1.5 block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
-                      <input
-                        autoFocus
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        inputMode="numeric"
-                        placeholder="• • • • •"
-                        className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-accent"
-                      />
-                      <button type="button" onClick={sendCode} disabled={busy} className="mt-2 text-sm font-semibold text-accent disabled:opacity-50">
-                        Kodni qayta yuborish
+                        <span className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
+                          {on && <Check size={16} strokeWidth={3} />}
+                        </span>
                       </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
-
-          {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* Bottom action */}
-      {showBottom && (
-        <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-lg border-t border-border bg-card/95 p-4 backdrop-blur">
-          {step === 'services' && (
-            <>
-              {selected.length > 0 && (
-                <div className="mb-2.5 flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{selected.length} xizmat · {dur(totalMin)}</span>
-                  <span className="text-base font-extrabold text-foreground">{money(totalPrice, business.currency)}</span>
+                    );
+                  })}
                 </div>
               )}
-              <PrimaryBtn disabled={selected.length === 0} onClick={goFromServices}>Davom etish</PrimaryBtn>
-            </>
-          )}
-          {step === 'contact' && !otpSent && (
-            <PrimaryBtn disabled={phone.length !== 9 || busy} onClick={sendCode}>
-              {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+
+              {/* ---- staff ---- */}
+              {step === 'staff' && (
+                <div className="flex flex-col gap-2.5">
+                  {eligibleStaff.map((st) => {
+                    const on = staffId === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => setStaffId(st.id)}
+                        className={`flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all ${on ? 'border-accent bg-accent/5' : 'border-border bg-card hover:border-foreground/20'}`}
+                      >
+                        {st.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
+                        ) : (
+                          <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
+                            {st.name.charAt(0).toUpperCase()}
+                          </span>
+                        )}
+                        <span className="font-semibold text-foreground">{st.name}</span>
+                        <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
+                          {on && <Check size={16} strokeWidth={3} />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* ---- time ---- */}
+              {step === 'time' && (
+                <div>
+                  <div className="scrollbar-hide -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
+                    {dates.map((d) => {
+                      const on = date === d.iso;
+                      return (
+                        <button
+                          key={d.iso}
+                          type="button"
+                          onClick={() => setDate(d.iso)}
+                          className={`flex w-[58px] shrink-0 flex-col items-center rounded-2xl py-2.5 transition-colors ${on ? 'bg-foreground text-background' : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'}`}
+                        >
+                          <span className="text-[11px] font-medium opacity-70">{d.wd}</span>
+                          <span className="text-xl font-extrabold leading-tight">{d.day}</span>
+                          <span className="text-[10px] opacity-60">{d.mon}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="mt-6">
+                    {availLoading ? (
+                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                        {Array.from({ length: 15 }).map((_, i) => (
+                          <span key={i} className="h-11 animate-pulse rounded-xl bg-foreground/5" />
+                        ))}
+                      </div>
+                    ) : futureSlots.length === 0 ? (
+                      <div className="py-14 text-center">
+                        <Clock size={28} className="mx-auto text-muted-foreground/40" />
+                        <p className="mt-3 text-sm text-muted-foreground">Bu kunga bo&apos;sh vaqt yo&apos;q.</p>
+                      </div>
+                    ) : (
+                      PERIODS.map((p) => {
+                        const items = futureSlots.filter((s) => {
+                          const h = Number(s.start.slice(0, 2));
+                          return h >= p.from && h < p.to;
+                        });
+                        if (items.length === 0) return null;
+                        return (
+                          <div key={p.label} className="mb-5">
+                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.label}</p>
+                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
+                              {items.map((s) => {
+                                const on = slot === s.start;
+                                return (
+                                  <button
+                                    key={s.start}
+                                    type="button"
+                                    onClick={() => setSlot(s.start)}
+                                    className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
+                                  >
+                                    {s.start}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ---- contact + OTP ---- */}
+              {step === 'contact' && (
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Ism"
+                    className="mb-4 h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
+                  />
+
+                  <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
+                  <div className="flex h-14 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-foreground/20">
+                    <Phone size={16} className="mr-2 text-muted-foreground" />
+                    <span className="font-bold text-foreground/80">+998</span>
+                    <input
+                      value={fmtPhone(phone)}
+                      onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                      inputMode="numeric"
+                      placeholder="90 123 45 67"
+                      className="ml-2 h-full w-full bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+                    />
+                  </div>
+
+                  <AnimatePresence>
+                    {otpSent && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
+                        <div className="mt-4">
+                          <label className="mb-1.5 block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
+                          <input
+                            autoFocus
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            inputMode="numeric"
+                            placeholder="• • • • •"
+                            className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
+                          />
+                          <button type="button" onClick={sendCode} disabled={busy} className="mt-2 text-sm font-semibold text-accent disabled:opacity-50">
+                            Kodni qayta yuborish
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
+
+              {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* ===== RIGHT: live summary (desktop) ===== */}
+        <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            {/* business */}
+            <div className="flex items-center gap-3">
+              {business.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={business.avatarUrl} alt={business.name} className="size-11 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+              ) : (
+                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground/5 text-lg font-black text-foreground ring-1 ring-border">
+                  {business.name.trim().charAt(0).toUpperCase()}
+                </div>
+              )}
+              <p className="min-w-0 truncate font-bold text-foreground">{business.name}</p>
+            </div>
+
+            <div className="my-4 border-t border-border" />
+
+            <SummaryBody
+              selected={selected}
+              currency={business.currency}
+              staffName={selectedStaff?.name ?? null}
+              when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}` : null}
+              totalMin={totalMin}
+              totalPrice={totalPrice}
+            />
+
+            <PrimaryBtn className="mt-5" disabled={action.disabled} onClick={action.onClick}>
+              {action.label}
             </PrimaryBtn>
-          )}
-          {step === 'contact' && otpSent && (
-            <PrimaryBtn disabled={code.length < 4 || busy} onClick={confirm}>
-              {busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash'}
-            </PrimaryBtn>
-          )}
+          </div>
+        </aside>
+      </div>
+
+      {/* ===== Mobile bottom bar (summary fallback) ===== */}
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
+        {selected.length > 0 && (
+          <div className="mb-2.5 flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">
+              {selected.length} xizmat{totalMin ? ` · ${dur(totalMin)}` : ''}
+            </span>
+            <span className="text-base font-extrabold text-foreground">{money(totalPrice, business.currency)}</span>
+          </div>
+        )}
+        <PrimaryBtn disabled={action.disabled} onClick={action.onClick}>
+          {action.label}
+        </PrimaryBtn>
+      </div>
+    </div>
+  );
+}
+
+function SummaryBody({
+  selected,
+  currency,
+  staffName,
+  when,
+  totalMin,
+  totalPrice,
+}: {
+  selected: PublicTenant['services'];
+  currency: string;
+  staffName: string | null;
+  when: string | null;
+  totalMin: number;
+  totalPrice: number;
+}) {
+  if (selected.length === 0) {
+    return <p className="py-1 text-sm text-muted-foreground">Hali xizmat tanlanmagan.</p>;
+  }
+  return (
+    <>
+      <div className="space-y-3">
+        {selected.map((s) => (
+          <div key={s.id} className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+              {s.durationMinutes != null && <p className="text-xs text-muted-foreground">{dur(s.durationMinutes)}</p>}
+            </div>
+            <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+              {s.price != null ? money(s.price, currency) : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {(staffName || when) && (
+        <div className="mt-4 space-y-2 border-t border-border pt-4">
+          {staffName && <SummaryRow icon={<User size={16} />} text={staffName} />}
+          {when && <SummaryRow icon={<Calendar size={16} />} text={when} />}
         </div>
       )}
-    </div>
+
+      <div className="mt-4 border-t border-border pt-4">
+        <p className="text-xs text-muted-foreground">Jami{totalMin ? ` · ${dur(totalMin)}` : ''}</p>
+        <p className="text-2xl font-extrabold text-foreground">{money(totalPrice, currency)}</p>
+      </div>
+    </>
   );
 }
 
 function SummaryRow({ icon, text }: { icon: React.ReactNode; text: string }) {
   return (
-    <div className="flex items-center gap-2.5 py-1 text-foreground">
+    <div className="flex items-center gap-2.5 py-0.5 text-foreground">
       <span className="text-muted-foreground">{icon}</span>
       <span className="font-semibold">{text}</span>
     </div>
@@ -467,17 +525,19 @@ function PrimaryBtn({
   disabled,
   onClick,
   children,
+  className = '',
 }: {
   disabled?: boolean;
   onClick: () => void;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-[56px] w-full items-center justify-center rounded-2xl bg-accent text-base font-bold text-accent-foreground shadow-lg shadow-accent/20 transition-all active:scale-[0.99] disabled:opacity-50 disabled:shadow-none"
+      className={`flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none ${className}`}
     >
       {children}
     </button>
