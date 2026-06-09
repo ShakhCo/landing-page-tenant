@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -50,7 +50,6 @@ function dur(min: number) {
 function isUnitService(s: { pricingMode: string }) {
   return s.pricingMode === 'time_rate';
 }
-const DURATION_CHOICES = [30, 60, 90, 120, 180, 240]; // minutes
 function addHm(hm: string, mins: number) {
   const [h, m] = hm.split(':').map(Number);
   const t = h * 60 + m + mins;
@@ -460,19 +459,38 @@ export function BookingFlow({
                     </div>
                   </div>
 
-                  {/* duration picker (hourly / time-rate services) */}
-                  {hourly && (
-                    <div className="mt-5">
-                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Davomiyligi</p>
-                      <div className="flex flex-wrap gap-2">
-                        {DURATION_CHOICES.filter((d) => d >= (avail?.minMinutes ?? 30)).map((d) => (
-                          <Chip key={d} on={durationMin === d} onClick={() => { setDurationMin(d); setSlot(null); }}>
-                            {dur(d)}
-                          </Chip>
-                        ))}
+                  {/* duration stepper (hourly / time-rate services) */}
+                  {hourly && (() => {
+                    const minDur = avail?.minMinutes ?? 30;
+                    const maxDur = 8 * 60;
+                    const setDur = (d: number) => { setDurationMin(Math.min(maxDur, Math.max(minDur, d))); setSlot(null); };
+                    return (
+                      <div className="mt-5">
+                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Davomiyligi</p>
+                        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+                          <button
+                            type="button"
+                            onClick={() => setDur(durationMin - 30)}
+                            disabled={durationMin <= minDur}
+                            aria-label="Kamaytirish"
+                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25"
+                          >
+                            <Minus size={18} />
+                          </button>
+                          <span className="min-w-[112px] text-center text-sm font-bold text-foreground tabular-nums">{dur(durationMin)}</span>
+                          <button
+                            type="button"
+                            onClick={() => setDur(durationMin + 30)}
+                            disabled={durationMin >= maxDur}
+                            aria-label="Ko&apos;paytirish"
+                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25"
+                          >
+                            <Plus size={18} />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   <div className="mt-6">
                     {availLoading ? (
@@ -638,7 +656,7 @@ export function BookingFlow({
               selected={selected}
               currency={business.currency}
               staffName={selectedStaff?.name ?? null}
-              when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}` : null}
+              when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null}
               totalMin={totalMin}
               totalPrice={totalPrice}
             />
