@@ -196,7 +196,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={st.photoUrl} alt={st.name} className="size-20 rounded-full object-cover ring-2 ring-card shadow-sm sm:size-24" />
                     ) : (
-                      <span className="grid size-20 place-items-center rounded-full bg-accent/10 text-2xl font-bold text-accent sm:size-24">
+                      <span className="grid size-20 place-items-center rounded-full bg-foreground/5 text-2xl font-bold text-foreground ring-1 ring-border sm:size-24">
                         {st.name.charAt(0).toUpperCase()}
                       </span>
                     )}
