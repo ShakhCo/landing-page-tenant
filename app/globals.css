@@ -277,15 +277,15 @@ body {
   background-color: var(--background);
   background-image: linear-gradient(
     120deg,
-    oklch(96.5% 0.006 9.15) 0%,
-    oklch(95.2% 0.038 9.15) 25%,
-    oklch(96.8% 0.01 250) 50%,
-    oklch(95.2% 0.036 62) 75%,
-    oklch(96.5% 0.006 9.15) 100%
+    oklch(97% 0.003 9.15) 0%,
+    oklch(96.6% 0.016 9.15) 30%,
+    oklch(97% 0.003 250) 55%,
+    oklch(96.6% 0.015 62) 80%,
+    oklch(97% 0.003 9.15) 100%
   );
-  background-size: 240% 240%;
+  background-size: 230% 230%;
   background-attachment: fixed;
-  animation: bgDrift 16s ease-in-out infinite;
+  animation: bgDrift 20s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
