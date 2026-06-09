@@ -34,6 +34,11 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Bookup" }],
   alternates: { canonical: "https://bookup.uz" },
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
   openGraph: {
     type: "website",
     siteName: "Bookup",
@@ -43,11 +48,13 @@ export const metadata: Metadata = {
     url: "https://bookup.uz",
     locale: "uz_UZ",
     alternateLocale: ["ru_RU", "en_US"],
+    images: [{ url: "/favicon.png", width: 1254, height: 1254, alt: "Bookup" }],
   },
   twitter: {
-    card: "summary_large_image",
+    card: "summary",
     title: "Bookup — Onlayn band qilish platformasi",
     description: "Biznesingiz uchun onlayn band qilish va boshqaruv platformasi.",
+    images: ["/favicon.png"],
   },
   robots: { index: true, follow: true },
 };

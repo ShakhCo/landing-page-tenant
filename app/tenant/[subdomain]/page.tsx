@@ -20,7 +20,7 @@ export async function generateMetadata({
   const bits = [cat, city].filter(Boolean).join(' · ');
   const title = `${b.name} — Onlayn bron qilish`;
   const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling. Онлайн запись · Online booking.`;
-  const images = b.avatarUrl ? [{ url: b.avatarUrl }] : undefined;
+  const images = [{ url: b.avatarUrl ?? 'https://bookup.uz/favicon.png' }];
 
   return {
     title: { absolute: `${title} | Bookup` },
@@ -37,7 +37,7 @@ export async function generateMetadata({
       alternateLocale: ['ru_RU', 'en_US'],
       images,
     },
-    twitter: { card: 'summary', title, description, images: b.avatarUrl ? [b.avatarUrl] : undefined },
+    twitter: { card: 'summary', title, description, images: [b.avatarUrl ?? 'https://bookup.uz/favicon.png'] },
     robots: { index: true, follow: true },
   };
 }
