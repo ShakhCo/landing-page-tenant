@@ -50,6 +50,37 @@ function dur(min: number) {
 function isUnitService(s: { pricingMode: string }) {
   return s.pricingMode === 'time_rate';
 }
+const DURATION_CHOICES = [30, 60, 90, 120, 180, 240]; // minutes
+function addHm(hm: string, mins: number) {
+  const [h, m] = hm.split(':').map(Number);
+  const t = h * 60 + m + mins;
+  return `${String(Math.floor(t / 60) % 24).padStart(2, '0')}:${String(t % 60).padStart(2, '0')}`;
+}
+function fmtHmInTz(ms: number, tz: string) {
+  const parts = new Intl.DateTimeFormat('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms));
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
+  return `${get('hour')}:${get('minute')}`;
+}
+/** TIME_RATE: start times where [start, start+duration] fits a free window, stepped by stepMin. */
+function hourlySlots(
+  res: { free: Array<{ fromAt: string; toAt: string }> } | undefined,
+  durationMin: number,
+  stepMin: number,
+  tz: string,
+): { start: string; startAt: string }[] {
+  if (!res) return [];
+  const out: { start: string; startAt: string }[] = [];
+  const stepMs = stepMin * 60_000;
+  const durMs = durationMin * 60_000;
+  for (const w of res.free ?? []) {
+    const startMs = Date.parse(w.fromAt);
+    const endMs = Date.parse(w.toAt);
+    for (let ms = startMs; ms + durMs <= endMs; ms += stepMs) {
+      out.push({ start: fmtHmInTz(ms, tz), startAt: new Date(ms).toISOString() });
+    }
+  }
+  return out;
+}
 function fmtPhone(d: string) {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
 }
@@ -115,14 +146,26 @@ export function BookingFlow({
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
   const [hourSlots, setHourSlots] = useState<{ start: string; startAt: string }[] | null>(null);
+  const [durationMin, setDurationMin] = useState(60);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
-  const selectedIsUnit = selected.some(isUnitService);
+  const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
+  const selectedIsUnit = hourly;
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
+  const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
-  const totalPrice = selected.reduce((s, x) => s + (x.price ?? 0), 0);
-  const totalMin = selected.reduce((s, x) => s + (x.durationMinutes ?? 0), 0);
-  const futureSlots = (avail?.slots ?? []).filter((s) => new Date(s.startAt).getTime() > Date.now());
+
+  const stepMin = avail?.stepMinutes ?? 15;
+  const availRes = avail?.resources?.find((r) => r.resourceId === staffId) ?? avail?.resources?.[0];
+  const ratePerHour = hourly ? (availRes?.ratePerHour ?? selected[0]?.ratePerHour ?? 0) : 0;
+
+  const totalPrice = hourly
+    ? Math.round((ratePerHour * durationMin) / 60)
+    : selected.reduce((s, x) => s + (x.price ?? 0), 0);
+  const totalMin = hourly ? durationMin : selected.reduce((s, x) => s + (x.durationMinutes ?? 0), 0);
+
+  const allSlots = hourly ? hourlySlots(availRes, durationMin, stepMin, tz) : (avail?.slots ?? []);
+  const futureSlots = allSlots.filter((s) => new Date(s.startAt).getTime() > Date.now());
 
   const todayIso = dates[0]?.iso ?? date;
   const tomorrowIso = addDaysIso(todayIso, 1);
@@ -212,7 +255,10 @@ export function BookingFlow({
     const r = await createBookingAction(subdomain, {
       date,
       start: slot,
-      items: selectedIds.map((id) => ({ offeringId: id, resourceId: staffId })),
+      // Hourly (time-rate) booking carries an explicit start+end on its single item.
+      items: hourly
+        ? [{ offeringId: selectedIds[0], resourceId: staffId, start: slot, end: addHm(slot, durationMin) }]
+        : selectedIds.map((id) => ({ offeringId: id, resourceId: staffId })),
       name: name.trim() || undefined,
       phone: `+998${phone}`,
       code,
@@ -285,7 +331,7 @@ export function BookingFlow({
             <ChevronLeft size={22} className="text-foreground" />
           </button>
           <h1 className="text-lg font-extrabold leading-tight text-foreground">
-            {step === 'staff' && selectedIsUnit ? 'Joyni tanlang' : STEP_TITLE[step]}
+            {step === 'staff' && resourcesAreAssets ? 'Joyni tanlang' : STEP_TITLE[step]}
           </h1>
         </div>
         <div className="-mx-4 h-1 bg-foreground/5">
@@ -347,8 +393,8 @@ export function BookingFlow({
                         type="button"
                         onClick={() => {
                           setStaffId(st.id);
-                          // Units auto-advance on pick; staff confirm via "Davom etish".
-                          if (selectedIsUnit) {
+                          // Units (assets) auto-advance on pick; staff confirm via "Davom etish".
+                          if (st.type === 'asset') {
                             setError(null);
                             setStep('time');
                           }
@@ -413,6 +459,20 @@ export function BookingFlow({
                       </AnimatePresence>
                     </div>
                   </div>
+
+                  {/* duration picker (hourly / time-rate services) */}
+                  {hourly && (
+                    <div className="mt-5">
+                      <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Davomiyligi</p>
+                      <div className="flex flex-wrap gap-2">
+                        {DURATION_CHOICES.filter((d) => d >= (avail?.minMinutes ?? 30)).map((d) => (
+                          <Chip key={d} on={durationMin === d} onClick={() => { setDurationMin(d); setSlot(null); }}>
+                            {dur(d)}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   <div className="mt-6">
                     {availLoading ? (

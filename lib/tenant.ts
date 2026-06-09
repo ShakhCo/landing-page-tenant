@@ -49,13 +49,22 @@ export interface AvailabilitySlot {
 }
 export interface AvailabilityResult {
   pricingMode: string;
-  durationMinutes: number;
+  durationMinutes?: number;
   slots?: AvailabilitySlot[];
+  /** TIME_RATE: booking-range constraints + each resource's free windows. */
+  minMinutes?: number;
+  stepMinutes?: number;
+  resources?: Array<{
+    resourceId: string;
+    name: string;
+    ratePerHour: number;
+    free: Array<{ from: string; to: string; fromAt: string; toAt: string }>;
+  }>;
 }
 export interface CreateBookingInput {
   date: string;
   start: string;
-  items: { offeringId: string; resourceId: string }[];
+  items: { offeringId: string; resourceId: string; start?: string; end?: string }[];
   name?: string;
   phone: string;
   code: string;
