@@ -219,7 +219,7 @@ export function BookingFlow({
 
       <div className="pt-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
         {/* ===== LEFT: choices ===== */}
-        <div className="lg:order-1">
+        <div className="min-w-0 lg:order-1">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
