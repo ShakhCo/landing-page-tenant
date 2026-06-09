@@ -413,7 +413,7 @@ export function BookingFlow({
 
         {/* ===== RIGHT: live summary (desktop) ===== */}
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <motion.div layout className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             {/* business */}
             <div className="flex items-center gap-3">
               {business.avatarUrl ? (
@@ -441,7 +441,7 @@ export function BookingFlow({
             <PrimaryBtn className="mt-5" disabled={action.disabled} onClick={action.onClick}>
               {action.label}
             </PrimaryBtn>
-          </div>
+          </motion.div>
         </aside>
       </div>
 
@@ -478,36 +478,82 @@ function SummaryBody({
   totalMin: number;
   totalPrice: number;
 }) {
-  if (selected.length === 0) {
-    return <p className="py-1 text-sm text-muted-foreground">Hali xizmat tanlanmagan.</p>;
-  }
   return (
     <>
-      <div className="space-y-3">
-        {selected.map((s) => (
-          <div key={s.id} className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-              {s.durationMinutes != null && <p className="text-xs text-muted-foreground">{dur(s.durationMinutes)}</p>}
+      <AnimatePresence initial={false} mode="wait">
+        {selected.length === 0 ? (
+          <motion.p
+            key="empty"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.18 }}
+            className="py-1 text-sm text-muted-foreground"
+          >
+            Hali xizmat tanlanmagan.
+          </motion.p>
+        ) : (
+          <motion.div key="list" layout>
+            <AnimatePresence initial={false}>
+              {selected.map((s) => (
+                <motion.div
+                  key={s.id}
+                  layout
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+                  className="overflow-hidden"
+                >
+                  <div className="flex items-start justify-between gap-3 pb-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                      {s.durationMinutes != null && <p className="text-xs text-muted-foreground">{dur(s.durationMinutes)}</p>}
+                    </div>
+                    <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+                      {s.price != null ? money(s.price, currency) : ''}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {(staffName || when) && (
+          <motion.div
+            layout
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <div className="mt-4 space-y-2 border-t border-border pt-4">
+              {staffName && <SummaryRow icon={<User size={16} />} text={staffName} />}
+              {when && <SummaryRow icon={<Calendar size={16} />} text={when} />}
             </div>
-            <span className="whitespace-nowrap text-sm font-semibold text-foreground">
-              {s.price != null ? money(s.price, currency) : ''}
-            </span>
-          </div>
-        ))}
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {(staffName || when) && (
-        <div className="mt-4 space-y-2 border-t border-border pt-4">
-          {staffName && <SummaryRow icon={<User size={16} />} text={staffName} />}
-          {when && <SummaryRow icon={<Calendar size={16} />} text={when} />}
-        </div>
-      )}
-
-      <div className="mt-4 border-t border-border pt-4">
+      <motion.div layout className="mt-4 border-t border-border pt-4">
         <p className="text-xs text-muted-foreground">Jami{totalMin ? ` · ${dur(totalMin)}` : ''}</p>
-        <p className="text-2xl font-extrabold text-foreground">{money(totalPrice, currency)}</p>
-      </div>
+        <AnimatePresence mode="wait">
+          <motion.p
+            key={totalPrice}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.2 }}
+            className="text-2xl font-extrabold text-foreground"
+          >
+            {money(totalPrice, currency)}
+          </motion.p>
+        </AnimatePresence>
+      </motion.div>
     </>
   );
 }
