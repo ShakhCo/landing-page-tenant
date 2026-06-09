@@ -255,3 +255,41 @@ button:not(:disabled),
     @apply font-sans;
   }
 }
+
+/*
+ ---break---
+ */
+
+/* Very light, slowly drifting gradient behind the whole app. Plain rule
+   (outside @layer) so it overrides the @apply bg-background above. The tints
+   are barely-there coral/peach over the near-white --background. */
+@keyframes bgDrift {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+body {
+  background-color: var(--background);
+  background-image: linear-gradient(
+    120deg,
+    oklch(97.02% 0.0015 9.15) 0%,
+    oklch(97.6% 0.014 9.15) 28%,
+    oklch(97.02% 0.0015 9.15) 52%,
+    oklch(97.6% 0.013 62) 78%,
+    oklch(97.02% 0.0015 9.15) 100%
+  );
+  background-size: 220% 220%;
+  background-attachment: fixed;
+  animation: bgDrift 22s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body {
+    animation: none;
+  }
+}
