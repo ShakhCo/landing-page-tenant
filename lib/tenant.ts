@@ -69,6 +69,11 @@ export interface PublicBookingView {
     startAt: string;
     endAt: string | null;
     totalPrice: number | null;
+    customer?: {
+      type: 'user' | 'guest';
+      user: { id: string; fullName: string } | null;
+      guest: { name: string; phone: string } | null;
+    } | null;
     items: Array<{
       offeringId: string;
       name: LocalizedText | null;
