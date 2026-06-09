@@ -240,24 +240,30 @@ export function BookingFlow({
                 </button>
               ))}
             </div>
-            {availLoading ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Yuklanmoqda…</p>
-            ) : (avail?.slots?.length ?? 0) === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">Bu kunga boʻsh vaqt yoʻq.</p>
-            ) : (
-              <div className="grid grid-cols-4 gap-2">
-                {avail!.slots!.map((s) => (
-                  <button
-                    key={s.start}
-                    type="button"
-                    onClick={() => { setSlot(s.start); setStep('contact'); }}
-                    className="rounded-xl border border-border py-2.5 text-sm font-semibold text-foreground hover:border-accent"
-                  >
-                    {s.start}
-                  </button>
-                ))}
-              </div>
-            )}
+            {(() => {
+              // Hide slots already in the past (today). Future dates: all kept.
+              const futureSlots = (avail?.slots ?? []).filter(
+                (s) => new Date(s.startAt).getTime() > Date.now(),
+              );
+              return availLoading ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">Yuklanmoqda…</p>
+              ) : futureSlots.length === 0 ? (
+                <p className="py-10 text-center text-sm text-muted-foreground">Bu kunga boʻsh vaqt yoʻq.</p>
+              ) : (
+                <div className="grid grid-cols-4 gap-2">
+                  {futureSlots.map((s) => (
+                    <button
+                      key={s.start}
+                      type="button"
+                      onClick={() => { setSlot(s.start); setStep('contact'); }}
+                      className="rounded-xl border border-border py-2.5 text-sm font-semibold text-foreground hover:border-accent"
+                    >
+                      {s.start}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
 
