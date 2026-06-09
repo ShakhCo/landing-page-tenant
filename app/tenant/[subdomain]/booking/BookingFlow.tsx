@@ -434,6 +434,7 @@ export function BookingFlow({
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
                   <input
+                    autoFocus
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Ism"
