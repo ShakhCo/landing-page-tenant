@@ -86,7 +86,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
               <div className="min-w-0 pt-0.5">
                 <h1 className="text-xl font-extrabold leading-tight text-foreground sm:text-2xl">{business.name}</h1>
                 {business.category && (
-                  <span className="mt-1.5 inline-block rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                  <span className="mt-1 inline-block text-sm font-medium text-muted-foreground lg:mt-1.5 lg:rounded-full lg:bg-accent/10 lg:px-2.5 lg:py-1 lg:text-xs lg:font-semibold lg:text-accent">
                     {localized(business.category.name)}
                   </span>
                 )}
