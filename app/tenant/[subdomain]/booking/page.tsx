@@ -2,6 +2,11 @@ import { redirect } from 'next/navigation';
 import { getTenant } from '@/lib/tenant';
 import { BookingFlow } from './BookingFlow';
 
+export const metadata = {
+  title: 'Bron qilish',
+  robots: { index: false, follow: false }, // app flow — not for search
+};
+
 export default async function BookingRoute({
   params,
   searchParams,

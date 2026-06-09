@@ -2,6 +2,11 @@ import { redirect } from 'next/navigation';
 import { getBooking } from '@/lib/tenant';
 import { BookingResult } from './BookingResult';
 
+export const metadata = {
+  title: 'Bandlik tafsilotlari',
+  robots: { index: false, follow: false }, // private booking — never index
+};
+
 export default async function BookingResultPage({
   params,
   searchParams,

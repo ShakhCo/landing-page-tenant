@@ -3,9 +3,10 @@ import { Footer } from "@/components/Footer";
 import { PricingSection } from "@/components/Pricing";
 
 export const metadata = {
-  title: "Narxlar — Bookup",
+  title: "Narxlar",
   description:
     "Bookup uchun narxlar — asosiy tarif va kerakli imkoniyatlarni qo'shing. Komissiya yo'q, faqat oddiy oylik to'lov.",
+  alternates: { canonical: "https://bookup.uz/narxlar" },
 };
 
 export default function NarxlarPage() {

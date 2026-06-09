@@ -1,5 +1,46 @@
-import { getTenant } from '@/lib/tenant';
+import type { Metadata } from 'next';
+import { getTenant, localized } from '@/lib/tenant';
 import { TenantView } from './TenantView';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ subdomain: string }>;
+}): Promise<Metadata> {
+  const { subdomain } = await params;
+  const tenant = await getTenant(subdomain);
+  if (!tenant) {
+    return { title: 'Topilmadi', robots: { index: false, follow: false } };
+  }
+  const b = tenant.business;
+  const cat = b.category ? localized(b.category.name) : '';
+  const branch = (tenant.branches ?? [])[0];
+  const city = branch?.address ? localized(branch.address) : '';
+  const url = `https://${subdomain}.bookup.uz`;
+  const bits = [cat, city].filter(Boolean).join(' · ');
+  const title = `${b.name} — Onlayn bron qilish`;
+  const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling. Онлайн запись · Online booking.`;
+  const images = b.avatarUrl ? [{ url: b.avatarUrl }] : undefined;
+
+  return {
+    title: { absolute: `${title} | Bookup` },
+    description,
+    applicationName: b.name,
+    alternates: { canonical: url },
+    openGraph: {
+      type: 'website',
+      siteName: b.name,
+      title,
+      description,
+      url,
+      locale: 'uz_UZ',
+      alternateLocale: ['ru_RU', 'en_US'],
+      images,
+    },
+    twitter: { card: 'summary', title, description, images: b.avatarUrl ? [b.avatarUrl] : undefined },
+    robots: { index: true, follow: true },
+  };
+}
 
 export default async function TenantPage({
   params,
