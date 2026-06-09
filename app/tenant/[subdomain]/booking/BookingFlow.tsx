@@ -430,7 +430,7 @@ export function BookingFlow({
                       <button
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
-                        className="flex items-center gap-2.5 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20"
+                        className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
                       >
                         <Calendar size={16} className="text-muted-foreground" />
                         {dateLabel}
@@ -815,8 +815,8 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
-        on ? 'bg-foreground text-background' : 'border border-border bg-card text-foreground hover:border-foreground/20'
+      className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+        on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'
       }`}
     >
       {children}
