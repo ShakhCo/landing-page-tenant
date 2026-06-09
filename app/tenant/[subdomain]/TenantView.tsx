@@ -61,36 +61,34 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
-      {/* ===== Hero ===== */}
-      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f4495b 0%,#ff7d8b 60%,#ff9a7a 100%)' }}>
-        <div className="pointer-events-none absolute -right-20 -top-24 size-72 rounded-full bg-white/15 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-28 left-1/3 size-72 rounded-full bg-white/10 blur-3xl" />
+      {/* ===== Header ===== */}
+      <div className="border-b border-border bg-card">
         <motion.div
-          initial={{ opacity: 0, y: 14 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="relative mx-auto flex max-w-6xl items-center gap-4 px-4 py-8 sm:gap-5 sm:py-10"
+          transition={{ duration: 0.4, ease: 'easeOut' }}
+          className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-6 sm:gap-5 sm:py-8"
         >
           {business.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.avatarUrl} alt={business.name} className="size-20 shrink-0 rounded-2xl object-cover shadow-lg ring-4 ring-white/30 sm:size-24" />
+            <img src={business.avatarUrl} alt={business.name} className="size-20 shrink-0 rounded-2xl object-cover shadow-sm ring-1 ring-border sm:size-24" />
           ) : (
-            <div className="grid size-20 shrink-0 place-items-center rounded-2xl bg-white/20 text-3xl font-black text-white shadow-lg ring-4 ring-white/25 sm:size-24 sm:text-4xl">
+            <div className="grid size-20 shrink-0 place-items-center rounded-2xl bg-accent text-3xl font-black text-accent-foreground shadow-sm sm:size-24 sm:text-4xl">
               {business.name.trim().charAt(0).toUpperCase()}
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-2xl font-extrabold leading-tight text-white drop-shadow-sm sm:text-3xl xl:text-4xl">{business.name}</h1>
+            <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl xl:text-4xl">{business.name}</h1>
             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
               {business.category && (
-                <span className="rounded-full bg-white/20 px-2.5 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
                   {localized(business.category.name)}
                 </span>
               )}
               {branch && (
-                <button type="button" onClick={() => setShowHours(true)} className="flex items-center gap-1.5 text-sm text-white/90">
-                  <span className={`size-2 rounded-full ${open ? 'bg-emerald-300' : 'bg-white/60'}`} />
-                  <span className="font-medium">{open && closing ? `Ochiq · ${closing} gacha` : 'Yopiq'}</span>
+                <button type="button" onClick={() => setShowHours(true)} className="flex items-center gap-1.5 text-sm">
+                  <span className={`size-2 rounded-full ${open ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                  <span className="font-medium text-muted-foreground">{open && closing ? `Ochiq · ${closing} gacha` : 'Yopiq'}</span>
                 </button>
               )}
             </div>
