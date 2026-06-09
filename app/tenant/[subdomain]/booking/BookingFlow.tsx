@@ -245,7 +245,7 @@ export function BookingFlow({
                         key={s.id}
                         type="button"
                         onClick={() => toggleService(s.id)}
-                        className={`flex items-center gap-3 rounded-2xl border-2 p-4 text-left transition-all ${on ? 'border-accent bg-accent/5' : 'border-border bg-card hover:border-foreground/20'}`}
+                        className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
                       >
                         <div className="min-w-0 flex-1">
                           <p className="font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
@@ -273,7 +273,7 @@ export function BookingFlow({
                         key={st.id}
                         type="button"
                         onClick={() => setStaffId(st.id)}
-                        className={`flex items-center gap-4 rounded-2xl border-2 p-4 text-left transition-all ${on ? 'border-accent bg-accent/5' : 'border-border bg-card hover:border-foreground/20'}`}
+                        className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
                       >
                         {st.photoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
