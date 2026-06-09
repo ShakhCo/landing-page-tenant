@@ -61,56 +61,43 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
-      {/* ===== Header ===== */}
-      <div className="border-b border-border bg-card">
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-6 sm:gap-5 sm:py-8"
-        >
-          {business.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={business.avatarUrl} alt={business.name} className="size-20 shrink-0 rounded-2xl object-cover shadow-sm ring-1 ring-border sm:size-24" />
-          ) : (
-            <div className="grid size-20 shrink-0 place-items-center rounded-2xl bg-accent text-3xl font-black text-accent-foreground shadow-sm sm:size-24 sm:text-4xl">
-              {business.name.trim().charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div className="min-w-0">
-            <h1 className="text-2xl font-extrabold leading-tight text-foreground sm:text-3xl xl:text-4xl">{business.name}</h1>
-            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5">
-              {business.category && (
-                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
-                  {localized(business.category.name)}
-                </span>
-              )}
-              {branch && (
-                <button type="button" onClick={() => setShowHours(true)} className="flex items-center gap-1.5 text-sm">
-                  <span className={`size-2 rounded-full ${open ? 'bg-emerald-500' : 'bg-stone-400'}`} />
-                  <span className="font-medium text-muted-foreground">{open && closing ? `Ochiq · ${closing} gacha` : 'Yopiq'}</span>
-                </button>
-              )}
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
       {/* ===== Body ===== */}
       <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10">
         {/* Right card (desktop) */}
         <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
-          {canBook && (
-            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-              <p className="text-sm text-muted-foreground">Onlayn bron qiling</p>
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="rounded-3xl border border-border bg-card p-6 shadow-sm"
+          >
+            <div className="flex items-start gap-3.5">
+              {business.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={business.avatarUrl} alt={business.name} className="size-14 shrink-0 rounded-2xl object-cover ring-1 ring-border" />
+              ) : (
+                <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-accent text-2xl font-black text-accent-foreground">
+                  {business.name.trim().charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="min-w-0 pt-0.5">
+                <h1 className="text-xl font-extrabold leading-tight text-foreground sm:text-2xl">{business.name}</h1>
+                {business.category && (
+                  <span className="mt-1.5 inline-block rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                    {localized(business.category.name)}
+                  </span>
+                )}
+              </div>
+            </div>
+            {canBook && (
               <Link
                 href="/booking"
-                className="mt-3 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-transform hover:opacity-90 active:scale-[0.99]"
+                className="mt-5 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-transform hover:opacity-90 active:scale-[0.99]"
               >
                 Bron qilish
               </Link>
-            </div>
-          )}
+            )}
+          </motion.div>
           {branch && (
             <div className="mt-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
               <button type="button" onClick={() => setShowHours(true)} className="flex w-full items-center gap-3 text-left">
