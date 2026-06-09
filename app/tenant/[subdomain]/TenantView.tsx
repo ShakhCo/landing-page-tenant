@@ -72,7 +72,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="rounded-3xl border border-border bg-card p-6 shadow-sm"
+            className="lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
           >
             <div className="flex items-start gap-3.5">
               {business.avatarUrl ? (
@@ -95,14 +95,14 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             {canBook && (
               <Link
                 href="/booking"
-                className="mt-5 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-transform hover:opacity-90 active:scale-[0.99]"
+                className="mt-5 hidden h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-transform hover:opacity-90 active:scale-[0.99] lg:flex"
               >
                 Bron qilish
               </Link>
             )}
           </motion.div>
           {branch && (
-            <div className="mt-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <div className="mt-4 rounded-2xl border border-border bg-card p-5 lg:rounded-3xl lg:p-6 lg:shadow-sm">
               <button type="button" onClick={() => setShowHours(true)} className="flex w-full items-center gap-3 text-left">
                 <Clock size={20} className="shrink-0 text-muted-foreground" />
                 <span className="flex-1 text-[15px]">
