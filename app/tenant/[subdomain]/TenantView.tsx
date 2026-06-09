@@ -3,37 +3,30 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, Navigation } from 'lucide-react';
+import { Clock, MapPin, ChevronDown } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant } from '@/lib/tenant';
 
 const DAY_NAMES = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
+const FEATURED_LIMIT = 6;
 
-function formatPrice(amount: number, currency: string): string {
+function money(amount: number, currency: string) {
   const n = amount.toLocaleString('ru-RU');
   return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
 }
-
-function formatDuration(min: number | null): string {
+function dur(min: number | null) {
   if (!min) return '';
-  if (min < 60) return `${min} daqiqa`;
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return m ? `${h} soat ${m} daqiqa` : `${h} soat`;
+  return h ? (m ? `${h} soat ${m} daqiqa` : `${h} soat`) : `${m} daqiqa`;
 }
-
-function hm(t: string | null): number | null {
+function hm(t: string | null) {
   if (!t) return null;
   const [h, m] = t.split(':');
   return Number(h) * 60 + Number(m);
 }
-
-function nowInTz(tz: string): { weekday: number; minutes: number } {
+function nowInTz(tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: tz,
-    weekday: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23',
+    timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).formatToParts(new Date());
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
   const map: Record<string, number> = { Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6, Sun: 7 };
@@ -47,94 +40,98 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const staff = tenant.staff ?? [];
   const branch = branches[0];
   const canBook = services.length > 0 && staff.length > 0;
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
   const [showHours, setShowHours] = useState(false);
 
   const now = branch ? nowInTz(branch.timezone) : null;
   const today = branch?.workingHours.find((w) => w.weekday === now?.weekday);
-  const openMin = hm(today?.openTime ?? null);
-  const closeMin = hm(today?.closeTime ?? null);
-  const open =
-    !!now && !!today && !today.isDayOff && openMin != null && closeMin != null &&
-    now.minutes >= openMin && now.minutes < closeMin;
+  const oMin = hm(today?.openTime ?? null);
+  const cMin = hm(today?.closeTime ?? null);
+  const open = !!now && !!today && !today.isDayOff && oMin != null && cMin != null && now.minutes >= oMin && now.minutes < cMin;
   const closing = today?.closeTime?.slice(0, 5) ?? null;
 
-  const grouped: Record<string, typeof services> = {};
-  for (const s of services) {
-    const key = localized(s.category as LocalizedText | null, 'Boshqa');
-    (grouped[key] ??= []).push(s);
-  }
-  const categories = Object.keys(grouped);
-  const visible = activeCategory ? grouped[activeCategory] ?? [] : services;
-
+  const cats = Array.from(
+    new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))),
+  );
+  const filtered = activeCat
+    ? services.filter((s) => localized(s.category as LocalizedText | null, 'Boshqa') === activeCat)
+    : services;
+  const visible = showAll ? filtered : filtered.slice(0, FEATURED_LIMIT);
   const mapsQuery = branch ? `${branch.latitude},${branch.longitude}` : '';
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-3xl bg-card shadow-lg lg:px-3">
-      {/* ---------- Profile header ---------- */}
-      <div className="px-4 pb-2 pt-4 text-left">
-        <div className="mb-6 flex items-center justify-between">
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
+      <div className="mx-auto max-w-6xl px-4 py-6 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:py-10">
+        {/* ===== Business card (right on desktop, top on mobile) ===== */}
+        <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
+          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+            <h1 className="text-3xl font-extrabold leading-tight text-foreground xl:text-4xl">
+              {business.name}
+            </h1>
+            {business.category && (
+              <span className="mt-3 inline-block rounded-full bg-accent/10 px-3 py-1 text-sm font-semibold text-accent">
+                {localized(business.category.name)}
+              </span>
+            )}
+            {canBook && (
+              <Link
+                href="/booking"
+                className="mt-5 flex h-14 w-full items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg shadow-accent/20 transition-transform active:scale-[0.99]"
+              >
+                Bron qilish
+              </Link>
+            )}
+          </div>
+
           {branch && (
-            <button
-              type="button"
-              onClick={() => document.getElementById('location')?.scrollIntoView({ behavior: 'smooth' })}
-              className="flex size-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-foreground/5"
-              aria-label="Manzil"
-            >
-              <MapPin size={18} className="text-muted-foreground" />
-            </button>
+            <div className="mt-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setShowHours(true)}
+                className="flex w-full items-center gap-3 text-left"
+              >
+                <Clock size={20} className="shrink-0 text-muted-foreground" />
+                <span className="flex-1 text-[15px]">
+                  <span className={open ? 'font-semibold text-emerald-600' : 'font-semibold text-foreground'}>
+                    {open ? 'Ochiq' : 'Yopiq'}
+                  </span>
+                  {open && closing && <span className="text-muted-foreground"> · {closing} gacha</span>}
+                </span>
+                <ChevronDown size={18} className="text-muted-foreground" />
+              </button>
+              {branch.address && (
+                <div className="mt-4 flex items-start gap-3 border-t border-border pt-4">
+                  <MapPin size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <p className="text-[15px] text-foreground">
+                    {localized(branch.address)}{' '}
+                    <a
+                      href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="font-semibold text-accent"
+                    >
+                      Yo&apos;l ko&apos;rsatish
+                    </a>
+                  </p>
+                </div>
+              )}
+            </div>
           )}
-          <span className="text-sm font-bold tracking-wider text-muted-foreground/50">BOOKUP</span>
-        </div>
+        </aside>
 
-        {business.avatarUrl && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={business.avatarUrl}
-            alt={business.name}
-            className="mb-4 size-20 rounded-3xl object-cover shadow-lg ring-4 ring-card"
-          />
-        )}
+        {/* ===== Services (left) ===== */}
+        <section className="lg:order-1">
+          <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Xizmatlar</h2>
 
-        <h1 className="text-3xl font-bold text-foreground xl:text-5xl">{business.name}</h1>
-
-        {branch?.address && <p className="mt-2 text-muted-foreground">{localized(branch.address)}</p>}
-
-        {branch && (
-          <button
-            type="button"
-            onClick={() => setShowHours(true)}
-            className="mt-2 flex items-center gap-1.5 text-base transition-opacity hover:opacity-70"
-          >
-            <span
-              className="size-2.5 shrink-0 rounded-full"
-              style={{ backgroundColor: open ? 'var(--success)' : 'var(--destructive)' }}
-            />
-            <span className="text-muted-foreground">
-              {open && closing ? `Ochiq · ${closing} gacha` : 'Hozir yopiq'}
-            </span>
-            <Clock size={15} className="text-muted-foreground/60" />
-          </button>
-        )}
-      </div>
-
-      {/* ---------- Content ---------- */}
-      <div className="px-4 pb-24">
-        {/* Services */}
-        <div className="pt-6">
-          <h2 className="mb-4 text-2xl font-bold text-foreground">Xizmatlar</h2>
-
-          {categories.length > 1 && (
-            <div className="scrollbar-hide -mx-1 flex gap-2 overflow-x-auto px-1 pb-4">
-              <Pill active={activeCategory === null} onClick={() => setActiveCategory(null)}>
+          {cats.length > 1 && (
+            <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+              <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>
                 Barchasi
               </Pill>
-              {categories.map((c) => (
-                <Pill
-                  key={c}
-                  active={activeCategory === c}
-                  onClick={() => setActiveCategory(c === activeCategory ? null : c)}
-                >
+              {cats.map((c) => (
+                <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>
                   {c}
                 </Pill>
               ))}
@@ -142,113 +139,91 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           )}
 
           {services.length === 0 ? (
-            <div className="py-16 text-center text-sm text-muted-foreground">Hozircha xizmatlar yo&apos;q.</div>
+            <p className="mt-6 rounded-2xl border border-border bg-card px-5 py-10 text-center text-sm text-muted-foreground">
+              Hozircha xizmatlar yo&apos;q.
+            </p>
           ) : (
-            <div>
-              {visible.map((s, i) => {
+            <div className="mt-4 flex flex-col gap-3">
+              {visible.map((s) => {
                 const price =
                   s.pricingMode === 'time_rate'
                     ? s.ratePerHour != null
-                      ? `${formatPrice(s.ratePerHour, business.currency)}/soat`
+                      ? `${money(s.ratePerHour, business.currency)}/soat`
                       : ''
                     : s.price != null
-                      ? formatPrice(s.price, business.currency)
+                      ? money(s.price, business.currency)
                       : '';
-                const cls = `flex items-center justify-between py-4 ${i > 0 ? 'border-t border-border' : ''} ${canBook ? '-mx-2 rounded-lg px-2 transition-colors active:bg-foreground/5' : ''}`;
-                const inner = (
-                  <>
-                    <div className="min-w-0 flex-1 pr-4">
-                      <h4 className="line-clamp-1 text-lg font-semibold text-foreground">
-                        {localized(s.name)}
-                      </h4>
+                return (
+                  <div
+                    key={s.id}
+                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/20"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-bold text-foreground">{localized(s.name as LocalizedText)}</h3>
                       {s.durationMinutes != null && (
-                        <p className="mt-0.5 text-base text-muted-foreground">
-                          {formatDuration(s.durationMinutes)}
-                        </p>
+                        <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>
                       )}
+                      {price && <p className="mt-3 font-bold text-foreground">{price}</p>}
                     </div>
-                    {price && (
-                      <p className="shrink-0 text-base font-semibold text-foreground xl:text-lg">{price}</p>
+                    {canBook && (
+                      <Link
+                        href={`/booking?service=${s.id}`}
+                        className="shrink-0 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+                      >
+                        Bron
+                      </Link>
                     )}
-                  </>
-                );
-                return canBook ? (
-                  <Link key={s.id} href={`/booking?service=${s.id}`} className={cls}>
-                    {inner}
-                  </Link>
-                ) : (
-                  <div key={s.id} className={cls}>
-                    {inner}
                   </div>
                 );
               })}
+
+              {filtered.length > FEATURED_LIMIT && !showAll && (
+                <button
+                  type="button"
+                  onClick={() => setShowAll(true)}
+                  className="mt-1 self-start rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+                >
+                  Barchasini ko&apos;rish
+                </button>
+              )}
             </div>
           )}
-        </div>
 
-        {/* Location */}
-        {branch && (
-          <div id="location" className="mt-10 scroll-mt-4">
-            <h2 className="mb-4 text-2xl font-semibold text-foreground">Manzil</h2>
-            <div className="overflow-hidden rounded-3xl border border-border">
-              <iframe
-                title="map"
-                className="h-56 w-full"
-                loading="lazy"
-                src={`https://www.google.com/maps?q=${mapsQuery}&z=16&output=embed`}
-              />
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center justify-center gap-2 bg-card py-3.5 text-base font-semibold text-accent"
-              >
-                <Navigation size={18} />
-                Yo&apos;l ko&apos;rsatish
-              </a>
-            </div>
-          </div>
-        )}
-
-        {/* Powered by */}
-        <a
-          href="https://bookup.uz"
-          target="_blank"
-          rel="noreferrer"
-          className="mt-12 flex items-center justify-center gap-2 pb-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
-        >
-          <span className="text-sm">powered by</span>
-          <span className="text-xl font-bold tracking-wider">BOOKUP</span>
-        </a>
+          <a
+            href="https://bookup.uz"
+            target="_blank"
+            rel="noreferrer"
+            className="mt-10 flex items-center gap-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
+          >
+            <span className="text-sm">powered by</span>
+            <span className="text-lg font-bold tracking-wider">BOOKUP</span>
+          </a>
+        </section>
       </div>
 
-      {/* ---------- Sticky booking CTA ---------- */}
+      {/* Mobile sticky Book CTA */}
       {canBook && (
-        <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-3xl bg-gradient-to-t from-card via-card to-transparent px-4 pb-4 pt-8">
+        <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
           <Link
             href="/booking"
-            className="flex h-[54px] items-center justify-center rounded-2xl bg-accent text-base font-bold text-accent-foreground shadow-lg transition-transform active:scale-[0.99]"
+            className="flex h-14 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg active:scale-[0.99]"
           >
             Bron qilish
           </Link>
         </div>
       )}
 
-      {/* ---------- Working hours sheet ---------- */}
+      {/* Working hours modal */}
       <AnimatePresence>
         {showHours && branch && (
           <motion.div
             className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowHours(false)}
           >
             <motion.div
               className="w-full overflow-hidden rounded-t-[28px] bg-card lg:w-[420px] lg:rounded-2xl"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
             >
@@ -259,22 +234,19 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                 <h3 className="text-2xl font-bold text-foreground">Ish vaqti</h3>
               </div>
               <div className="px-6 pb-7">
-                {branch.workingHours.map((w) => {
-                  const isToday = w.weekday === now?.weekday;
-                  return (
-                    <div
-                      key={w.weekday}
-                      className={`flex justify-between py-2 text-base ${isToday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}
-                    >
-                      <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
-                      <span className="tabular-nums">
-                        {w.isDayOff || !w.openTime || !w.closeTime
-                          ? 'Dam olish'
-                          : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
-                      </span>
-                    </div>
-                  );
-                })}
+                {branch.workingHours.map((w) => (
+                  <div
+                    key={w.weekday}
+                    className={`flex justify-between py-2 text-base ${w.weekday === now?.weekday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}
+                  >
+                    <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
+                    <span className="tabular-nums">
+                      {w.isDayOff || !w.openTime || !w.closeTime
+                        ? 'Dam olish'
+                        : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
+                    </span>
+                  </div>
+                ))}
               </div>
             </motion.div>
           </motion.div>
@@ -284,23 +256,13 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   );
 }
 
-function Pill({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex-shrink-0 rounded-full px-4 py-2 text-base font-medium transition-all ${
-        active
-          ? 'bg-accent text-accent-foreground'
-          : 'border border-border bg-card text-muted-foreground hover:bg-foreground/5'
+      className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
+        active ? 'bg-foreground text-background' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
       }`}
     >
       {children}
