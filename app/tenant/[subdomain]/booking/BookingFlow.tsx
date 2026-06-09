@@ -47,6 +47,9 @@ function dur(min: number) {
   const m = min % 60;
   return h ? (m ? `${h} soat ${m} daq` : `${h} soat`) : `${m} daq`;
 }
+function isUnitService(s: { pricingMode: string }) {
+  return s.pricingMode === 'time_rate';
+}
 function fmtPhone(d: string) {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
 }
@@ -114,6 +117,7 @@ export function BookingFlow({
   const [hourSlots, setHourSlots] = useState<{ start: string; startAt: string }[] | null>(null);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
+  const selectedIsUnit = selected.some(isUnitService);
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
   const totalPrice = selected.reduce((s, x) => s + (x.price ?? 0), 0);
@@ -156,19 +160,39 @@ export function BookingFlow({
     else if (step === 'contact') setStep('time');
     else router.push('/');
   };
-  const toggleService = (id: string) =>
-    setSelectedIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
-  const goFromServices = () => {
+  const advance = (ids: string[] = selectedIds) => {
     setError(null);
-    if (selected.length === 0) return;
-    if (eligibleStaff.length === 0) {
+    if (ids.length === 0) return;
+    const elig = staff.filter((st) => ids.every((id) => st.offeringIds.includes(id)));
+    if (elig.length === 0) {
       setError('Bu xizmatlarni bitta mutaxassis bajara olmaydi — alohida band qiling.');
       return;
     }
-    if (eligibleStaff.length === 1) {
-      setStaffId(eligibleStaff[0].id);
+    if (elig.length === 1) {
+      setStaffId(elig[0].id);
       setStep('time');
     } else setStep('staff');
+  };
+  const goFromServices = () => advance();
+  const toggleService = (id: string) => {
+    const svc = services.find((s) => s.id === id);
+    if (!svc) return;
+    if (isUnitService(svc)) {
+      // Unit / time-rate service is exclusive — select it alone and skip the
+      // multi-service page straight to the unit/time picker.
+      setSelectedIds([id]);
+      advance([id]);
+      return;
+    }
+    // Fixed service: replace any unit selection, otherwise multi-toggle.
+    setSelectedIds((prev) => {
+      const prevHasUnit = prev.some((pid) => {
+        const p = services.find((s) => s.id === pid);
+        return p ? isUnitService(p) : false;
+      });
+      if (prevHasUnit) return [id];
+      return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
+    });
   };
   const sendCode = async () => {
     if (phone.length !== 9 || busy) return;
@@ -260,7 +284,9 @@ export function BookingFlow({
           <button type="button" onClick={back} className="grid size-10 place-items-center rounded-full hover:bg-foreground/5">
             <ChevronLeft size={22} className="text-foreground" />
           </button>
-          <h1 className="text-lg font-extrabold leading-tight text-foreground">{STEP_TITLE[step]}</h1>
+          <h1 className="text-lg font-extrabold leading-tight text-foreground">
+            {step === 'staff' && selectedIsUnit ? 'Joyni tanlang' : STEP_TITLE[step]}
+          </h1>
         </div>
         <div className="-mx-4 h-1 bg-foreground/5">
           <div className="h-full rounded-r-full bg-foreground transition-all duration-300" style={{ width: `${progress}%` }} />

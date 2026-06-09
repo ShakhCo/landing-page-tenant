@@ -34,6 +34,7 @@ export interface PublicTenant {
   staff: Array<{
     id: string;
     name: string;
+    type?: string;
     photoUrl: string | null;
     offeringIds: string[];
   }>;
