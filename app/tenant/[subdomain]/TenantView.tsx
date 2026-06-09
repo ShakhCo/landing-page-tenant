@@ -215,7 +215,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                 <iframe
                   title="Map"
                   src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
-                  className="h-64 w-full border-0 sm:h-80"
+                  className="h-80 w-full border-0 sm:h-[28rem]"
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
                 />
