@@ -220,7 +220,7 @@ export function BookingFlow({
         </div>
       </div>
 
-      <div className="pt-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
+      <div className="pt-6 lg:grid lg:grid-cols-[1fr_440px] lg:items-start lg:gap-10">
         {/* ===== LEFT: choices ===== */}
         <div className="lg:order-1">
           <AnimatePresence mode="wait">
@@ -413,7 +413,7 @@ export function BookingFlow({
 
         {/* ===== RIGHT: live summary (desktop) ===== */}
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
-          <motion.div layout className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <motion.div layout className="rounded-3xl border border-border bg-card p-7 shadow-sm sm:p-8">
             {/* business */}
             <div className="flex items-center gap-3">
               {business.avatarUrl ? (
