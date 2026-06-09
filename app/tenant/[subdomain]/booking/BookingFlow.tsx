@@ -89,6 +89,7 @@ export function BookingFlow({
   const [phone, setPhone] = useState('');
   const [code, setCode] = useState('');
   const [otpSent, setOtpSent] = useState(false);
+  const [isNewCustomer, setIsNewCustomer] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
@@ -157,8 +158,10 @@ export function BookingFlow({
     setBusy(true);
     const r = await requestOtpAction(`+998${phone}`);
     setBusy(false);
-    if (r.ok) setOtpSent(true);
-    else setError(r.error);
+    if (r.ok) {
+      setIsNewCustomer(r.isNewCustomer);
+      setOtpSent(true);
+    } else setError(r.error);
   };
   const confirm = async () => {
     if (!slot || !staffId || code.length < 4 || busy) return;
@@ -226,7 +229,7 @@ export function BookingFlow({
         : step === 'time'
           ? { label: 'Davom etish', disabled: !slot, onClick: () => { setError(null); setStep('contact'); } }
           : otpSent
-            ? { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: code.length < 4 || busy, onClick: confirm }
+            ? { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: code.length < 4 || busy || (isNewCustomer && !name.trim()), onClick: confirm }
             : { label: busy ? 'Yuborilmoqda…' : 'Kod yuborish', disabled: phone.length !== 9 || busy, onClick: sendCode };
 
   return (
@@ -432,20 +435,12 @@ export function BookingFlow({
               {/* ---- contact + OTP ---- */}
               {step === 'contact' && (
                 <div>
-                  <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
-                  <input
-                    autoFocus
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Ism"
-                    className="mb-4 h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
-                  />
-
                   <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
                   <div className="flex h-14 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-foreground/20">
                     <Phone size={16} className="mr-2 text-muted-foreground" />
                     <span className="font-bold text-foreground/80">+998</span>
                     <input
+                      autoFocus
                       value={fmtPhone(phone)}
                       onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
                       inputMode="numeric"
@@ -457,10 +452,24 @@ export function BookingFlow({
                   <AnimatePresence>
                     {otpSent && (
                       <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
+                        {/* New customer → ask for a name */}
+                        {isNewCustomer && (
+                          <div className="mt-4">
+                            <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
+                            <input
+                              autoFocus
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="Ism"
+                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
+                            />
+                          </div>
+                        )}
+
                         <div className="mt-4">
                           <label className="mb-1.5 block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
                           <input
-                            autoFocus
+                            autoFocus={!isNewCustomer}
                             value={code}
                             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             inputMode="numeric"

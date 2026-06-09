@@ -40,14 +40,16 @@ export async function getAvailabilityAction(
 
 export async function requestOtpAction(
   phone: string,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; isNewCustomer: boolean } | { ok: false; error: string }> {
   const res = await fetch(`${API_BASE}/public/otp/request`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ phone }),
   });
   if (!res.ok) return { ok: false, error: await errorMessage(res) };
-  return { ok: true };
+  const body = (await res.json().catch(() => ({}))) as { isNewCustomer?: boolean };
+  // Unknown (older backend) → treat as new so we still ask for a name.
+  return { ok: true, isNewCustomer: body.isNewCustomer ?? true };
 }
 
 export async function createBookingAction(
