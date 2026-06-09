@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, Clock, Calendar, User, Phone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -18,6 +18,19 @@ const STEP_TITLE: Record<Step, string> = {
 };
 const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
 const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
+const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
+const WEEK = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
+const pad2 = (n: number) => String(n).padStart(2, '0');
+function isoParts(iso: string) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  return { day: d.getUTCDate(), monIdx: d.getUTCMonth(), wdIdx: d.getUTCDay() };
+}
+function addDaysIso(iso: string, days: number) {
+  const d = new Date(`${iso}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
 const PERIODS = [
   { label: 'Ertalab', from: 0, to: 12 },
   { label: 'Kunduzi', from: 12, to: 17 },
@@ -78,8 +91,7 @@ export function BookingFlow({
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const dateRef = useRef<HTMLDivElement>(null);
-  const scrollDates = (dir: number) => dateRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
+  const [showCal, setShowCal] = useState(false);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
@@ -87,7 +99,19 @@ export function BookingFlow({
   const totalPrice = selected.reduce((s, x) => s + (x.price ?? 0), 0);
   const totalMin = selected.reduce((s, x) => s + (x.durationMinutes ?? 0), 0);
   const futureSlots = (avail?.slots ?? []).filter((s) => new Date(s.startAt).getTime() > Date.now());
-  const selDate = dates.find((x) => x.iso === date);
+
+  const todayIso = dates[0]?.iso ?? date;
+  const tomorrowIso = addDaysIso(todayIso, 1);
+  const maxIso = addDaysIso(todayIso, 90);
+  const selP = date ? isoParts(date) : null;
+  const selDate = selP ? { day: selP.day, mon: MONTHS[selP.monIdx] } : null;
+  const dateLabel = !selP
+    ? 'Sana tanlang'
+    : date === todayIso
+      ? `Bugun, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`
+      : date === tomorrowIso
+        ? `Ertaga, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`
+        : `${WEEKDAYS_FULL[selP.wdIdx]}, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`;
 
   useEffect(() => {
     if (step !== 'time' || !staffId || !date) return;
@@ -295,40 +319,42 @@ export function BookingFlow({
               {/* ---- time ---- */}
               {step === 'time' && (
                 <div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => scrollDates(-1)}
-                      aria-label="Oldingi kunlar"
-                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
-                    >
-                      <ChevronLeft size={18} />
-                    </button>
-                    <div ref={dateRef} className="scrollbar-hide flex min-w-0 flex-1 gap-2.5 overflow-x-auto scroll-smooth">
-                      {dates.map((d) => {
-                        const on = date === d.iso;
-                        return (
-                          <button
-                            key={d.iso}
-                            type="button"
-                            onClick={() => setDate(d.iso)}
-                            className={`flex w-[58px] shrink-0 flex-col items-center rounded-2xl py-2.5 transition-colors ${on ? 'bg-foreground text-background' : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'}`}
-                          >
-                            <span className="text-[11px] font-medium opacity-70">{d.wd}</span>
-                            <span className="text-xl font-extrabold leading-tight">{d.day}</span>
-                            <span className="text-[10px] opacity-60">{d.mon}</span>
-                          </button>
-                        );
-                      })}
+                  {/* quick chips + calendar field */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Chip on={date === todayIso} onClick={() => setDate(todayIso)}>Bugun</Chip>
+                    <Chip on={date === tomorrowIso} onClick={() => setDate(tomorrowIso)}>Ertaga</Chip>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => setShowCal((v) => !v)}
+                        className="flex items-center gap-2.5 rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/20"
+                      >
+                        <Calendar size={16} className="text-muted-foreground" />
+                        {dateLabel}
+                        <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showCal ? 'rotate-180' : ''}`} />
+                      </button>
+                      <AnimatePresence>
+                        {showCal && (
+                          <>
+                            <div className="fixed inset-0 z-20" onClick={() => setShowCal(false)} />
+                            <motion.div
+                              initial={{ opacity: 0, y: -6 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -6 }}
+                              transition={{ duration: 0.15 }}
+                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card p-4 shadow-xl"
+                            >
+                              <DayPicker
+                                value={date}
+                                todayIso={todayIso}
+                                maxIso={maxIso}
+                                onSelect={(iso) => { setDate(iso); setShowCal(false); }}
+                              />
+                            </motion.div>
+                          </>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => scrollDates(1)}
-                      aria-label="Keyingi kunlar"
-                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
-                    >
-                      <ChevronRight size={18} />
-                    </button>
                   </div>
 
                   <div className="mt-6">
@@ -572,6 +598,94 @@ function SummaryBody({
         </AnimatePresence>
       </motion.div>
     </>
+  );
+}
+
+function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-4 py-2.5 text-sm font-semibold transition-colors ${
+        on ? 'bg-foreground text-background' : 'border border-border bg-card text-foreground hover:border-foreground/20'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DayPicker({
+  value,
+  todayIso,
+  maxIso,
+  onSelect,
+}: {
+  value: string;
+  todayIso: string;
+  maxIso: string;
+  onSelect: (iso: string) => void;
+}) {
+  const v = isoParts(value);
+  const [vy, setVy] = useState(Number(value.slice(0, 4)));
+  const [vm, setVm] = useState(v.monIdx);
+  const daysIn = new Date(Date.UTC(vy, vm + 1, 0)).getUTCDate();
+  const firstWd = (new Date(Date.UTC(vy, vm, 1)).getUTCDay() + 6) % 7; // Monday-first
+  const cells: (number | null)[] = [...Array(firstWd).fill(null), ...Array.from({ length: daysIn }, (_, i) => i + 1)];
+  const curMonth = `${vy}-${pad2(vm + 1)}`;
+  const prevDisabled = curMonth <= todayIso.slice(0, 7);
+  const nextDisabled = curMonth >= maxIso.slice(0, 7);
+  const go = (delta: number) => {
+    let m = vm + delta;
+    let y = vy;
+    if (m < 0) { m = 11; y -= 1; }
+    if (m > 11) { m = 0; y += 1; }
+    setVm(m);
+    setVy(y);
+  };
+  return (
+    <div>
+      <div className="mb-3 flex items-center justify-between">
+        <button type="button" disabled={prevDisabled} onClick={() => go(-1)} aria-label="Oldingi oy" className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
+          <ChevronLeft size={18} />
+        </button>
+        <span className="text-sm font-bold text-foreground">{MONTHS_FULL[vm]} {vy}</span>
+        <button type="button" disabled={nextDisabled} onClick={() => go(1)} aria-label="Keyingi oy" className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
+          <ChevronRight size={18} />
+        </button>
+      </div>
+      <div className="grid grid-cols-7 gap-y-1">
+        {WEEK.map((w) => (
+          <span key={w} className="py-1 text-center text-[11px] font-semibold text-muted-foreground">{w}</span>
+        ))}
+        {cells.map((d, i) => {
+          if (d == null) return <span key={`b${i}`} />;
+          const iso = `${vy}-${pad2(vm + 1)}-${pad2(d)}`;
+          const disabled = iso < todayIso || iso > maxIso;
+          const sel = iso === value;
+          return (
+            <div key={iso} className="flex justify-center py-0.5">
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onSelect(iso)}
+                className={`grid size-10 place-items-center rounded-full text-sm font-semibold transition-colors ${
+                  sel
+                    ? 'bg-foreground text-background'
+                    : disabled
+                      ? 'text-muted-foreground/30'
+                      : iso === todayIso
+                        ? 'text-foreground ring-1 ring-border hover:bg-foreground/5'
+                        : 'text-foreground hover:bg-foreground/5'
+                }`}
+              >
+                {d}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
