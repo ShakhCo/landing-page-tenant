@@ -52,9 +52,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const open = !!now && !!today && !today.isDayOff && oMin != null && cMin != null && now.minutes >= oMin && now.minutes < cMin;
   const closing = today?.closeTime?.slice(0, 5) ?? null;
 
-  const cats = Array.from(
-    new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))),
-  );
+  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))));
   const filtered = activeCat
     ? services.filter((s) => localized(s.category as LocalizedText | null, 'Boshqa') === activeCat)
     : services;
@@ -63,35 +61,67 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
-      <div className="mx-auto max-w-6xl px-4 py-6 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10 lg:py-10">
-        {/* ===== Business card (right on desktop, top on mobile) ===== */}
+      {/* ===== Hero ===== */}
+      <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg,#f4495b 0%,#ff7d8b 60%,#ff9a7a 100%)' }}>
+        <div className="pointer-events-none absolute -right-16 -top-20 size-64 rounded-full bg-white/15 blur-2xl" />
+        <div className="pointer-events-none absolute -bottom-24 -left-10 size-64 rounded-full bg-white/10 blur-2xl" />
+        <div className="relative mx-auto h-40 max-w-6xl px-4 sm:h-52" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: 'easeOut' }}
+          className="-mt-14 flex items-end gap-4"
+        >
+          {business.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={business.avatarUrl} alt={business.name} className="size-28 rounded-3xl object-cover ring-4 ring-card shadow-xl" />
+          ) : (
+            <div className="grid size-28 place-items-center rounded-3xl bg-accent text-4xl font-black text-accent-foreground ring-4 ring-card shadow-xl">
+              {business.name.trim().charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="min-w-0 pb-2">
+            <h1 className="truncate text-3xl font-extrabold text-foreground xl:text-4xl">{business.name}</h1>
+            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+              {business.category && (
+                <span className="rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
+                  {localized(business.category.name)}
+                </span>
+              )}
+              {branch && (
+                <button type="button" onClick={() => setShowHours(true)} className="flex items-center gap-1.5 text-sm">
+                  <span className={`size-2 rounded-full ${open ? 'bg-emerald-500' : 'bg-stone-400'}`} />
+                  <span className="font-medium text-muted-foreground">
+                    {open && closing ? `Ochiq · ${closing} gacha` : 'Yopiq'}
+                  </span>
+                </button>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ===== Body ===== */}
+      <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10">
+        {/* Right card (desktop) */}
         <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
-          <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            <h1 className="text-3xl font-extrabold leading-tight text-foreground xl:text-4xl">
-              {business.name}
-            </h1>
-            {business.category && (
-              <span className="mt-3 inline-block rounded-full bg-accent/10 px-3 py-1 text-sm font-semibold text-accent">
-                {localized(business.category.name)}
-              </span>
-            )}
-            {canBook && (
+          {canBook && (
+            <div className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+              <p className="text-sm text-muted-foreground">Onlayn bron qiling</p>
               <Link
                 href="/booking"
-                className="mt-5 flex h-14 w-full items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg shadow-accent/20 transition-transform active:scale-[0.99]"
+                className="mt-3 flex h-14 w-full items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-transform active:scale-[0.99]"
               >
                 Bron qilish
               </Link>
-            )}
-          </div>
-
+            </div>
+          )}
           {branch && (
             <div className="mt-4 rounded-3xl border border-border bg-card p-6 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setShowHours(true)}
-                className="flex w-full items-center gap-3 text-left"
-              >
+              <button type="button" onClick={() => setShowHours(true)} className="flex w-full items-center gap-3 text-left">
                 <Clock size={20} className="shrink-0 text-muted-foreground" />
                 <span className="flex-1 text-[15px]">
                   <span className={open ? 'font-semibold text-emerald-600' : 'font-semibold text-foreground'}>
@@ -106,12 +136,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                   <MapPin size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
                   <p className="text-[15px] text-foreground">
                     {localized(branch.address)}{' '}
-                    <a
-                      href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-semibold text-accent"
-                    >
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noreferrer" className="font-semibold text-accent">
                       Yo&apos;l ko&apos;rsatish
                     </a>
                   </p>
@@ -121,19 +146,15 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           )}
         </aside>
 
-        {/* ===== Services (left) ===== */}
+        {/* Left: services + team */}
         <section className="lg:order-1">
           <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Xizmatlar</h2>
 
           {cats.length > 1 && (
             <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
-              <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>
-                Barchasi
-              </Pill>
+              <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>Barchasi</Pill>
               {cats.map((c) => (
-                <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>
-                  {c}
-                </Pill>
+                <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>
               ))}
             </div>
           )}
@@ -144,39 +165,35 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             </p>
           ) : (
             <div className="mt-4 flex flex-col gap-3">
-              {visible.map((s) => {
+              {visible.map((s, i) => {
                 const price =
                   s.pricingMode === 'time_rate'
-                    ? s.ratePerHour != null
-                      ? `${money(s.ratePerHour, business.currency)}/soat`
-                      : ''
-                    : s.price != null
-                      ? money(s.price, business.currency)
-                      : '';
+                    ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
+                    : s.price != null ? money(s.price, business.currency) : '';
                 return (
-                  <div
+                  <motion.div
                     key={s.id}
-                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:border-foreground/20"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
+                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
                   >
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-foreground">{localized(s.name as LocalizedText)}</h3>
-                      {s.durationMinutes != null && (
-                        <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>
-                      )}
+                      {s.durationMinutes != null && <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                       {price && <p className="mt-3 font-bold text-foreground">{price}</p>}
                     </div>
                     {canBook && (
                       <Link
                         href={`/booking?service=${s.id}`}
-                        className="shrink-0 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+                        className="shrink-0 rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-accent-foreground transition-transform active:scale-95"
                       >
                         Bron
                       </Link>
                     )}
-                  </div>
+                  </motion.div>
                 );
               })}
-
               {filtered.length > FEATURED_LIMIT && !showAll && (
                 <button
                   type="button"
@@ -189,12 +206,29 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             </div>
           )}
 
-          <a
-            href="https://bookup.uz"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-10 flex items-center gap-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground"
-          >
+          {/* Team */}
+          {staff.length > 0 && (
+            <div className="mt-10">
+              <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Mutaxassislar</h2>
+              <div className="scrollbar-hide -mx-4 mt-4 flex gap-5 overflow-x-auto px-4 pb-2">
+                {staff.map((st) => (
+                  <div key={st.id} className="flex w-20 shrink-0 flex-col items-center text-center">
+                    {st.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={st.photoUrl} alt={st.name} className="size-16 rounded-full object-cover ring-2 ring-card shadow" />
+                    ) : (
+                      <span className="grid size-16 place-items-center rounded-full bg-accent/10 text-xl font-bold text-accent">
+                        {st.name.charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <p className="mt-2 w-full truncate text-sm font-semibold text-foreground">{st.name}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <a href="https://bookup.uz" target="_blank" rel="noreferrer" className="mt-10 flex items-center gap-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground">
             <span className="text-sm">powered by</span>
             <span className="text-lg font-bold tracking-wider">BOOKUP</span>
           </a>
@@ -204,10 +238,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
       {/* Mobile sticky Book CTA */}
       {canBook && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
-          <Link
-            href="/booking"
-            className="flex h-14 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg active:scale-[0.99]"
-          >
+          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg active:scale-[0.99]">
             Bron qilish
           </Link>
         </div>
@@ -227,23 +258,14 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-center pt-3 lg:hidden">
-                <div className="h-1 w-10 rounded-full bg-border" />
-              </div>
-              <div className="px-6 pb-2 pt-5">
-                <h3 className="text-2xl font-bold text-foreground">Ish vaqti</h3>
-              </div>
+              <div className="flex justify-center pt-3 lg:hidden"><div className="h-1 w-10 rounded-full bg-border" /></div>
+              <div className="px-6 pb-2 pt-5"><h3 className="text-2xl font-bold text-foreground">Ish vaqti</h3></div>
               <div className="px-6 pb-7">
                 {branch.workingHours.map((w) => (
-                  <div
-                    key={w.weekday}
-                    className={`flex justify-between py-2 text-base ${w.weekday === now?.weekday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}
-                  >
+                  <div key={w.weekday} className={`flex justify-between py-2 text-base ${w.weekday === now?.weekday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
                     <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
                     <span className="tabular-nums">
-                      {w.isDayOff || !w.openTime || !w.closeTime
-                        ? 'Dam olish'
-                        : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
+                      {w.isDayOff || !w.openTime || !w.closeTime ? 'Dam olish' : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
                     </span>
                   </div>
                 ))}
