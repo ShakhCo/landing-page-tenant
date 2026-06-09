@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Check, Clock, Calendar, User, Phone } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Check, Clock, Calendar, User, Phone } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -78,6 +78,8 @@ export function BookingFlow({
   const [otpSent, setOtpSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const dateRef = useRef<HTMLDivElement>(null);
+  const scrollDates = (dir: number) => dateRef.current?.scrollBy({ left: dir * 260, behavior: 'smooth' });
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
@@ -293,22 +295,40 @@ export function BookingFlow({
               {/* ---- time ---- */}
               {step === 'time' && (
                 <div>
-                  <div className="scrollbar-hide -mx-4 flex gap-2.5 overflow-x-auto px-4 pb-1">
-                    {dates.map((d) => {
-                      const on = date === d.iso;
-                      return (
-                        <button
-                          key={d.iso}
-                          type="button"
-                          onClick={() => setDate(d.iso)}
-                          className={`flex w-[58px] shrink-0 flex-col items-center rounded-2xl py-2.5 transition-colors ${on ? 'bg-foreground text-background' : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'}`}
-                        >
-                          <span className="text-[11px] font-medium opacity-70">{d.wd}</span>
-                          <span className="text-xl font-extrabold leading-tight">{d.day}</span>
-                          <span className="text-[10px] opacity-60">{d.mon}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => scrollDates(-1)}
+                      aria-label="Oldingi kunlar"
+                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
+                    >
+                      <ChevronLeft size={18} />
+                    </button>
+                    <div ref={dateRef} className="scrollbar-hide flex min-w-0 flex-1 gap-2.5 overflow-x-auto scroll-smooth">
+                      {dates.map((d) => {
+                        const on = date === d.iso;
+                        return (
+                          <button
+                            key={d.iso}
+                            type="button"
+                            onClick={() => setDate(d.iso)}
+                            className={`flex w-[58px] shrink-0 flex-col items-center rounded-2xl py-2.5 transition-colors ${on ? 'bg-foreground text-background' : 'bg-foreground/[0.04] text-foreground hover:bg-foreground/[0.08]'}`}
+                          >
+                            <span className="text-[11px] font-medium opacity-70">{d.wd}</span>
+                            <span className="text-xl font-extrabold leading-tight">{d.day}</span>
+                            <span className="text-[10px] opacity-60">{d.mon}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => scrollDates(1)}
+                      aria-label="Keyingi kunlar"
+                      className="grid size-10 shrink-0 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
+                    >
+                      <ChevronRight size={18} />
+                    </button>
                   </div>
 
                   <div className="mt-6">

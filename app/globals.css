@@ -116,6 +116,15 @@ button:not(:disabled),
   cursor: pointer;
 }
 
+/* Hide horizontal scrollbars on scroll strips (date pickers, pill rows). */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 @keyframes marquee {
   from {
     transform: translateX(-50%);
