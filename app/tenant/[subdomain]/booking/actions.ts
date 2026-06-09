@@ -55,12 +55,13 @@ export async function requestOtpAction(
 export async function createBookingAction(
   subdomain: string,
   input: CreateBookingInput,
-): Promise<{ ok: true } | { ok: false; error: string }> {
+): Promise<{ ok: true; id: string } | { ok: false; error: string }> {
   const res = await fetch(`${API_BASE}/public/tenants/${subdomain}/bookings`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
   });
   if (!res.ok) return { ok: false, error: await errorMessage(res) };
-  return { ok: true };
+  const body = (await res.json().catch(() => ({}))) as { id?: string };
+  return { ok: true, id: body.id ?? '' };
 }

@@ -175,9 +175,13 @@ export function BookingFlow({
       phone: `+998${phone}`,
       code,
     });
+    if (r.ok) {
+      // Go to the booking result page on this subdomain: /bookings/<id>?created=1
+      router.push(`/bookings/${r.id}?created=1`);
+      return; // keep `busy` while the page navigates
+    }
     setBusy(false);
-    if (r.ok) setStep('done');
-    else setError(r.error);
+    setError(r.error);
   };
 
   // ---- success ----

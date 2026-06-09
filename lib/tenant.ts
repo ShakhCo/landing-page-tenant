@@ -61,6 +61,39 @@ export interface CreateBookingInput {
   note?: string;
 }
 
+export interface PublicBookingView {
+  business: { name: string; currency: string; timezone: string };
+  booking: {
+    id: string;
+    status: string;
+    startAt: string;
+    endAt: string | null;
+    totalPrice: number | null;
+    items: Array<{
+      offeringId: string;
+      name: LocalizedText | null;
+      resourceName: string;
+      price: number;
+    }>;
+  };
+}
+
+/** Fetch a single booking's public details by id. Null when missing. */
+export async function getBooking(subdomain: string, id: string): Promise<PublicBookingView | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}`,
+      { cache: 'no-store' },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as PublicBookingView;
+    if (!data?.booking?.id) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 /** Fetch a tenant's public business + services by subdomain. Null when missing. */
 export async function getTenant(subdomain: string): Promise<PublicTenant | null> {
   try {
