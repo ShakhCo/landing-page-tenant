@@ -220,7 +220,7 @@ export function BookingFlow({
         </div>
       </div>
 
-      <div className="pt-6 lg:grid lg:grid-cols-[1fr_440px] lg:items-start lg:gap-10">
+      <div className="pt-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
         {/* ===== LEFT: choices ===== */}
         <div className="lg:order-1">
           <AnimatePresence mode="wait">
@@ -413,7 +413,7 @@ export function BookingFlow({
 
         {/* ===== RIGHT: live summary (desktop) ===== */}
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
-          <motion.div layout className="rounded-3xl border border-border bg-card p-7 shadow-sm sm:p-8">
+          <motion.div layout className="rounded-3xl border border-border bg-card p-6 shadow-sm">
             {/* business */}
             <div className="flex items-center gap-3">
               {business.avatarUrl ? (
@@ -424,7 +424,7 @@ export function BookingFlow({
                   {business.name.trim().charAt(0).toUpperCase()}
                 </div>
               )}
-              <p className="min-w-0 truncate font-bold text-foreground">{business.name}</p>
+              <p className="min-w-0 truncate text-lg font-bold text-foreground">{business.name}</p>
             </div>
 
             <div className="my-4 border-t border-border" />
@@ -488,7 +488,7 @@ function SummaryBody({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="py-1 text-sm text-muted-foreground"
+            className="py-1 text-base text-muted-foreground"
           >
             Hali xizmat tanlanmagan.
           </motion.p>
@@ -505,12 +505,12 @@ function SummaryBody({
                   transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
                   className="overflow-hidden"
                 >
-                  <div className="flex items-start justify-between gap-3 pb-3">
+                  <div className="flex items-start justify-between gap-3 pb-3.5">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                      {s.durationMinutes != null && <p className="text-xs text-muted-foreground">{dur(s.durationMinutes)}</p>}
+                      <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                      {s.durationMinutes != null && <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                     </div>
-                    <span className="whitespace-nowrap text-sm font-semibold text-foreground">
+                    <span className="whitespace-nowrap text-base font-semibold text-foreground">
                       {s.price != null ? money(s.price, currency) : ''}
                     </span>
                   </div>
@@ -540,7 +540,7 @@ function SummaryBody({
       </AnimatePresence>
 
       <motion.div layout className="mt-4 border-t border-border pt-4">
-        <p className="text-xs text-muted-foreground">Jami{totalMin ? ` · ${dur(totalMin)}` : ''}</p>
+        <p className="text-sm text-muted-foreground">Jami{totalMin ? ` · ${dur(totalMin)}` : ''}</p>
         <AnimatePresence mode="wait">
           <motion.p
             key={totalPrice}
@@ -548,7 +548,7 @@ function SummaryBody({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="text-2xl font-extrabold text-foreground"
+            className="text-3xl font-extrabold text-foreground"
           >
             {money(totalPrice, currency)}
           </motion.p>
