@@ -277,11 +277,11 @@ body {
   background-color: var(--background);
   background-image: linear-gradient(
     120deg,
-    oklch(97% 0.003 9.15) 0%,
-    oklch(96.6% 0.016 9.15) 30%,
-    oklch(97% 0.003 250) 55%,
-    oklch(96.6% 0.015 62) 80%,
-    oklch(97% 0.003 9.15) 100%
+    oklch(97% 0.002 9.15) 0%,
+    oklch(96.9% 0.009 9.15) 30%,
+    oklch(97% 0.002 250) 55%,
+    oklch(96.9% 0.008 62) 80%,
+    oklch(97% 0.002 9.15) 100%
   );
   background-size: 230% 230%;
   background-attachment: fixed;
