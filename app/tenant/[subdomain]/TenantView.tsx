@@ -72,7 +72,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:p-6 lg:shadow-sm"
+            className="-mx-4 border-b border-border px-4 pb-6 lg:mx-0 lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:px-6 lg:pb-6 lg:pt-6 lg:shadow-sm"
           >
             <div className="flex items-start gap-3.5">
               {business.avatarUrl ? (
@@ -102,7 +102,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             )}
           </motion.div>
           {branch && (
-            <div className="mt-4 rounded-2xl border border-border bg-card p-5 lg:rounded-3xl lg:p-6 lg:shadow-sm">
+            <div className="mt-4 hidden rounded-2xl border border-border bg-card p-5 lg:block lg:rounded-3xl lg:p-6 lg:shadow-sm">
               <button type="button" onClick={() => setShowHours(true)} className="flex w-full items-center gap-3 text-left">
                 <Clock size={20} className="shrink-0 text-muted-foreground" />
                 <span className="flex-1 text-[15px]">
