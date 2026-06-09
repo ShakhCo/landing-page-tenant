@@ -107,7 +107,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
               <p className="text-sm text-muted-foreground">Onlayn bron qiling</p>
               <Link
                 href="/booking"
-                className="mt-3 flex h-14 w-full items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg shadow-accent/25 transition-transform active:scale-[0.99]"
+                className="mt-3 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-transform hover:opacity-90 active:scale-[0.99]"
               >
                 Bron qilish
               </Link>
@@ -180,7 +180,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                     {canBook && (
                       <Link
                         href={`/booking?service=${s.id}`}
-                        className="shrink-0 rounded-full bg-accent px-6 py-2.5 text-sm font-bold text-accent-foreground transition-transform active:scale-95"
+                        className="shrink-0 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 active:scale-95"
                       >
                         Bron
                       </Link>
@@ -202,27 +202,78 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
           {/* Team */}
           {staff.length > 0 && (
-            <div className="mt-10">
+            <div className="mt-12">
               <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Mutaxassislar</h2>
-              <div className="mt-4 flex flex-wrap justify-center gap-5 pb-2">
+              <div className="mt-5 grid grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-4">
                 {staff.map((st) => (
-                  <div key={st.id} className="flex w-20 shrink-0 flex-col items-center text-center">
+                  <div key={st.id} className="flex flex-col items-center text-center">
                     {st.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={st.photoUrl} alt={st.name} className="size-16 rounded-full object-cover ring-2 ring-card shadow" />
+                      <img src={st.photoUrl} alt={st.name} className="size-20 rounded-full object-cover ring-2 ring-card shadow-sm sm:size-24" />
                     ) : (
-                      <span className="grid size-16 place-items-center rounded-full bg-accent/10 text-xl font-bold text-accent">
+                      <span className="grid size-20 place-items-center rounded-full bg-accent/10 text-2xl font-bold text-accent sm:size-24">
                         {st.name.charAt(0).toUpperCase()}
                       </span>
                     )}
-                    <p className="mt-2 w-full truncate text-sm font-semibold text-foreground">{st.name}</p>
+                    <p className="mt-2.5 w-full truncate px-1 text-sm font-semibold text-foreground">{st.name}</p>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <a href="https://bookup.uz" target="_blank" rel="noreferrer" className="mt-10 flex items-center gap-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground">
+          {/* Location / map */}
+          {branch && (
+            <div className="mt-12">
+              <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Manzil</h2>
+              <div className="mt-5 overflow-hidden rounded-2xl border border-border">
+                <iframe
+                  title="Map"
+                  src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
+                  className="h-64 w-full border-0 sm:h-80"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              {branch.address && (
+                <p className="mt-3 flex items-start gap-2.5 text-[15px] text-foreground">
+                  <MapPin size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
+                  <span>
+                    {localized(branch.address)}{' '}
+                    <a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noreferrer" className="font-semibold text-accent">
+                      Yo&apos;l ko&apos;rsatish
+                    </a>
+                  </span>
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Opening times */}
+          {branch && branch.workingHours.length > 0 && (
+            <div className="mt-12">
+              <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Ish vaqti</h2>
+              <div className="mt-5 max-w-md">
+                {branch.workingHours.map((w) => {
+                  const isToday = w.weekday === now?.weekday;
+                  const off = w.isDayOff || !w.openTime || !w.closeTime;
+                  return (
+                    <div key={w.weekday} className="flex items-center justify-between border-b border-border py-3 last:border-0">
+                      <span className="flex items-center gap-3">
+                        <span className={`size-2 rounded-full ${off ? 'bg-stone-300' : 'bg-emerald-500'}`} />
+                        <span className={isToday ? 'font-bold text-foreground' : 'text-foreground'}>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
+                      </span>
+                      <span className={`tabular-nums ${isToday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
+                        {off ? 'Dam olish' : `${w.openTime!.slice(0, 5)} – ${w.closeTime!.slice(0, 5)}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          <a href="https://bookup.uz" target="_blank" rel="noreferrer" className="mt-12 flex items-center gap-2 text-muted-foreground/60 transition-colors hover:text-muted-foreground">
             <span className="text-sm">powered by</span>
             <span className="text-lg font-bold tracking-wider">BOOKUP</span>
           </a>
@@ -232,7 +283,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
       {/* Mobile sticky Book CTA */}
       {canBook && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
-          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-accent text-base font-bold text-accent-foreground shadow-lg active:scale-[0.99]">
+          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
             Bron qilish
           </Link>
         </div>
