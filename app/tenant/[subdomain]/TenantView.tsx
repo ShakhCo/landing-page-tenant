@@ -60,7 +60,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const mapsQuery = branch ? `${branch.latitude},${branch.longitude}` : '';
 
   return (
-    <div className="min-h-screen pb-24 lg:pb-0">
+    <div className="min-h-screen bg-background pb-24 lg:pb-0">
       {/* ===== Body ===== */}
       <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-10">
         {/* Right card (desktop) */}

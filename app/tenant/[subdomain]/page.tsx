@@ -27,7 +27,7 @@ export default async function TenantPage({
   }
 
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-background">
       <TenantView tenant={tenant} />
     </main>
   );
