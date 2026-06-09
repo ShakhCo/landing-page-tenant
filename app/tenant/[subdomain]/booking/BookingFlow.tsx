@@ -210,10 +210,7 @@ export function BookingFlow({
           <button type="button" onClick={back} className="grid size-10 place-items-center rounded-full hover:bg-foreground/5">
             <ChevronLeft size={22} className="text-foreground" />
           </button>
-          <div className="-mt-0.5">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{idx + 1}/{FLOW.length}</p>
-            <h1 className="text-lg font-extrabold leading-tight text-foreground">{STEP_TITLE[step]}</h1>
-          </div>
+          <h1 className="text-lg font-extrabold leading-tight text-foreground">{STEP_TITLE[step]}</h1>
         </div>
         <div className="-mx-4 h-1 bg-foreground/5">
           <div className="h-full rounded-r-full bg-foreground transition-all duration-300" style={{ width: `${progress}%` }} />
