@@ -38,6 +38,9 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
   const staff = tenant.staff ?? [];
+  // "Mutaxassislar" shows people only — assets/units (bowling lanes etc.) are
+  // bookable resources but not team members.
+  const team = staff.filter((st) => (st.type ?? 'staff') === 'staff');
   const branch = branches[0];
   const canBook = services.length > 0 && staff.length > 0;
 
@@ -186,11 +189,11 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           )}
 
           {/* Team */}
-          {staff.length > 0 && (
+          {team.length > 0 && (
             <div className="mt-12">
               <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Mutaxassislar</h2>
               <div className="mt-5 grid grid-cols-3 gap-x-4 gap-y-7 sm:grid-cols-4">
-                {staff.map((st) => (
+                {team.map((st) => (
                   <div key={st.id} className="flex flex-col items-center text-center">
                     {st.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
