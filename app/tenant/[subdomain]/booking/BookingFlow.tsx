@@ -76,11 +76,29 @@ export function BookingFlow({
   const tz = branches[0]?.timezone ?? 'Asia/Tashkent';
   const dates = nextDates(tz);
 
-  const [step, setStep] = useState<Step>('services');
-  const [selectedIds, setSelectedIds] = useState<string[]>(
-    initialServiceId && services.some((s) => s.id === initialServiceId) ? [initialServiceId] : [],
+  // With exactly one service, skip the services step: preselect it and start
+  // at the next meaningful step (staff if there's a choice, else straight to time).
+  const onlyService = services.length === 1 ? services[0] : null;
+  const onlyStaffForOnly = onlyService
+    ? staff.filter((st) => st.offeringIds.includes(onlyService.id))
+    : [];
+
+  const [step, setStep] = useState<Step>(() => {
+    if (!onlyService) return 'services';
+    if (onlyStaffForOnly.length === 1) return 'time';
+    if (onlyStaffForOnly.length > 1) return 'staff';
+    return 'services'; // no eligible staff → keep on services
+  });
+  const [selectedIds, setSelectedIds] = useState<string[]>(() =>
+    onlyService
+      ? [onlyService.id]
+      : initialServiceId && services.some((s) => s.id === initialServiceId)
+        ? [initialServiceId]
+        : [],
   );
-  const [staffId, setStaffId] = useState<string | null>(null);
+  const [staffId, setStaffId] = useState<string | null>(
+    onlyService && onlyStaffForOnly.length === 1 ? onlyStaffForOnly[0].id : null,
+  );
   const [date, setDate] = useState<string>(dates[0]?.iso ?? '');
   const [slot, setSlot] = useState<string | null>(null);
   const [avail, setAvail] = useState<AvailabilityResult | null>(null);
