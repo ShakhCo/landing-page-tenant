@@ -564,7 +564,7 @@ export function BookingFlow({
                     <button
                       key={s.start}
                       type="button"
-                      onClick={() => { setSlot(s.start); setHourSlots(null); }}
+                      onClick={() => { setSlot(s.start); setHourSlots(null); setError(null); setStep('contact'); }}
                       className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                     >
                       {s.start}
