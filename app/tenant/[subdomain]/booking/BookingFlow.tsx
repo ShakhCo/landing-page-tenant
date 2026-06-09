@@ -345,7 +345,14 @@ export function BookingFlow({
                       <button
                         key={st.id}
                         type="button"
-                        onClick={() => setStaffId(st.id)}
+                        onClick={() => {
+                          setStaffId(st.id);
+                          // Units auto-advance on pick; staff confirm via "Davom etish".
+                          if (selectedIsUnit) {
+                            setError(null);
+                            setStep('time');
+                          }
+                        }}
                         className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
                       >
                         {st.photoUrl ? (
