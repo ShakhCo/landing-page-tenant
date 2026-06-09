@@ -228,9 +228,7 @@ export function BookingFlow({
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : step === 'time'
           ? { label: 'Davom etish', disabled: !slot, onClick: () => { setError(null); setStep('contact'); } }
-          : otpSent
-            ? { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: code.length < 4 || busy || (isNewCustomer && !name.trim()), onClick: confirm }
-            : { label: busy ? 'Yuborilmoqda…' : 'Kod yuborish', disabled: phone.length !== 9 || busy, onClick: sendCode };
+          : { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: !otpSent || code.length < 4 || busy || (isNewCustomer && !name.trim()), onClick: confirm };
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl px-4 pb-32 lg:pb-12">
@@ -436,17 +434,29 @@ export function BookingFlow({
               {step === 'contact' && (
                 <div>
                   <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                  <div className="flex h-14 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-foreground/20">
-                    <Phone size={16} className="mr-2 text-muted-foreground" />
-                    <span className="font-bold text-foreground/80">+998</span>
-                    <input
-                      autoFocus
-                      value={fmtPhone(phone)}
-                      onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                      inputMode="numeric"
-                      placeholder="90 123 45 67"
-                      className="ml-2 h-full w-full bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                    />
+                  <div className="flex gap-2">
+                    <div className="flex h-14 min-w-0 flex-1 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-foreground/20">
+                      <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
+                      <span className="font-bold text-foreground/80">+998</span>
+                      <input
+                        autoFocus
+                        value={fmtPhone(phone)}
+                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                        inputMode="numeric"
+                        placeholder="90 123 45 67"
+                        className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+                      />
+                    </div>
+                    {!otpSent && (
+                      <button
+                        type="button"
+                        onClick={sendCode}
+                        disabled={phone.length !== 9 || busy}
+                        className="h-14 shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                      >
+                        {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+                      </button>
+                    )}
                   </div>
 
                   <AnimatePresence>
