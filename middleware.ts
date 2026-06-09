@@ -21,7 +21,7 @@ function tenantSubdomain(host: string): string | null {
   return null; // unknown host (e.g. a cloudflare tunnel) → main site
 }
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const host = req.headers.get('host') ?? '';
   const sub = tenantSubdomain(host);
   const url = req.nextUrl;

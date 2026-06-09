@@ -31,10 +31,35 @@ export interface PublicTenant {
     durationMinutes: number | null;
     ratePerHour: number | null;
   }>;
+  staff: Array<{
+    id: string;
+    name: string;
+    photoUrl: string | null;
+    offeringIds: string[];
+  }>;
 }
 
-const API_BASE =
+export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://bookup-api.automations.uz';
+
+export interface AvailabilitySlot {
+  start: string;
+  startAt: string;
+}
+export interface AvailabilityResult {
+  pricingMode: string;
+  durationMinutes: number;
+  slots?: AvailabilitySlot[];
+}
+export interface CreateBookingInput {
+  date: string;
+  start: string;
+  items: { offeringId: string; resourceId: string }[];
+  name?: string;
+  phone: string;
+  code: string;
+  note?: string;
+}
 
 /** Fetch a tenant's public business + services by subdomain. Null when missing. */
 export async function getTenant(subdomain: string): Promise<PublicTenant | null> {
@@ -44,7 +69,16 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
       { next: { revalidate: 60 } },
     );
     if (!res.ok) return null;
-    return (await res.json()) as PublicTenant;
+    const data = (await res.json()) as Partial<PublicTenant>;
+    if (!data || !data.business) return null;
+    // Normalize: an older/partial backend may omit arrays — never let the UI
+    // read `.length` of undefined.
+    return {
+      business: data.business,
+      branches: Array.isArray(data.branches) ? data.branches : [],
+      services: Array.isArray(data.services) ? data.services : [],
+      staff: Array.isArray(data.staff) ? data.staff : [],
+    };
   } catch {
     return null;
   }
