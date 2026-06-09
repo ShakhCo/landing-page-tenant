@@ -62,7 +62,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       {/* ===== Body ===== */}
-      <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_360px] lg:gap-10">
+      <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-10">
         {/* Right card (desktop) */}
         <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
           <motion.div
