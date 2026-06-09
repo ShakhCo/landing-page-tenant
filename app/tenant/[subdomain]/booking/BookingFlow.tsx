@@ -567,8 +567,8 @@ export function BookingFlow({
               {step === 'contact' && (
                 <div className="max-w-lg">
                   <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                  <div className="flex gap-2">
-                    <div className="flex h-14 min-w-0 flex-1 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-foreground/20">
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20 sm:flex-1">
                       <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
                       <span className="font-bold text-foreground/80">+998</span>
                       <input
@@ -585,7 +585,7 @@ export function BookingFlow({
                         type="button"
                         onClick={sendCode}
                         disabled={phone.length !== 9 || busy}
-                        className="h-14 shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 sm:w-auto"
                       >
                         {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
                       </button>
@@ -604,7 +604,7 @@ export function BookingFlow({
                               value={name}
                               onChange={(e) => setName(e.target.value)}
                               placeholder="Ism"
-                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
+                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
                             />
                           </div>
                         )}
@@ -617,7 +617,7 @@ export function BookingFlow({
                             onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                             inputMode="numeric"
                             placeholder="• • • • •"
-                            className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-foreground/20"
+                            className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
                           />
                           <button type="button" onClick={sendCode} disabled={busy} className="mt-2 text-sm font-semibold text-accent disabled:opacity-50">
                             Kodni qayta yuborish
