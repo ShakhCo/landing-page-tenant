@@ -48,13 +48,13 @@ export const metadata: Metadata = {
     url: "https://bookup.uz",
     locale: "uz_UZ",
     alternateLocale: ["ru_RU", "en_US"],
-    images: [{ url: "/favicon.png", width: 1254, height: 1254, alt: "Bookup" }],
+    images: [{ url: "/og.jpg", width: 640, height: 360, alt: "Bookup — bookup.uz" }],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Bookup — Onlayn band qilish platformasi",
     description: "Biznesingiz uchun onlayn band qilish va boshqaruv platformasi.",
-    images: ["/favicon.png"],
+    images: ["/og.jpg"],
   },
   robots: { index: true, follow: true },
 };
