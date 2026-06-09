@@ -204,7 +204,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           {staff.length > 0 && (
             <div className="mt-10">
               <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Mutaxassislar</h2>
-              <div className="scrollbar-hide -mx-4 mt-4 flex gap-5 overflow-x-auto px-4 pb-2">
+              <div className="mt-4 flex flex-wrap justify-center gap-5 pb-2">
                 {staff.map((st) => (
                   <div key={st.id} className="flex w-20 shrink-0 flex-col items-center text-center">
                     {st.photoUrl ? (
