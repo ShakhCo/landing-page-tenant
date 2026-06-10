@@ -778,14 +778,14 @@ export function BookingFlow({
               {!otpSent && (
                 <div className="mb-5 space-y-2.5">
                   {modalWhen && (
-                    <p className="flex items-center gap-2.5 text-[15px] text-foreground">
+                    <p className="flex items-center gap-2.5 text-[15px] font-semibold text-foreground">
                       <Clock size={18} className="shrink-0 text-muted-foreground" />
-                      <span><span className="text-muted-foreground">Vaqt: </span><span className="font-semibold">{modalWhen}</span></span>
+                      {modalWhen}
                     </p>
                   )}
-                  <p className="flex items-center gap-2.5 text-[15px] text-foreground">
+                  <p className="flex items-center gap-2.5 text-[15px] font-bold text-foreground">
                     <Wallet size={18} className="shrink-0 text-muted-foreground" />
-                    <span><span className="text-muted-foreground">Jami: </span><span className="font-bold">{money(totalPrice, business.currency)}</span></span>
+                    {money(totalPrice, business.currency)}
                   </p>
                 </div>
               )}
