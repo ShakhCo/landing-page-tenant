@@ -73,12 +73,90 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const mapsQuery = branch ? `${branch.latitude},${branch.longitude}` : '';
 
   return (
-    <div className="min-h-screen bg-background pb-24 lg:pb-0">
+    <div className="min-h-screen bg-card pb-24 lg:pb-0">
       {/* ===== Body ===== */}
       <div className="mx-auto max-w-[1300px] px-4 py-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-20">
-        {/* Right card (desktop) */}
+        {/* Right card (desktop) / mobile hero */}
         <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
-          <div className="-mx-4 border-b border-border px-4 pb-6 lg:mx-0 lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:px-6 lg:pb-6 lg:pt-6 lg:shadow-sm">
+          {/* Mobile hero: blurred-avatar cover + overlapping profile block */}
+          <div className="-mx-4 -mt-8 lg:hidden">
+            <div className={`relative overflow-hidden ${business.avatarUrl ? 'h-32' : 'h-24'}`}>
+              {business.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={business.avatarUrl}
+                  alt=""
+                  aria-hidden
+                  className="absolute inset-0 size-full scale-150 object-cover blur-2xl saturate-[1.35]"
+                />
+              ) : (
+                <div className="absolute inset-0 bg-foreground/[0.04]">
+                  <div className="absolute -right-10 -top-16 size-52 rounded-full bg-foreground/[0.10] blur-2xl" />
+                  <div className="absolute -bottom-12 -left-8 size-44 rounded-full bg-foreground/[0.07] blur-2xl" />
+                </div>
+              )}
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent via-card/25 to-card" />
+            </div>
+
+            <div className="relative -mt-12 px-4">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              >
+                {business.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={business.avatarUrl}
+                    alt={business.name}
+                    className="size-[88px] rounded-[1.375rem] object-cover shadow-lg ring-4 ring-card"
+                  />
+                ) : (
+                  <div className="grid size-[88px] place-items-center rounded-[1.375rem] bg-foreground text-4xl font-black text-background shadow-lg ring-4 ring-card">
+                    {business.name.trim().charAt(0).toUpperCase()}
+                  </div>
+                )}
+
+                <h1 className="mt-3.5 text-[26px] font-extrabold leading-tight tracking-tight text-foreground">
+                  {business.name}
+                </h1>
+                {business.category && (
+                  <span className="mt-2 inline-block rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+                    {localized(business.category.name)}
+                  </span>
+                )}
+
+                {branch && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowHours(true)}
+                      className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-bold text-foreground shadow-sm transition-transform active:scale-[0.97]"
+                    >
+                      <Clock size={14} className={`shrink-0 ${open ? 'text-emerald-600' : 'text-muted-foreground'}`} />
+                      <span className={open ? 'text-emerald-600' : ''}>{open ? 'Ochiq' : 'Yopiq'}</span>
+                      {open && closing && <span className="font-medium text-muted-foreground">{closing} gacha</span>}
+                      <ChevronDown size={14} className="text-muted-foreground" />
+                    </button>
+                    {branch.address && (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border border-border bg-card px-3.5 py-2 text-[13px] font-bold text-foreground shadow-sm transition-transform active:scale-[0.97]"
+                      >
+                        <MapPin size={14} className="shrink-0 text-accent" />
+                        <span className="truncate">{localized(branch.address)}</span>
+                      </a>
+                    )}
+                  </div>
+                )}
+              </motion.div>
+            </div>
+          </div>
+
+          {/* Desktop profile card */}
+          <div className="hidden lg:block lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:px-6 lg:pb-6 lg:pt-6 lg:shadow-sm">
             <div className="flex items-start gap-3.5">
               {business.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -89,9 +167,9 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                 </div>
               )}
               <div className="min-w-0 pt-0.5">
-                <h1 className="text-xl font-extrabold leading-tight text-foreground sm:text-2xl">{business.name}</h1>
+                <p className="text-xl font-extrabold leading-tight text-foreground sm:text-2xl" role="heading" aria-level={1}>{business.name}</p>
                 {business.category && (
-                  <span className="mt-1 inline-block text-sm font-medium text-muted-foreground lg:mt-1.5 lg:rounded-full lg:bg-accent/10 lg:px-2.5 lg:py-1 lg:text-xs lg:font-semibold lg:text-accent">
+                  <span className="mt-1.5 inline-block rounded-full bg-accent/10 px-2.5 py-1 text-xs font-semibold text-accent">
                     {localized(business.category.name)}
                   </span>
                 )}
