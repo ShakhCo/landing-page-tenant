@@ -137,7 +137,7 @@ export function BookingResult({
   const reschedule = () => {
     if (pending) return;
     if (!manageable) {
-      setNotice(blockReason("o'zgartirib"));
+      window.alert(blockReason("o'zgartirib"));
       return;
     }
     setNotice(null);
@@ -152,7 +152,7 @@ export function BookingResult({
   const cancel = () => {
     if (pending) return;
     if (!manageable) {
-      setNotice(blockReason('bekor qilib'));
+      window.alert(blockReason('bekor qilib'));
       return;
     }
     setNotice(null);
@@ -398,11 +398,6 @@ export function BookingResult({
           <Send size={16} />
           Yordam kerakmi? Telegram orqali yozing
         </a>
-        {notice && (
-          <div className="mt-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            {notice}
-          </div>
-        )}
       </div>
 
       {/* Booking reference — small footnote */}
