@@ -630,8 +630,8 @@ export function BookingFlow({
                 <div className="max-w-md">
                   {/* Phone */}
                   <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                  <div className="flex flex-col gap-2 sm:flex-row">
-                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20 sm:flex-1">
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20">
                       <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
                       <span className="font-bold text-foreground/80">+998</span>
                       <input
@@ -648,7 +648,7 @@ export function BookingFlow({
                         type="button"
                         onClick={sendCode}
                         disabled={phone.length !== 9 || busy}
-                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 sm:w-auto"
+                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
                       >
                         {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
                       </button>
