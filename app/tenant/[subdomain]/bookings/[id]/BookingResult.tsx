@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, MapPin, CalendarClock, X, Send } from 'lucide-react';
@@ -99,6 +99,23 @@ export function BookingResult({
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = whenLabel(booking.startAt, business.timezone, booking.endAt);
+  // Open (no-end) hourly session that has started: the backend bills on close,
+  // so show a LIVE running total — rate × elapsed (floored at 30 min, like the
+  // backend's minimum). Re-rendered every minute via the tick below.
+  const [, setTick] = useState(0);
+  const svcOfItem = tenant?.services?.find((s) => s.id === booking.items[0]?.offeringId) ?? null;
+  const liveRate = svcOfItem?.pricingMode === 'time_rate' ? svcOfItem.ratePerHour ?? null : null;
+  const startedOpen =
+    booking.endAt == null && liveRate != null && Date.parse(booking.startAt) <= Date.now();
+  const elapsedMin = startedOpen
+    ? Math.max(30, Math.floor((Date.now() - Date.parse(booking.startAt)) / 60000))
+    : null;
+  const liveTotal = startedOpen && elapsedMin != null ? Math.round((liveRate * elapsedMin) / 60) : null;
+  useEffect(() => {
+    if (!startedOpen) return;
+    const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(id);
+  }, [startedOpen]);
   // Title shows just the start ("Bugun, 18:00") — the full range lives in the card's Vaqt row.
   const whenShort = whenLabel(booking.startAt, business.timezone);
   // Resource field: the unit's own label ("Yo'laklar") when the booked resources
@@ -332,8 +349,8 @@ export function BookingResult({
           </div>
 
           <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-            <span>Jami{durationMin ? ` · ${fmtDuration(durationMin)}` : ''}</span>
-            <span>{money(total, business.currency)}</span>
+            <span>Jami{(durationMin ?? elapsedMin) ? ` · ${fmtDuration((durationMin ?? elapsedMin)!)}` : ''}</span>
+            <span>{money(liveTotal ?? total, business.currency)}</span>
           </div>
         </div>
       </Section>
