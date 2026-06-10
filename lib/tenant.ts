@@ -93,6 +93,8 @@ export interface PublicBookingView {
     items: Array<{
       offeringId: string;
       name: LocalizedText | null;
+      /** Booked resource (staff/unit) id — optional in case an older backend omits it. */
+      resourceId?: string;
       resourceName: string;
       pricingMode?: string;
       startAt?: string;

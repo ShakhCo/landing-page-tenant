@@ -31,6 +31,7 @@ export default async function BookingRoute({
   // read so the slot picker would render, but the final reschedule always fails
   // server-side (unknown booking). Show a clear "link invalid" screen instead.
   let initialDuration: number | undefined;
+  let initialStaffId: string | undefined;
   if (reschedule) {
     const original = await getBooking(subdomain, reschedule);
     if (!original) {
@@ -59,6 +60,10 @@ export default async function BookingRoute({
       const mins = Math.round((Date.parse(endAt) - Date.parse(startAt)) / 60000);
       if (mins > 0) initialDuration = mins;
     }
+    // Preselect the original resource (unit/staff) so the customer only re-picks
+    // the time. Skipped if the resource no longer exists on the tenant.
+    const rid = original.booking?.items?.[0]?.resourceId;
+    if (rid && tenant.staff.some((st) => st.id === rid)) initialStaffId = rid;
   }
 
   // Remembered customer? → the flow can skip the phone/OTP step.
@@ -72,6 +77,7 @@ export default async function BookingRoute({
         initialServiceId={service}
         rescheduleId={reschedule}
         initialDuration={initialDuration}
+        initialStaffId={initialStaffId}
         hasSession={hasSession}
       />
     </main>

@@ -10,14 +10,14 @@ const SESSION_COOKIE = 'bookup_session';
 function mapErrorCode(code: string): string {
   const map: Record<string, string> = {
     BOOKING_CONFLICT: "Bu vaqt allaqachon band — iltimos, boshqa vaqtni tanlang.",
-    INVALID_BOOKING: "Bandlikni amalga oshirib bo'lmadi. Iltimos, ma'lumotlarni tekshiring.",
+    INVALID_BOOKING: "Bron qilib bo'lmadi. Iltimos, ma'lumotlarni tekshiring.",
     INVALID_OR_EXPIRED_CODE: "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.",
     TOO_MANY_OTP_ATTEMPTS: "Juda ko'p marta noto'g'ri kod kiritildi. Iltimos, yangi kod so'rang.",
     TOO_MANY_OTP_REQUESTS: "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
     TOO_MANY_REQUESTS: "Juda ko'p so'rov yuborildi. Iltimos, bir daqiqa kutib turing.",
     INVALID_PHONE_NUMBER: "Telefon raqami noto'g'ri. Iltimos, tekshirib qayta kiriting.",
     CODE_REQUIRED: "Tasdiqlash kodini kiriting.",
-    BOOKING_NOT_FOUND: "Bandlik topilmadi. Sahifani yangilab qayta urinib ko'ring.",
+    BOOKING_NOT_FOUND: "Bron topilmadi. Sahifani yangilab qayta urinib ko'ring.",
     BUSINESS_NOT_FOUND: "Biznes topilmadi.",
     BRANCH_NOT_FOUND: "Filial topilmadi.",
     OFFERING_NOT_FOUND: "Tanlangan xizmat hozir mavjud emas.",
