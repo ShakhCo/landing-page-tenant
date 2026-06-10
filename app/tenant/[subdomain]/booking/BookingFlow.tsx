@@ -481,7 +481,7 @@ export function BookingFlow({
                     const setDur = (d: number) => { setDurationMin(Math.min(maxDur, Math.max(minDur, d))); setSlot(null); };
                     return (
                       <div className="mt-5">
-                        <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">Davomiyligi</p>
+                        <p className="mb-2 text-base font-bold text-foreground">Davomiyligi</p>
                         <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
                           <button
                             type="button"
@@ -528,7 +528,7 @@ export function BookingFlow({
                         if (items.length === 0) return null;
                         return (
                           <div key={p.label} className="mb-6">
-                            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.label}</p>
+                            <p className="mb-3 text-lg font-extrabold text-foreground">{p.label}</p>
                             <div className="flex flex-col gap-2.5">
                               {items.map((s) => {
                                 const on = slot === s.start;
