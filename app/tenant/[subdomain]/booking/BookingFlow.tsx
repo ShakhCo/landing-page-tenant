@@ -454,7 +454,7 @@ export function BookingFlow({
                         )}
                         <span className="font-semibold text-foreground">{st.name}</span>
                         <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
-                          {on && <Check size={16} strokeWidth={3} />}
+                          {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
                         </span>
                       </button>
                     );
