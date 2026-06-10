@@ -109,28 +109,30 @@ export function BookingFlow({
   const tz = branches[0]?.timezone ?? 'Asia/Tashkent';
   const dates = nextDates(tz);
 
-  // With exactly one service, skip the services step: preselect it and start
-  // at the next meaningful step (staff if there's a choice, else straight to time).
+  // Skip the services step and go straight to the resource/time picker when:
+  //  - the business has exactly one service, OR
+  //  - the entry service (?service=…) is a unit (time-rate) — units are exclusive,
+  //    so the user should pick a unit next, not browse other services.
   const onlyService = services.length === 1 ? services[0] : null;
-  const onlyStaffForOnly = onlyService
-    ? staff.filter((st) => st.offeringIds.includes(onlyService.id))
-    : [];
+  const initService = initialServiceId ? services.find((s) => s.id === initialServiceId) ?? null : null;
+  const skipService = onlyService ?? (initService && isUnitService(initService) ? initService : null);
+  const skipEligible = skipService ? staff.filter((st) => st.offeringIds.includes(skipService.id)) : [];
 
   const [step, setStep] = useState<Step>(() => {
-    if (!onlyService) return 'services';
-    if (onlyStaffForOnly.length === 1) return 'time';
-    if (onlyStaffForOnly.length > 1) return 'staff';
-    return 'services'; // no eligible staff → keep on services
+    if (!skipService) return 'services';
+    if (skipEligible.length === 1) return 'time';
+    if (skipEligible.length > 1) return 'staff';
+    return 'services'; // no eligible resource → keep on services
   });
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-    onlyService
-      ? [onlyService.id]
+    skipService
+      ? [skipService.id]
       : initialServiceId && services.some((s) => s.id === initialServiceId)
         ? [initialServiceId]
         : [],
   );
   const [staffId, setStaffId] = useState<string | null>(
-    onlyService && onlyStaffForOnly.length === 1 ? onlyStaffForOnly[0].id : null,
+    skipService && skipEligible.length === 1 ? skipEligible[0].id : null,
   );
   const [date, setDate] = useState<string>(dates[0]?.iso ?? '');
   const [slot, setSlot] = useState<string | null>(null);
