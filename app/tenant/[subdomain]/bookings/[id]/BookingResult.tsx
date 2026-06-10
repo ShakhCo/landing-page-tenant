@@ -224,14 +224,6 @@ export function BookingResult({
       <p className="mt-8 text-sm text-muted-foreground">
         Bandlik raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
       </p>
-
-      <button
-        type="button"
-        onClick={() => router.push('/')}
-        className="mt-7 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
-      >
-        Tayyor
-      </button>
     </div>
   );
 }
