@@ -761,7 +761,7 @@ export function BookingFlow({
               <div className="mb-4 flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="text-xl font-extrabold text-foreground">
-                    {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "Vaqtni tasdiqlaysizmi?" : 'Bandlikni tasdiqlash'}
+                    {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : 'Bandlikni tasdiqlash'}
                   </h3>
                   {otpSent && (
                     <p className="mt-1 text-sm text-muted-foreground">
