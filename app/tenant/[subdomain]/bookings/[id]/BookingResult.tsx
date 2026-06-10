@@ -47,15 +47,16 @@ function dateParts(iso: string, tz: string) {
 function localDay(d: Date, tz: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 }
-/** "Bugun, 14:00" / "Ertaga, 14:00" / "Chorshanba, 10-Iyun · 14:00". */
-function whenLabel(iso: string, tz: string) {
+/** "Bugun, 14:00–15:00" / "Ertaga, 14:00–15:00" / "Chorshanba, 10-Iyun · 14:00–15:00". */
+function whenLabel(iso: string, tz: string, endIso?: string | null) {
   const p = dateParts(iso, tz);
+  const time = endIso ? `${p.time}–${dateParts(endIso, tz).time}` : p.time;
   const bookingDay = localDay(new Date(iso), tz);
   const today = localDay(new Date(), tz);
   const tomorrow = localDay(new Date(Date.now() + 86_400_000), tz);
-  if (bookingDay === today) return `Bugun, ${p.time}`;
-  if (bookingDay === tomorrow) return `Ertaga, ${p.time}`;
-  return `${p.wd}, ${p.day}-${p.mon} · ${p.time}`;
+  if (bookingDay === today) return `Bugun, ${time}`;
+  if (bookingDay === tomorrow) return `Ertaga, ${time}`;
+  return `${p.wd}, ${p.day}-${p.mon} · ${time}`;
 }
 export function BookingResult({
   created,
@@ -72,7 +73,7 @@ export function BookingResult({
   const address = branch?.address ? localized(branch.address) : null;
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
-  const when = whenLabel(booking.startAt, business.timezone);
+  const when = whenLabel(booking.startAt, business.timezone, booking.endAt);
   const durationMin = booking.endAt
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
@@ -109,7 +110,7 @@ export function BookingResult({
       </div>
 
       {/* Overview */}
-      <Section title="Buyurtma">
+      <Section>
         <div className="space-y-3">
           {booking.items.map((it, i) => (
             <div key={`${it.offeringId}-${i}`} className="flex items-start justify-between gap-4">
@@ -173,11 +174,11 @@ export function BookingResult({
 }
 
 /** A page section with a consistent heading, top separator, and spacing. */
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title?: string; children: React.ReactNode }) {
   return (
     <section className="mt-9">
-      <h2 className="text-lg font-bold text-foreground">{title}</h2>
-      <div className="mt-4">{children}</div>
+      {title && <h2 className="text-lg font-bold text-foreground">{title}</h2>}
+      <div className={title ? 'mt-4' : ''}>{children}</div>
     </section>
   );
 }
