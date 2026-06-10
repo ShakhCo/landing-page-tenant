@@ -73,8 +73,8 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
       {/* Labeled details */}
       <div className="w-full rounded-3xl border border-border bg-card">
         <div className="divide-y divide-border">
-          <Row label="Mijoz" value={customer} />
           <Row label="Biznes" value={business.name} />
+          <Row label="Mijoz" value={customer} />
           {staff && <Row label="Mutaxassis" value={staff} />}
           <Row label="Sana" value={when.date} />
           <Row label="Vaqt" value={when.time} />
