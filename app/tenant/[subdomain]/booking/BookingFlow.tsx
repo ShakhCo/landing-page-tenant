@@ -424,11 +424,11 @@ export function BookingFlow({
   //  - reschedule (no session) → confirm the time first ("Davom etish" sends OTP);
   //  - new (no session) → confirm after the phone + OTP.
   const confirmBtn = sessionActive
-    ? { label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash', disabled: busy, onClick: confirm }
+    ? { label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bron qilish', disabled: busy, onClick: confirm }
     : rescheduleId && !otpSent
       ? { label: 'Davom etish', disabled: busy, onClick: sendCode }
       : {
-          label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash',
+          label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bron qilish',
           disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()),
           onClick: confirm,
         };
