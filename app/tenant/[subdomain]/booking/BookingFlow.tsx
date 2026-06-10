@@ -410,7 +410,13 @@ export function BookingFlow({
                           {/* A unit (time-rate) selection is exclusive — other services can't be
                               added, only switched to — so show a select (radio) circle, not a +. */}
                           <span className={`ml-auto grid size-9 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-foreground'}`}>
-                            {on ? <Check size={18} strokeWidth={3} /> : hourly ? <span className="size-2.5 rounded-full bg-foreground/30" /> : <Plus size={18} />}
+                            {/* "+" only for fixed services that can be added (not units, and not
+                                while a unit/hourly service is selected); otherwise a select dot. */}
+                            {on
+                              ? <Check size={18} strokeWidth={3} />
+                              : !isUnitService(s) && !hourly
+                                ? <Plus size={18} />
+                                : <span className="size-2.5 rounded-full bg-foreground/30" />}
                           </span>
                         </div>
                       </button>
