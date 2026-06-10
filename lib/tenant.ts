@@ -66,7 +66,8 @@ export interface CreateBookingInput {
   start: string;
   items: { offeringId: string; resourceId: string; start?: string; end?: string }[];
   name?: string;
-  phone: string;
+  /** Omitted for a reschedule — the backend uses the original booking's phone. */
+  phone?: string;
   code: string;
   note?: string;
   /** Reschedule: the booking being replaced, ignored in conflict checks. */

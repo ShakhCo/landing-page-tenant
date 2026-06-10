@@ -54,6 +54,19 @@ export async function requestOtpAction(
   return { ok: true, isNewCustomer: body.isNewCustomer ?? true };
 }
 
+export async function requestRescheduleOtpAction(
+  subdomain: string,
+  bookingId: string,
+): Promise<{ ok: true; maskedPhone: string } | { ok: false; error: string }> {
+  const res = await fetch(
+    `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(bookingId)}/reschedule/otp`,
+    { method: 'POST', cache: 'no-store' },
+  );
+  if (!res.ok) return { ok: false, error: await errorMessage(res) };
+  const body = (await res.json().catch(() => ({}))) as { maskedPhone?: string };
+  return { ok: true, maskedPhone: body.maskedPhone ?? '' };
+}
+
 export async function createBookingAction(
   subdomain: string,
   input: CreateBookingInput,

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
-import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
+import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { cancelBookingAction } from '../bookings/[id]/actions';
 
 type Step = 'services' | 'staff' | 'time' | 'contact' | 'done';
@@ -153,6 +153,8 @@ export function BookingFlow({
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
   const [durationMin, setDurationMin] = useState(initialDuration && initialDuration > 0 ? initialDuration : 60);
+  // Reschedule: masked phone of the original booking ("••• •• 40 20") for the OTP step.
+  const [maskedPhone, setMaskedPhone] = useState('');
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
@@ -256,7 +258,22 @@ export function BookingFlow({
     });
   };
   const sendCode = async () => {
-    if (phone.length !== 9 || busy) return;
+    if (busy) return;
+    // Reschedule: OTP goes to the ORIGINAL booking's phone (server-resolved) —
+    // the customer never re-enters their number.
+    if (rescheduleId) {
+      setError(null);
+      setBusy(true);
+      const r = await requestRescheduleOtpAction(subdomain, rescheduleId);
+      setBusy(false);
+      if (r.ok) {
+        setMaskedPhone(r.maskedPhone);
+        setIsNewCustomer(false); // existing customer → no name needed
+        setOtpSent(true);
+      } else setError(r.error);
+      return;
+    }
+    if (phone.length !== 9) return;
     setError(null);
     setBusy(true);
     const r = await requestOtpAction(`+998${phone}`);
@@ -266,6 +283,13 @@ export function BookingFlow({
       setOtpSent(true);
     } else setError(r.error);
   };
+
+  // Reschedule: auto-send the OTP as soon as the customer reaches the confirm
+  // step — there's no phone entry, so kick it off without a button press.
+  useEffect(() => {
+    if (rescheduleId && step === 'contact' && !otpSent && !busy) void sendCode();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, rescheduleId]);
   const confirm = async () => {
     if (!slot || !staffId || code.length < 5 || busy) return;
     setError(null);
@@ -278,7 +302,8 @@ export function BookingFlow({
         ? [{ offeringId: selectedIds[0], resourceId: staffId, start: slot, end: addHm(slot, durationMin) }]
         : selectedIds.map((id) => ({ offeringId: id, resourceId: staffId })),
       name: name.trim() || undefined,
-      phone: `+998${phone}`,
+      // Reschedule: phone is resolved from the original booking server-side.
+      phone: rescheduleId ? undefined : `+998${phone}`,
       code,
       // Reschedule: ignore the old booking in conflict checks so an overlapping
       // new time (e.g. 14:00-15:00 -> 14:30-15:30) is allowed.
@@ -628,32 +653,47 @@ export function BookingFlow({
               {/* ---- contact + OTP ---- */}
               {step === 'contact' && (
                 <div className="max-w-md">
-                  {/* Phone */}
-                  <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                  <div className="flex flex-col gap-2.5">
-                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20">
-                      <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
-                      <span className="font-bold text-foreground/80">+998</span>
-                      <input
-                        autoFocus
-                        value={fmtPhone(phone)}
-                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                        inputMode="numeric"
-                        placeholder="90 123 45 67"
-                        className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                      />
-                    </div>
-                    {!otpSent && (
-                      <button
-                        type="button"
-                        onClick={sendCode}
-                        disabled={phone.length !== 9 || busy}
-                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
-                      >
-                        {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+                  {/* New booking asks for a phone; reschedule auto-sends the OTP
+                      to the original booking's number (no phone entry). */}
+                  {!rescheduleId && (
+                    <>
+                      <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
+                      <div className="flex flex-col gap-2.5">
+                        <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20">
+                          <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
+                          <span className="font-bold text-foreground/80">+998</span>
+                          <input
+                            autoFocus
+                            value={fmtPhone(phone)}
+                            onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                            inputMode="numeric"
+                            placeholder="90 123 45 67"
+                            className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+                          />
+                        </div>
+                        {!otpSent && (
+                          <button
+                            type="button"
+                            onClick={sendCode}
+                            disabled={phone.length !== 9 || busy}
+                            className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                          >
+                            {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {rescheduleId && !otpSent && (
+                    busy ? (
+                      <p className="text-[15px] text-muted-foreground">Tasdiqlash kodi yuborilmoqda…</p>
+                    ) : (
+                      <button type="button" onClick={sendCode} className="text-[15px] font-semibold text-accent">
+                        Tasdiqlash kodini yuborish
                       </button>
-                    )}
-                  </div>
+                    )
+                  )}
 
                   <AnimatePresence>
                     {otpSent && (
@@ -672,10 +712,10 @@ export function BookingFlow({
                           </div>
                         )}
 
-                        <div className="mt-5">
+                        <div className={rescheduleId ? '' : 'mt-5'}>
                           <div className="mb-2 flex items-baseline justify-between gap-2">
                             <label className="block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
-                            <span className="text-xs tabular-nums text-muted-foreground">+998 {fmtPhone(phone)}</span>
+                            <span className="text-xs tabular-nums text-muted-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span>
                           </div>
                           <input
                             autoFocus={!isNewCustomer}
