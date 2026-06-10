@@ -398,16 +398,19 @@ export function BookingFlow({
               {/* ---- services ---- */}
               {step === 'services' && (
                 <div className="flex flex-col gap-3">
-                  {services.map((s) => {
+                  {services.map((s, i) => {
                     const on = selectedIds.includes(s.id);
                     const price =
                       s.pricingMode === 'time_rate'
                         ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
                         : s.price != null ? money(s.price, business.currency) : '';
                     return (
-                      <button
+                      <motion.button
                         key={s.id}
                         type="button"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
                         onClick={() => toggleService(s.id)}
                         className={`rounded-2xl border-2 bg-card p-5 text-left transition-colors ${on ? 'border-accent' : 'border-border hover:border-foreground/20'}`}
                       >
@@ -427,7 +430,7 @@ export function BookingFlow({
                                 : <span className="size-2.5 rounded-full bg-foreground/30" />}
                           </span>
                         </div>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -436,12 +439,15 @@ export function BookingFlow({
               {/* ---- staff ---- */}
               {step === 'staff' && (
                 <div className="flex flex-col gap-2.5">
-                  {eligibleStaff.map((st) => {
+                  {eligibleStaff.map((st, i) => {
                     const on = staffId === st.id;
                     return (
-                      <button
+                      <motion.button
                         key={st.id}
                         type="button"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
                         onClick={() => {
                           setStaffId(st.id);
                           // Units (assets) auto-advance on pick; staff confirm via "Davom etish".
@@ -464,7 +470,7 @@ export function BookingFlow({
                         <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
                           {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
                         </span>
-                      </button>
+                      </motion.button>
                     );
                   })}
                 </div>
@@ -584,15 +590,18 @@ export function BookingFlow({
                                   );
                                 }
                                 return (
-                                  <button
+                                  <motion.button
                                     key={s.start}
                                     type="button"
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.025, 0.6), ease: 'easeOut' }}
                                     onClick={() => { setSlot(s.start); setError(null); setStep('contact'); }}
                                     className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                                   >
                                     <span className="tabular-nums">{s.start}</span>
                                     <ChevronRight size={18} className={on ? 'text-background/70' : 'text-muted-foreground'} />
-                                  </button>
+                                  </motion.button>
                                 );
                               })}
                             </div>
