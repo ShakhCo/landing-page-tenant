@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight, Wallet } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight, Wallet } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 
@@ -48,6 +48,15 @@ function dur(min: number) {
 }
 function isUnitService(s: { pricingMode: string }) {
   return s.pricingMode === 'time_rate';
+}
+/** Per-service price label: hourly rate for a unit/time-rate service, flat price for fixed. */
+function priceLabel(
+  s: { pricingMode: string; ratePerHour: number | null; price: number | null },
+  currency: string,
+) {
+  return s.pricingMode === 'time_rate'
+    ? s.ratePerHour != null ? `${money(s.ratePerHour, currency)}/soat` : ''
+    : s.price != null ? money(s.price, currency) : '';
 }
 function addHm(hm: string, mins: number) {
   const [h, m] = hm.split(':').map(Number);
@@ -360,13 +369,15 @@ export function BookingFlow({
         <h1 className="mt-7 text-2xl font-extrabold text-foreground">Band qilindi!</h1>
         <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
         <div className="mt-7 w-full rounded-3xl border border-border bg-card p-5">
-          <SummaryRow icon={<User size={16} />} text={selectedStaff?.name ?? '—'} />
-          <SummaryRow icon={<Calendar size={16} />} text={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
+          <div className="space-y-3">
+            <FieldRow label={resourcesAreAssets ? 'Joy' : 'Mutaxassis'} value={selectedStaff?.name ?? '—'} />
+            <FieldRow label="Vaqt" value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
+          </div>
           <div className="mt-3 border-t border-border pt-3">
             {selected.map((s) => (
               <div key={s.id} className="flex justify-between py-0.5 text-sm">
                 <span className="text-muted-foreground">{localized(s.name as LocalizedText)}</span>
-                <span className="font-medium text-foreground">{s.price != null ? money(s.price, business.currency) : ''}</span>
+                <span className="font-medium text-foreground">{priceLabel(s, business.currency)}</span>
               </div>
             ))}
             <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-bold text-foreground">
@@ -477,10 +488,7 @@ export function BookingFlow({
                 <div className="flex flex-col gap-3">
                   {services.map((s, i) => {
                     const on = selectedIds.includes(s.id);
-                    const price =
-                      s.pricingMode === 'time_rate'
-                        ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
-                        : s.price != null ? money(s.price, business.currency) : '';
+                    const price = priceLabel(s, business.currency);
                     return (
                       <motion.button
                         key={s.id}
@@ -726,6 +734,7 @@ export function BookingFlow({
               selected={selected}
               currency={business.currency}
               staffName={selectedStaff?.name ?? null}
+              staffIsAsset={resourcesAreAssets}
               when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null}
               totalMin={totalMin}
               totalPrice={totalPrice}
@@ -883,6 +892,7 @@ function SummaryBody({
   selected,
   currency,
   staffName,
+  staffIsAsset = false,
   when,
   totalMin,
   totalPrice,
@@ -890,6 +900,8 @@ function SummaryBody({
   selected: PublicTenant['services'];
   currency: string;
   staffName: string | null;
+  /** The picked resource is a place/unit (e.g. a lane), not a person. */
+  staffIsAsset?: boolean;
   when: string | null;
   totalMin: number;
   totalPrice: number;
@@ -923,11 +935,12 @@ function SummaryBody({
                 >
                   <div className="flex items-start justify-between gap-3 pb-3.5">
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
+                      <p className="mt-0.5 text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
                       {s.durationMinutes != null && <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                     </div>
                     <span className="whitespace-nowrap text-base font-semibold text-foreground">
-                      {s.price != null ? money(s.price, currency) : ''}
+                      {priceLabel(s, currency)}
                     </span>
                   </div>
                 </motion.div>
@@ -947,9 +960,9 @@ function SummaryBody({
             transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="mt-4 space-y-2 border-t border-border pt-4">
-              {staffName && <SummaryRow icon={<User size={16} />} text={staffName} />}
-              {when && <SummaryRow icon={<Calendar size={16} />} text={when} />}
+            <div className="mt-4 space-y-3 border-t border-border pt-4">
+              {staffName && <FieldRow label={staffIsAsset ? 'Joy' : 'Mutaxassis'} value={staffName} />}
+              {when && <FieldRow label="Vaqt" value={when} />}
             </div>
           </motion.div>
         )}
@@ -1062,11 +1075,12 @@ function DayPicker({
   );
 }
 
-function SummaryRow({ icon, text }: { icon: React.ReactNode; text: string }) {
+/** A labeled summary field — small muted label above a bold value (e.g. "Joy" / "Yo'lak 2"). */
+function FieldRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-2.5 py-0.5 text-foreground">
-      <span className="text-muted-foreground">{icon}</span>
-      <span className="font-semibold">{text}</span>
+    <div>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
+      <p className="mt-0.5 text-base font-semibold text-foreground">{value}</p>
     </div>
   );
 }
