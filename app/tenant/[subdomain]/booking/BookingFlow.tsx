@@ -60,21 +60,21 @@ function fmtHmInTz(ms: number, tz: string) {
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '00';
   return `${get('hour')}:${get('minute')}`;
 }
-/** TIME_RATE: start times where [start, start+duration] fits a free window, stepped by stepMin. */
+const SLOT_STEP_MS = 10 * 60_000; // 10-minute grid, aligned to :00 / :10 / …
+/** TIME_RATE: 10-min-aligned start times where [start, start+duration] fits a free window. */
 function hourlySlots(
   res: { free: Array<{ fromAt: string; toAt: string }> } | undefined,
   durationMin: number,
-  stepMin: number,
   tz: string,
 ): { start: string; startAt: string }[] {
   if (!res) return [];
   const out: { start: string; startAt: string }[] = [];
-  const stepMs = stepMin * 60_000;
   const durMs = durationMin * 60_000;
   for (const w of res.free ?? []) {
-    const startMs = Date.parse(w.fromAt);
     const endMs = Date.parse(w.toAt);
-    for (let ms = startMs; ms + durMs <= endMs; ms += stepMs) {
+    // Align the first start up to a 10-min boundary so slots land on :00, :10, …
+    const startMs = Math.ceil(Date.parse(w.fromAt) / SLOT_STEP_MS) * SLOT_STEP_MS;
+    for (let ms = startMs; ms + durMs <= endMs; ms += SLOT_STEP_MS) {
       out.push({ start: fmtHmInTz(ms, tz), startAt: new Date(ms).toISOString() });
     }
   }
@@ -156,7 +156,6 @@ export function BookingFlow({
   const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
 
-  const stepMin = avail?.stepMinutes ?? 15;
   const availRes = avail?.resources?.find((r) => r.resourceId === staffId) ?? avail?.resources?.[0];
   const ratePerHour = hourly ? (availRes?.ratePerHour ?? selected[0]?.ratePerHour ?? 0) : 0;
 
@@ -165,7 +164,10 @@ export function BookingFlow({
     : selected.reduce((s, x) => s + (x.price ?? 0), 0);
   const totalMin = hourly ? durationMin : selected.reduce((s, x) => s + (x.durationMinutes ?? 0), 0);
 
-  const allSlots = hourly ? hourlySlots(availRes, durationMin, stepMin, tz) : (avail?.slots ?? []);
+  // 10-minute grid aligned to the hour (…:00, :10, …) for both fixed and hourly services.
+  const allSlots = hourly
+    ? hourlySlots(availRes, durationMin, tz)
+    : (avail?.slots ?? []).filter((s) => Number(s.start.slice(3, 5)) % 10 === 0);
   const futureSlots = allSlots.filter((s) => new Date(s.startAt).getTime() > Date.now());
 
   const todayIso = dates[0]?.iso ?? date;
