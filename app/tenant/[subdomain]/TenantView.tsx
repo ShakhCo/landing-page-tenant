@@ -162,26 +162,34 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                   s.pricingMode === 'time_rate'
                     ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
                     : s.price != null ? money(s.price, business.currency) : '';
-                return (
-                  <motion.div
-                    key={s.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
-                    className="flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md"
-                  >
+                const cardClass = 'flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-all hover:-translate-y-0.5 hover:shadow-md';
+                const inner = (
+                  <>
                     <div className="min-w-0 flex-1">
                       <h3 className="font-bold text-foreground">{localized(s.name as LocalizedText)}</h3>
                       {s.durationMinutes != null && <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                       {price && <p className="mt-3 font-bold text-foreground">{price}</p>}
                     </div>
                     {canBook && (
-                      <Link
-                        href={`/booking?service=${s.id}`}
-                        className="shrink-0 rounded-full border border-border bg-card px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5 active:scale-95"
-                      >
+                      <span className="shrink-0 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors group-hover:bg-foreground/5">
                         Bron
+                      </span>
+                    )}
+                  </>
+                );
+                return (
+                  <motion.div
+                    key={s.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
+                  >
+                    {canBook ? (
+                      <Link href={`/booking?service=${s.id}`} className={`group ${cardClass} active:scale-[0.99]`}>
+                        {inner}
                       </Link>
+                    ) : (
+                      <div className={cardClass}>{inner}</div>
                     )}
                   </motion.div>
                 );
