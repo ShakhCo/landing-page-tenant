@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, MapPin, Store, ChevronRight } from 'lucide-react';
+import { Check, MapPin } from 'lucide-react';
 import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
@@ -124,12 +124,6 @@ export function BookingResult({
         )}
       </div>
 
-      {/* Quick actions */}
-      <div className="mt-6 overflow-hidden rounded-2xl border border-border">
-        {directionsHref && <ActionRow icon={<MapPin size={18} />} label="Yo'l ko'rsatish" href={directionsHref} external />}
-        <ActionRow icon={<Store size={18} />} label="Biznes sahifasi" href="/" />
-      </div>
-
       {/* Overview */}
       <Section title="Buyurtma">
         <div className="space-y-3">
@@ -178,10 +172,10 @@ export function BookingResult({
         </Section>
       )}
 
-      {/* Booking reference */}
-      <Section title="Bandlik raqami">
-        <p className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</p>
-      </Section>
+      {/* Booking reference — small footnote */}
+      <p className="mt-8 text-sm text-muted-foreground">
+        Bandlik raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
+      </p>
 
       <button
         type="button"
@@ -204,16 +198,3 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function ActionRow({ icon, label, href, external }: { icon: React.ReactNode; label: string; href: string; external?: boolean }) {
-  return (
-    <a
-      href={href}
-      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
-      className="flex items-center gap-3.5 border-b border-border px-4 py-3.5 transition-colors last:border-0 hover:bg-foreground/[0.03]"
-    >
-      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">{icon}</span>
-      <span className="flex-1 text-[15px] font-semibold text-foreground">{label}</span>
-      <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
-    </a>
-  );
-}
