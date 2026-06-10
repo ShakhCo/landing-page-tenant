@@ -59,7 +59,7 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
             <Check size={52} strokeWidth={3} />
           </motion.div>
           <h1 className="mt-7 text-3xl font-extrabold text-foreground">Band qilindi!</h1>
-          <p className="mt-2 text-center text-base text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
+          <p className="mt-2 text-center text-base text-muted-foreground">Tafsilotlar SMS orqali yuborildi.</p>
         </div>
       ) : (
         <div className="mb-5 w-full">
