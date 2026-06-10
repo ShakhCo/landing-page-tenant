@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getTenant } from '@/lib/tenant';
+import { getTenant, getBooking } from '@/lib/tenant';
 import { BookingFlow } from './BookingFlow';
 
 export const metadata = {
@@ -12,10 +12,10 @@ export default async function BookingRoute({
   searchParams,
 }: {
   params: Promise<{ subdomain: string }>;
-  searchParams: Promise<{ service?: string; reschedule?: string; duration?: string }>;
+  searchParams: Promise<{ service?: string; reschedule?: string }>;
 }) {
   const { subdomain } = await params;
-  const { service, reschedule, duration } = await searchParams;
+  const { service, reschedule } = await searchParams;
   const tenant = await getTenant(subdomain);
 
   // No tenant or no bookable staff/services → back to the tenant home.
@@ -23,7 +23,17 @@ export default async function BookingRoute({
     redirect('/');
   }
 
-  const dur = duration ? Number(duration) : NaN;
+  // Reschedule: derive the original booking's length so an hourly booking
+  // re-opens at its real duration (no need to carry it in the URL).
+  let initialDuration: number | undefined;
+  if (reschedule) {
+    const original = await getBooking(subdomain, reschedule);
+    const { startAt, endAt } = original?.booking ?? {};
+    if (startAt && endAt) {
+      const mins = Math.round((Date.parse(endAt) - Date.parse(startAt)) / 60000);
+      if (mins > 0) initialDuration = mins;
+    }
+  }
 
   return (
     <main className="min-h-screen bg-background">
@@ -32,7 +42,7 @@ export default async function BookingRoute({
         subdomain={subdomain}
         initialServiceId={service}
         rescheduleId={reschedule}
-        initialDuration={Number.isFinite(dur) && dur > 0 ? dur : undefined}
+        initialDuration={initialDuration}
       />
     </main>
   );
