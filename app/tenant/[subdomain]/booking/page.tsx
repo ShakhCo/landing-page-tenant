@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { getTenant, getBooking } from '@/lib/tenant';
 import { BookingFlow } from './BookingFlow';
 
@@ -35,6 +36,9 @@ export default async function BookingRoute({
     }
   }
 
+  // Remembered customer? → the flow can skip the phone/OTP step.
+  const hasSession = (await cookies()).has('bookup_session');
+
   return (
     <main className="min-h-screen bg-background">
       <BookingFlow
@@ -43,6 +47,7 @@ export default async function BookingRoute({
         initialServiceId={service}
         rescheduleId={reschedule}
         initialDuration={initialDuration}
+        hasSession={hasSession}
       />
     </main>
   );

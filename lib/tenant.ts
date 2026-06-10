@@ -66,9 +66,10 @@ export interface CreateBookingInput {
   start: string;
   items: { offeringId: string; resourceId: string; start?: string; end?: string }[];
   name?: string;
-  /** Omitted for a reschedule — the backend uses the original booking's phone. */
+  /** Omitted for a reschedule or a remembered session. */
   phone?: string;
-  code: string;
+  /** Omitted when a remembered session is used (no OTP). */
+  code?: string;
   note?: string;
   /** Reschedule: the booking being replaced, ignored in conflict checks. */
   rescheduleId?: string;

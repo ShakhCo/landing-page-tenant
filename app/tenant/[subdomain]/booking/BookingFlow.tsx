@@ -97,12 +97,14 @@ export function BookingFlow({
   initialServiceId,
   rescheduleId,
   initialDuration,
+  hasSession = false,
 }: {
   tenant: PublicTenant;
   subdomain: string;
   initialServiceId?: string;
   rescheduleId?: string;
   initialDuration?: number;
+  hasSession?: boolean;
 }) {
   const router = useRouter();
   const { business } = tenant;
@@ -155,6 +157,9 @@ export function BookingFlow({
   const [maskedPhone, setMaskedPhone] = useState('');
   // Confirm/OTP modal — opens automatically when a time slot is picked.
   const [showConfirm, setShowConfirm] = useState(false);
+  // Remembered customer (cookie) → one-tap, no phone/OTP. Flips off if the
+  // session turns out to be expired when we try to book.
+  const [sessionActive, setSessionActive] = useState(hasSession);
   // Seconds left before the customer can request a new OTP (60s cooldown).
   const [resendIn, setResendIn] = useState(0);
 
@@ -306,7 +311,8 @@ export function BookingFlow({
     return () => clearTimeout(id);
   }, [resendIn]);
   const confirm = async () => {
-    if (!slot || !staffId || code.length < 5 || busy) return;
+    // Remembered session → no OTP needed; otherwise require the 5-digit code.
+    if (!slot || !staffId || busy || (!sessionActive && code.length < 5)) return;
     setError(null);
     setBusy(true);
     const r = await createBookingAction(subdomain, {
@@ -317,21 +323,25 @@ export function BookingFlow({
         ? [{ offeringId: selectedIds[0], resourceId: staffId, start: slot, end: addHm(slot, durationMin) }]
         : selectedIds.map((id) => ({ offeringId: id, resourceId: staffId })),
       name: name.trim() || undefined,
-      // Reschedule: phone is resolved from the original booking server-side.
-      phone: rescheduleId ? undefined : `+998${phone}`,
-      code,
-      // Reschedule: ignore the old booking in conflict checks so an overlapping
-      // new time (e.g. 14:00-15:00 -> 14:30-15:30) is allowed.
+      // Phone/code only matter for the OTP path; the cookie session is attached
+      // server-side by the action. Reschedule resolves the phone server-side.
+      phone: sessionActive || rescheduleId ? undefined : `+998${phone}`,
+      code: sessionActive ? undefined : code,
       rescheduleId,
     });
     if (r.ok) {
       // Reschedule: the backend already cancelled the old booking and linked it
       // to this new one (rescheduledToId), so nothing extra to do here.
-      // Go to the booking result page on this subdomain: /bookings/<id>?created=1
       router.push(`/bookings/${r.id}?created=1`);
       return; // keep `busy` while the page navigates
     }
     setBusy(false);
+    // Session expired → drop one-tap and fall back to the OTP flow.
+    if (r.needsOtp) {
+      setSessionActive(false);
+      if (rescheduleId) void sendCode(); // resend to the original number
+      return;
+    }
     setError(r.error);
   };
 
@@ -390,10 +400,13 @@ export function BookingFlow({
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) { setError(null); setShowConfirm(true); } } };
 
-  // Modal's primary button. For a reschedule the customer first confirms the new
-  // time ("Davom etish" → sends the OTP); only then can they finalize.
-  const confirmBtn =
-    rescheduleId && !otpSent
+  // Modal's primary button:
+  //  - remembered session → one tap, no OTP;
+  //  - reschedule (no session) → confirm the time first ("Davom etish" sends OTP);
+  //  - new (no session) → confirm after the phone + OTP.
+  const confirmBtn = sessionActive
+    ? { label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash', disabled: busy, onClick: confirm }
+    : rescheduleId && !otpSent
       ? { label: 'Davom etish', disabled: busy, onClick: sendCode }
       : {
           label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash',
@@ -790,8 +803,8 @@ export function BookingFlow({
                 </div>
               )}
 
-              {/* New booking → phone entry (hidden once the code is sent). */}
-              {!rescheduleId && !otpSent && (
+              {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
+              {!rescheduleId && !otpSent && !sessionActive && (
                 <>
                   <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
                   <div className="flex flex-col gap-2.5">
