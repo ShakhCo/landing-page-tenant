@@ -70,8 +70,6 @@ export function BookingResult({
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
   const address = branch?.address ? localized(branch.address) : null;
-  const category = tenant?.business.category ? localized(tenant.business.category.name) : null;
-  const avatarUrl = tenant?.business.avatarUrl ?? null;
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = whenLabel(booking.startAt, business.timezone);
@@ -90,36 +88,20 @@ export function BookingResult({
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
 
   return (
-    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+    <div className="mx-auto max-w-xl px-5 pb-16 sm:px-6">
       {/* Status banner (card width) */}
       <motion.div
         initial={created ? { opacity: 0, y: -8 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`mb-6 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-center text-sm font-bold text-white ${bannerStyle}`}
+        className={`mb-6 flex items-center justify-center gap-2 rounded-b-2xl px-5 py-4 text-center text-sm font-bold text-white ${bannerStyle}`}
       >
         {(created || booking.status === 'confirmed' || booking.status === 'completed') && <Check size={16} strokeWidth={3} />}
         {statusLabel}
       </motion.div>
 
-      {/* Business header */}
-      <div className="flex items-center gap-3.5">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt={business.name} className="size-14 shrink-0 rounded-2xl object-cover ring-1 ring-border" />
-        ) : (
-          <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-foreground/5 text-xl font-black text-foreground ring-1 ring-border">
-            {business.name.trim().charAt(0).toUpperCase()}
-          </div>
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-lg font-bold leading-tight text-foreground">{business.name}</p>
-          {category && <p className="mt-0.5 truncate text-sm text-muted-foreground">{category}</p>}
-        </div>
-      </div>
-
       {/* Big time + duration */}
-      <div className="mt-7">
+      <div className="mt-1">
         <h1 className="text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
         {durationMin != null && (
           <p className="mt-1.5 text-base text-muted-foreground">{fmtDuration(durationMin)} davom etadi</p>
