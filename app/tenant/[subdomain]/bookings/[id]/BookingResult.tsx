@@ -41,7 +41,6 @@ function dateParts(iso: string, tz: string) {
 export function BookingResult({ created, data }: { created: boolean; data: PublicBookingView }) {
   const router = useRouter();
   const { business, booking } = data;
-  const customer = booking.customer?.user?.fullName || booking.customer?.guest?.name || '—';
   const staff = [...new Set(booking.items.map((i) => i.resourceName))].filter(Boolean).join(', ');
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = dateParts(booking.startAt, business.timezone);
@@ -74,7 +73,6 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
       <div className="w-full rounded-3xl border border-border bg-card">
         <div className="divide-y divide-border">
           <Row label="Biznes" value={business.name} />
-          <Row label="Mijoz" value={customer} />
           {staff && <Row label="Mutaxassis" value={staff} />}
           <Row label="Sana" value={when.date} />
           <Row label="Vaqt" value={when.time} />
