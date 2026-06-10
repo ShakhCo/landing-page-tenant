@@ -156,6 +156,8 @@ export function BookingFlow({
   const [maskedPhone, setMaskedPhone] = useState('');
   // Confirm/OTP modal — opens automatically when a time slot is picked.
   const [showConfirm, setShowConfirm] = useState(false);
+  // Seconds left before the customer can request a new OTP (60s cooldown).
+  const [resendIn, setResendIn] = useState(0);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
@@ -271,6 +273,7 @@ export function BookingFlow({
         setMaskedPhone(r.maskedPhone);
         setIsNewCustomer(false); // existing customer → no name needed
         setOtpSent(true);
+        setResendIn(60);
       } else setError(r.error);
       return;
     }
@@ -282,6 +285,7 @@ export function BookingFlow({
     if (r.ok) {
       setIsNewCustomer(r.isNewCustomer);
       setOtpSent(true);
+      setResendIn(60);
     } else setError(r.error);
   };
 
@@ -299,6 +303,13 @@ export function BookingFlow({
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = prev; };
   }, [showConfirm]);
+
+  // Tick down the resend cooldown once per second.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = setTimeout(() => setResendIn(resendIn - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendIn]);
   const confirm = async () => {
     if (!slot || !staffId || code.length < 5 || busy) return;
     setError(null);
@@ -739,7 +750,7 @@ export function BookingFlow({
               className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-lg font-bold text-foreground">Tasdiqlash</h3>
+                <h3 className="text-xl font-extrabold text-foreground">{rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash'}</h3>
                 <button type="button" onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }} aria-label="Yopish" className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5">
                   <X size={18} />
                 </button>
@@ -814,20 +825,25 @@ export function BookingFlow({
                     )}
 
                     <div className={rescheduleId ? '' : 'mt-5'}>
-                      <div className="mb-2 flex items-baseline justify-between gap-2">
-                        <label className="block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
-                        <span className="text-xs tabular-nums text-muted-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span>
-                      </div>
+                      <label className="block text-base font-bold text-foreground">SMS kodni kiriting</label>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
+                      </p>
                       <input
                         autoFocus={!isNewCustomer}
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
                         inputMode="numeric"
                         placeholder="• • • • •"
-                        className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                        className="mt-3 h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-2xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
                       />
-                      <button type="button" onClick={sendCode} disabled={busy} className="mt-2.5 text-sm font-semibold text-accent disabled:opacity-50">
-                        Kodni qayta yuborish
+                      <button
+                        type="button"
+                        onClick={sendCode}
+                        disabled={busy || resendIn > 0}
+                        className="mt-3 text-sm font-semibold text-accent disabled:text-muted-foreground"
+                      >
+                        {resendIn > 0 ? `Kodni qayta yuborish · 0:${pad2(resendIn)}` : 'Kodni qayta yuborish'}
                       </button>
                     </div>
                   </motion.div>
@@ -841,7 +857,7 @@ export function BookingFlow({
                 disabled={!otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim())}
                 onClick={confirm}
               >
-                <span className="inline-flex items-center gap-2">{busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash'}<ArrowRight size={18} /></span>
+                <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash'}<ArrowRight size={18} /></span>
               </PrimaryBtn>
             </motion.div>
           </motion.div>
