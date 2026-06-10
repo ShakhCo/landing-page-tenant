@@ -776,7 +776,7 @@ export function BookingFlow({
 
               {/* compact summary — hidden once we're entering the SMS code */}
               {!otpSent && (
-                <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3.5">
+                <div className="mb-5">
                   {modalWhen && (
                     <p className="text-[15px] text-foreground">
                       <span className="text-muted-foreground">Vaqt: </span>
