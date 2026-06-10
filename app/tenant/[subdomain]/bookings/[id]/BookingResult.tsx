@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, MapPin, Store, ChevronRight, Clock } from 'lucide-react';
+import { Check, MapPin, Store, ChevronRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
@@ -72,7 +72,6 @@ export function BookingResult({
   const category = tenant?.business.category ? localized(tenant.business.category.name) : null;
   const avatarUrl = tenant?.business.avatarUrl ?? null;
 
-  const staff = [...new Set(booking.items.map((i) => i.resourceName))].filter(Boolean).join(', ');
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = whenLabel(booking.startAt, business.timezone);
   const durationMin = booking.endAt
@@ -132,9 +131,8 @@ export function BookingResult({
       </div>
 
       {/* Overview */}
-      <section className="mt-9">
-        <h2 className="text-lg font-bold text-foreground">Buyurtma</h2>
-        <div className="mt-3 space-y-3">
+      <Section title="Buyurtma">
+        <div className="space-y-3">
           {booking.items.map((it, i) => (
             <div key={`${it.offeringId}-${i}`} className="flex items-start justify-between gap-4">
               <div className="min-w-0">
@@ -147,31 +145,15 @@ export function BookingResult({
         </div>
 
         <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
-          <span className="text-lg font-bold text-foreground">Jami</span>
-          <span className="text-lg font-bold text-foreground">{money(total, business.currency)}</span>
+          <span className="text-base font-bold text-foreground">Jami</span>
+          <span className="text-base font-bold text-foreground">{money(total, business.currency)}</span>
         </div>
-      </section>
-
-      {/* More details */}
-      <section className="mt-9">
-        <h2 className="text-lg font-bold text-foreground">Qo&apos;shimcha</h2>
-        <p className="mt-3 text-sm font-semibold text-foreground">Bekor qilish siyosati</p>
-        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-          Tayinlangan vaqtdan oldin istalgan paytda bekor qilishingiz mumkin.
-        </p>
-        {staff && (
-          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock size={16} className="shrink-0" />
-            Mutaxassis: <span className="font-semibold text-foreground">{staff}</span>
-          </p>
-        )}
-      </section>
+      </Section>
 
       {/* Getting there */}
       {branch && (
-        <section className="mt-9">
-          <h2 className="text-lg font-bold text-foreground">Manzil</h2>
-          <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+        <Section title="Manzil">
+          <div className="overflow-hidden rounded-2xl border border-border">
             <iframe
               title="Map"
               src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
@@ -193,13 +175,13 @@ export function BookingResult({
               </span>
             </p>
           )}
-        </section>
+        </Section>
       )}
 
       {/* Booking reference */}
-      <p className="mt-9 text-sm text-muted-foreground">
-        Bandlik raqami: <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
-      </p>
+      <Section title="Bandlik raqami">
+        <p className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</p>
+      </Section>
 
       <button
         type="button"
@@ -209,6 +191,16 @@ export function BookingResult({
         Tayyor
       </button>
     </div>
+  );
+}
+
+/** A page section with a consistent heading, top separator, and spacing. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-8 border-t border-border pt-7">
+      <h2 className="text-lg font-bold text-foreground">{title}</h2>
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }
 
