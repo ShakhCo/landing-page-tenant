@@ -99,23 +99,28 @@ export function BookingResult({
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = whenLabel(booking.startAt, business.timezone, booking.endAt);
-  // Open (no-end) hourly session that has started: the backend bills on close,
-  // so show a LIVE running total — rate × elapsed (floored at 30 min, like the
-  // backend's minimum). Re-rendered every minute via the tick below.
+  // Hourly (time-rate) booking that has started and is still running — open OR
+  // fixed-end: show a LIVE running total, rate × elapsed so far. Once it ends,
+  // the stored total takes over. Re-rendered every minute via the tick below.
   const [, setTick] = useState(0);
   const svcOfItem = tenant?.services?.find((s) => s.id === booking.items[0]?.offeringId) ?? null;
   const liveRate = svcOfItem?.pricingMode === 'time_rate' ? svcOfItem.ratePerHour ?? null : null;
-  const startedOpen =
-    booking.endAt == null && liveRate != null && Date.parse(booking.startAt) <= Date.now();
-  const elapsedMin = startedOpen
-    ? Math.max(30, Math.floor((Date.now() - Date.parse(booking.startAt)) / 60000))
+  const runningLive =
+    liveRate != null &&
+    (booking.status === 'pending' || booking.status === 'confirmed') &&
+    Date.parse(booking.startAt) <= Date.now() &&
+    (booking.endAt == null || Date.now() < Date.parse(booking.endAt));
+  const elapsedMin = runningLive
+    ? Math.max(1, Math.floor((Date.now() - Date.parse(booking.startAt)) / 60000))
     : null;
-  const liveTotal = startedOpen && elapsedMin != null ? Math.round((liveRate * elapsedMin) / 60) : null;
+  // Rounded to the nearest 500 so'm so the running figure reads clean.
+  const liveTotal =
+    runningLive && elapsedMin != null ? Math.round((liveRate * elapsedMin) / 60 / 500) * 500 : null;
   useEffect(() => {
-    if (!startedOpen) return;
+    if (!runningLive) return;
     const id = window.setInterval(() => setTick((n) => n + 1), 60_000);
     return () => window.clearInterval(id);
-  }, [startedOpen]);
+  }, [runningLive]);
   // Title shows just the start ("Bugun, 18:00") — the full range lives in the card's Vaqt row.
   const whenShort = whenLabel(booking.startAt, business.timezone);
   // Resource field: the unit's own label ("Yo'laklar") when the booked resources
@@ -349,7 +354,7 @@ export function BookingResult({
           </div>
 
           <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-            <span>Jami{(durationMin ?? elapsedMin) ? ` · ${fmtDuration((durationMin ?? elapsedMin)!)}` : ''}</span>
+            <span>Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}</span>
             <span>{money(liveTotal ?? total, business.currency)}</span>
           </div>
         </div>
