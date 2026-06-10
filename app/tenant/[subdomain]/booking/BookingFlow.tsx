@@ -8,13 +8,12 @@ import { localized, type LocalizedText, type PublicTenant, type AvailabilityResu
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { cancelBookingAction } from '../bookings/[id]/actions';
 
-type Step = 'services' | 'staff' | 'time' | 'contact' | 'done';
-const FLOW: Step[] = ['services', 'staff', 'time', 'contact'];
+type Step = 'services' | 'staff' | 'time' | 'done';
+const FLOW: Step[] = ['services', 'staff', 'time'];
 const STEP_TITLE: Record<Step, string> = {
   services: 'Xizmatlarni tanlang',
   staff: 'Mutaxassisni tanlang',
   time: 'Sana va vaqt',
-  contact: 'Tasdiqlash',
   done: '',
 };
 const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
@@ -155,6 +154,8 @@ export function BookingFlow({
   const [durationMin, setDurationMin] = useState(initialDuration && initialDuration > 0 ? initialDuration : 60);
   // Reschedule: masked phone of the original booking ("••• •• 40 20") for the OTP step.
   const [maskedPhone, setMaskedPhone] = useState('');
+  // Confirm/OTP modal — opens automatically when a time slot is picked.
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
@@ -218,9 +219,9 @@ export function BookingFlow({
 
   const back = () => {
     setError(null);
+    if (showConfirm) { setShowConfirm(false); return; }
     if (step === 'staff') setStep('services');
     else if (step === 'time') setStep(eligibleStaff.length > 1 ? 'staff' : 'services');
-    else if (step === 'contact') setStep('time');
     else router.push('/');
   };
   const advance = (ids: string[] = selectedIds) => {
@@ -284,12 +285,20 @@ export function BookingFlow({
     } else setError(r.error);
   };
 
-  // Reschedule: auto-send the OTP as soon as the customer reaches the confirm
-  // step — there's no phone entry, so kick it off without a button press.
+  // Reschedule: auto-send the OTP as soon as the confirm modal opens — there's
+  // no phone entry, so kick it off without a button press.
   useEffect(() => {
-    if (rescheduleId && step === 'contact' && !otpSent && !busy) void sendCode();
+    if (rescheduleId && showConfirm && !otpSent && !busy) void sendCode();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, rescheduleId]);
+  }, [showConfirm, rescheduleId]);
+
+  // Lock background scroll while the confirm modal is open.
+  useEffect(() => {
+    if (!showConfirm) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, [showConfirm]);
   const confirm = async () => {
     if (!slot || !staffId || code.length < 5 || busy) return;
     setError(null);
@@ -370,9 +379,7 @@ export function BookingFlow({
       ? { label: 'Davom etish', disabled: selected.length === 0, onClick: goFromServices }
       : step === 'staff'
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
-        : step === 'time'
-          ? { label: 'Davom etish', disabled: !slot, onClick: () => { setError(null); setStep('contact'); } }
-          : { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()), onClick: confirm };
+        : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) { setError(null); setShowConfirm(true); } } };
 
   return (
     <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
@@ -633,7 +640,7 @@ export function BookingFlow({
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.025, 0.6), ease: 'easeOut' }}
-                                    onClick={() => { setSlot(s.start); setError(null); setStep('contact'); }}
+                                    onClick={() => { setSlot(s.start); setError(null); setShowConfirm(true); }}
                                     className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                                   >
                                     <span className="tabular-nums">{s.start}</span>
@@ -650,92 +657,7 @@ export function BookingFlow({
                 </div>
               )}
 
-              {/* ---- contact + OTP ---- */}
-              {step === 'contact' && (
-                <div className="max-w-md">
-                  {/* New booking asks for a phone; reschedule auto-sends the OTP
-                      to the original booking's number (no phone entry). */}
-                  {!rescheduleId && (
-                    <>
-                      <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                      <div className="flex flex-col gap-2.5">
-                        <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20">
-                          <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
-                          <span className="font-bold text-foreground/80">+998</span>
-                          <input
-                            autoFocus
-                            value={fmtPhone(phone)}
-                            onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                            inputMode="numeric"
-                            placeholder="90 123 45 67"
-                            className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                          />
-                        </div>
-                        {!otpSent && (
-                          <button
-                            type="button"
-                            onClick={sendCode}
-                            disabled={phone.length !== 9 || busy}
-                            className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
-                          >
-                            {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
-                          </button>
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {rescheduleId && !otpSent && (
-                    busy ? (
-                      <p className="text-[15px] text-muted-foreground">Tasdiqlash kodi yuborilmoqda…</p>
-                    ) : (
-                      <button type="button" onClick={sendCode} className="text-[15px] font-semibold text-accent">
-                        Tasdiqlash kodini yuborish
-                      </button>
-                    )
-                  )}
-
-                  <AnimatePresence>
-                    {otpSent && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
-                        {/* New customer → ask for a name */}
-                        {isNewCustomer && (
-                          <div className="mt-5">
-                            <label className="mb-2 block text-sm font-semibold text-foreground">Ismingiz</label>
-                            <input
-                              autoFocus
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              placeholder="Ism"
-                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
-                            />
-                          </div>
-                        )}
-
-                        <div className={rescheduleId ? '' : 'mt-5'}>
-                          <div className="mb-2 flex items-baseline justify-between gap-2">
-                            <label className="block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
-                            <span className="text-xs tabular-nums text-muted-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span>
-                          </div>
-                          <input
-                            autoFocus={!isNewCustomer}
-                            value={code}
-                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                            inputMode="numeric"
-                            placeholder="• • • • •"
-                            className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
-                          />
-                          <button type="button" onClick={sendCode} disabled={busy} className="mt-2.5 text-sm font-semibold text-accent disabled:opacity-50">
-                            Kodni qayta yuborish
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              )}
-
-              {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+              {error && !showConfirm && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
             </motion.div>
           </AnimatePresence>
           </div>
@@ -797,6 +719,134 @@ export function BookingFlow({
           <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
         </PrimaryBtn>
       </div>
+
+      {/* ===== Confirm / OTP modal (opens on slot select) ===== */}
+      <AnimatePresence>
+        {showConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }}
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
+          >
+            <motion.div
+              initial={{ y: 28, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 28, opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6"
+            >
+              <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-lg font-bold text-foreground">Tasdiqlash</h3>
+                <button type="button" onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }} aria-label="Yopish" className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5">
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* compact summary of what's being confirmed */}
+              <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3">
+                {selectedStaff?.name && <p className="text-sm font-semibold text-foreground">{selectedStaff.name}</p>}
+                {slot && selDate && (
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {selDate.day} {selDate.mon} · {slot}{hourly ? `–${addHm(slot, durationMin)}` : ''}
+                  </p>
+                )}
+                <p className="mt-1.5 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
+              </div>
+
+              {/* New booking → phone entry. Reschedule → auto-sent OTP (loading). */}
+              {!rescheduleId && (
+                <>
+                  <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
+                  <div className="flex flex-col gap-2.5">
+                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20">
+                      <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
+                      <span className="font-bold text-foreground/80">+998</span>
+                      <input
+                        autoFocus
+                        value={fmtPhone(phone)}
+                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                        inputMode="numeric"
+                        placeholder="90 123 45 67"
+                        className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+                      />
+                    </div>
+                    {!otpSent && (
+                      <button
+                        type="button"
+                        onClick={sendCode}
+                        disabled={phone.length !== 9 || busy}
+                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+                      >
+                        {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+                      </button>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {rescheduleId && !otpSent && (
+                busy ? (
+                  <p className="text-[15px] text-muted-foreground">Tasdiqlash kodi yuborilmoqda…</p>
+                ) : (
+                  <button type="button" onClick={sendCode} className="text-[15px] font-semibold text-accent">
+                    Tasdiqlash kodini yuborish
+                  </button>
+                )
+              )}
+
+              <AnimatePresence>
+                {otpSent && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
+                    {isNewCustomer && (
+                      <div className="mt-5">
+                        <label className="mb-2 block text-sm font-semibold text-foreground">Ismingiz</label>
+                        <input
+                          autoFocus
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Ism"
+                          className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                        />
+                      </div>
+                    )}
+
+                    <div className={rescheduleId ? '' : 'mt-5'}>
+                      <div className="mb-2 flex items-baseline justify-between gap-2">
+                        <label className="block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
+                        <span className="text-xs tabular-nums text-muted-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span>
+                      </div>
+                      <input
+                        autoFocus={!isNewCustomer}
+                        value={code}
+                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+                        inputMode="numeric"
+                        placeholder="• • • • •"
+                        className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                      />
+                      <button type="button" onClick={sendCode} disabled={busy} className="mt-2.5 text-sm font-semibold text-accent disabled:opacity-50">
+                        Kodni qayta yuborish
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+
+              <PrimaryBtn
+                className="mt-5"
+                disabled={!otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim())}
+                onClick={confirm}
+              >
+                <span className="inline-flex items-center gap-2">{busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash'}<ArrowRight size={18} /></span>
+              </PrimaryBtn>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

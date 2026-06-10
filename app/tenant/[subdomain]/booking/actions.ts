@@ -2,26 +2,33 @@
 
 import { API_BASE, type AvailabilityResult, type CreateBookingInput } from '@/lib/tenant';
 
-/** Map a backend error body to a user-facing Uzbek message. */
+/**
+ * Map a backend error to a user-facing Uzbek message. NEVER returns the raw
+ * backend text (it's English/technical, e.g. "Cannot POST …") — unknown errors
+ * fall back to a friendly generic message.
+ */
 async function errorMessage(res: Response): Promise<string> {
   let code = '';
-  let message = '';
   try {
     const body = await res.json();
     code = body?.code ?? '';
-    message = Array.isArray(body?.message) ? body.message.join(', ') : body?.message ?? '';
   } catch {
     /* ignore */
   }
   const map: Record<string, string> = {
-    BOOKING_CONFLICT: "Bu vaqt allaqachon band — boshqasini tanlang.",
-    INVALID_BOOKING: "Bandlikni yaratib bo'lmadi — ma'lumotlarni tekshiring.",
-    INVALID_OR_EXPIRED_CODE: "Kod noto'g'ri yoki muddati o'tgan.",
-    TOO_MANY_OTP_REQUESTS: "Juda ko'p urinish. Birozdan so'ng qayta urinib ko'ring.",
-    INVALID_PHONE_NUMBER: "To'g'ri telefon raqamini kiriting.",
+    BOOKING_CONFLICT: "Bu vaqt allaqachon band — iltimos, boshqa vaqtni tanlang.",
+    INVALID_BOOKING: "Bandlikni amalga oshirib bo'lmadi. Iltimos, ma'lumotlarni tekshiring.",
+    INVALID_OR_EXPIRED_CODE: "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.",
+    TOO_MANY_OTP_REQUESTS: "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
+    INVALID_PHONE_NUMBER: "Telefon raqami noto'g'ri. Iltimos, tekshirib qayta kiriting.",
     CODE_REQUIRED: "Tasdiqlash kodini kiriting.",
+    BOOKING_NOT_FOUND: "Bandlik topilmadi. Sahifani yangilab qayta urinib ko'ring.",
+    BUSINESS_NOT_FOUND: "Biznes topilmadi.",
+    BRANCH_NOT_FOUND: "Filial topilmadi.",
+    OFFERING_NOT_FOUND: "Tanlangan xizmat hozir mavjud emas.",
+    RESOURCE_NOT_FOUND: "Tanlangan mutaxassis yoki resurs mavjud emas.",
   };
-  return map[code] || message || "Xatolik yuz berdi. Qayta urinib ko'ring.";
+  return map[code] || "Xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.";
 }
 
 export async function getAvailabilityAction(
