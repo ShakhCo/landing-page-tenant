@@ -197,7 +197,10 @@ export function BookingFlow({
     return () => {
       alive = false;
     };
-  }, [step, date, staffId, subdomain, selectedIds]);
+    // durationMin only changes for hourly services (the stepper is hidden for
+    // fixed) — refetching on it keeps the free windows fresh against concurrent
+    // bookings while the customer adjusts the duration.
+  }, [step, date, staffId, subdomain, selectedIds, durationMin]);
 
   const back = () => {
     setError(null);
