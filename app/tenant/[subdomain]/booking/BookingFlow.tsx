@@ -196,6 +196,9 @@ export function BookingFlow({
       : date === tomorrowIso
         ? `Ertaga, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`
         : `${WEEKDAYS_FULL[selP.wdIdx]}, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`;
+  // "Bugun, 15:00–16:30" — relative day + chosen time range, for the confirm modal.
+  const dayWord = !selP ? '' : date === todayIso ? 'Bugun' : date === tomorrowIso ? 'Ertaga' : WEEKDAYS_FULL[selP.wdIdx];
+  const modalWhen = slot ? `${dayWord}, ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null;
 
   useEffect(() => {
     if (step !== 'time' || !staffId || !date) return;
@@ -753,7 +756,7 @@ export function BookingFlow({
               className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6"
             >
               <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-extrabold text-foreground">{rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash'}</h3>
+                <h3 className="text-xl font-extrabold text-foreground">{rescheduleId ? "Vaqtni tasdiqlaysizmi?" : 'Bandlikni tasdiqlash'}</h3>
                 <button type="button" onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }} aria-label="Yopish" className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5">
                   <X size={18} />
                 </button>
@@ -761,13 +764,8 @@ export function BookingFlow({
 
               {/* compact summary of what's being confirmed */}
               <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3">
-                {selectedStaff?.name && <p className="text-sm font-semibold text-foreground">{selectedStaff.name}</p>}
-                {slot && selDate && (
-                  <p className="mt-0.5 text-sm text-muted-foreground">
-                    {selDate.day} {selDate.mon} · {slot}{hourly ? `–${addHm(slot, durationMin)}` : ''}
-                  </p>
-                )}
-                <p className="mt-1.5 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
+                {modalWhen && <p className="text-base font-bold text-foreground">{modalWhen}</p>}
+                <p className="mt-1 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
               </div>
 
               {/* New booking → phone entry. Reschedule → auto-sent OTP (loading). */}
