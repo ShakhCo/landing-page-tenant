@@ -504,7 +504,7 @@ export function BookingFlow({
                     const setDur = (d: number) => { setDurationMin(Math.min(maxDur, Math.max(minDur, d))); setSlot(null); };
                     return (
                       <div className="mt-5">
-                        <p className="mb-2 text-base font-bold text-foreground">Davomiyligi</p>
+                        <p className="mb-3 text-lg font-extrabold text-foreground">Davomiyligi</p>
                         <div className="inline-flex h-14 items-center gap-1 rounded-xl border border-border bg-card px-1">
                           <button
                             type="button"
