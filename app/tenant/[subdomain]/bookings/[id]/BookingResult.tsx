@@ -2,8 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
-import { localized, type LocalizedText, type PublicBookingView } from '@/lib/tenant';
+import { Check, CalendarPlus, MapPin, Store, ChevronRight, Clock } from 'lucide-react';
+import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
@@ -40,90 +40,204 @@ function dateParts(iso: string, tz: string) {
   const day = Number(get('day'));
   const mon = MONTHS_FULL[Number(get('month')) - 1];
   const wd = WEEKDAYS_FULL[wdMap[get('weekday')] ?? 0];
-  return { date: `${wd}, ${day}-${mon}`, time: `${get('hour')}:${get('minute')}` };
+  return { day, mon, wd, date: `${wd}, ${day}-${mon}`, time: `${get('hour')}:${get('minute')}` };
+}
+/** Local YYYY-MM-DD in a timezone, for comparing calendar days. */
+function localDay(d: Date, tz: string) {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+}
+/** "Bugun, 14:00" / "Ertaga, 14:00" / "Chorshanba, 10-Iyun · 14:00". */
+function whenLabel(iso: string, tz: string) {
+  const p = dateParts(iso, tz);
+  const bookingDay = localDay(new Date(iso), tz);
+  const today = localDay(new Date(), tz);
+  const tomorrow = localDay(new Date(Date.now() + 86_400_000), tz);
+  if (bookingDay === today) return `Bugun, ${p.time}`;
+  if (bookingDay === tomorrow) return `Ertaga, ${p.time}`;
+  return `${p.wd}, ${p.day}-${p.mon} · ${p.time}`;
+}
+/** Google Calendar "add event" template URL. */
+function gcalUrl(opts: { title: string; startIso: string; endIso: string | null; location: string; details: string }) {
+  const z = (s: string) => s.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  const dates = `${z(opts.startIso)}/${z(opts.endIso ?? opts.startIso)}`;
+  const q = new URLSearchParams({ action: 'TEMPLATE', text: opts.title, dates, location: opts.location, details: opts.details });
+  return `https://calendar.google.com/calendar/render?${q.toString()}`;
 }
 
-export function BookingResult({ created, data }: { created: boolean; data: PublicBookingView }) {
+export function BookingResult({
+  created,
+  data,
+  tenant,
+}: {
+  created: boolean;
+  data: PublicBookingView;
+  tenant: PublicTenant | null;
+}) {
   const router = useRouter();
   const { business, booking } = data;
+  const branch = tenant?.branches?.[0] ?? null;
+  const address = branch?.address ? localized(branch.address) : null;
+  const category = tenant?.business.category ? localized(tenant.business.category.name) : null;
+  const avatarUrl = tenant?.business.avatarUrl ?? null;
+
   const staff = [...new Set(booking.items.map((i) => i.resourceName))].filter(Boolean).join(', ');
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
-  const when = dateParts(booking.startAt, business.timezone);
-  // Hourly-charged (time-rate) bookings have a chosen duration worth showing.
-  const hourly = booking.items.some((i) => i.pricingMode === 'time_rate');
-  const end = booking.endAt ? dateParts(booking.endAt, business.timezone) : null;
+  const when = whenLabel(booking.startAt, business.timezone);
   const durationMin = booking.endAt
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
 
+  const statusLabel = created ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
+  const statusStyle = created ? 'bg-emerald-50 text-emerald-600' : STATUS_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
+
+  const mapsQuery = branch
+    ? `${branch.latitude},${branch.longitude}`
+    : address
+      ? encodeURIComponent(address)
+      : null;
+  const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
+
+  const calHref = gcalUrl({
+    title: `${business.name} — ${booking.items.map((i) => localized(i.name as LocalizedText | null, 'Xizmat')).join(', ')}`,
+    startIso: booking.startAt,
+    endIso: booking.endAt,
+    location: address ?? business.name,
+    details: 'Bookup orqali bron qilingan',
+  });
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-12 sm:px-6">
-      {created ? (
-        <div className="mb-8 flex flex-col items-center">
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-            className="grid size-24 place-items-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/30 sm:size-28"
-          >
-            <Check size={52} strokeWidth={3} />
-          </motion.div>
-          <h1 className="mt-7 text-3xl font-extrabold text-foreground">Band qilindi!</h1>
-          <p className="mt-2 text-center text-base text-muted-foreground">Tafsilotlar SMS orqali yuborildi.</p>
-        </div>
-      ) : (
-        <div className="mb-5 w-full">
-          <h1 className="text-3xl font-extrabold text-foreground">Bron tafsilotlari</h1>
-          <span className={`mt-2.5 inline-block rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground'}`}>
-            {STATUS_UZ[booking.status] ?? booking.status}
-          </span>
-        </div>
-      )}
-
-      {/* Labeled details */}
-      <div className="w-full rounded-3xl border border-border bg-card">
-        <div className="divide-y divide-border">
-          <Row label="Biznes" value={business.name} />
-          {staff && <Row label="Mutaxassis" value={staff} />}
-          <Row label="Sana" value={when.date} />
-          <Row label="Vaqt" value={hourly && end ? `${when.time}–${end.time}` : when.time} />
-          {hourly && durationMin != null && <Row label="Davomiyligi" value={fmtDuration(durationMin)} />}
-        </div>
-
-        <div className="border-t border-border px-6 py-5">
-          <p className="mb-3 text-sm text-muted-foreground">Xizmatlar</p>
-          <div className="space-y-2.5">
-            {booking.items.map((it, i) => (
-              <div key={`${it.offeringId}-${i}`} className="flex items-center justify-between gap-4">
-                <span className="text-base font-medium text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
-                <span className="whitespace-nowrap text-base font-semibold text-foreground">{money(it.price, business.currency)}</span>
-              </div>
-            ))}
+    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+      {/* Business header */}
+      <div className="flex items-center gap-3.5">
+        {avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarUrl} alt={business.name} className="size-14 shrink-0 rounded-2xl object-cover ring-1 ring-border" />
+        ) : (
+          <div className="grid size-14 shrink-0 place-items-center rounded-2xl bg-foreground/5 text-xl font-black text-foreground ring-1 ring-border">
+            {business.name.trim().charAt(0).toUpperCase()}
           </div>
+        )}
+        <div className="min-w-0">
+          <p className="truncate text-lg font-bold leading-tight text-foreground">{business.name}</p>
+          {category && <p className="mt-0.5 truncate text-sm text-muted-foreground">{category}</p>}
+        </div>
+      </div>
+
+      {/* Status + big time + duration */}
+      <div className="mt-7">
+        <motion.span
+          initial={created ? { scale: 0.6, opacity: 0 } : false}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 14, stiffness: 220 }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle}`}
+        >
+          {created && <Check size={15} strokeWidth={3} />}
+          {statusLabel}
+        </motion.span>
+        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
+        {durationMin != null && (
+          <p className="mt-1.5 text-base text-muted-foreground">{fmtDuration(durationMin)} davom etadi</p>
+        )}
+      </div>
+
+      {/* Quick actions */}
+      <div className="mt-6 overflow-hidden rounded-2xl border border-border">
+        <ActionRow icon={<CalendarPlus size={18} />} label="Taqvimga qo'shish" href={calHref} external />
+        {directionsHref && <ActionRow icon={<MapPin size={18} />} label="Yo'l ko'rsatish" href={directionsHref} external />}
+        <ActionRow icon={<Store size={18} />} label="Biznes sahifasi" href="/" />
+      </div>
+
+      {/* Overview */}
+      <section className="mt-9">
+        <h2 className="text-lg font-bold text-foreground">Buyurtma</h2>
+        <div className="mt-3 space-y-3">
+          {booking.items.map((it, i) => (
+            <div key={`${it.offeringId}-${i}`} className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <p className="text-base font-semibold text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</p>
+                {it.resourceName && <p className="mt-0.5 text-sm text-muted-foreground">{it.resourceName}</p>}
+              </div>
+              <span className="whitespace-nowrap text-base font-semibold text-foreground">{money(it.price, business.currency)}</span>
+            </div>
+          ))}
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-6 py-5">
+        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
           <span className="text-lg font-bold text-foreground">Jami</span>
           <span className="text-lg font-bold text-foreground">{money(total, business.currency)}</span>
         </div>
-      </div>
+      </section>
+
+      {/* More details */}
+      <section className="mt-9">
+        <h2 className="text-lg font-bold text-foreground">Qo&apos;shimcha</h2>
+        <p className="mt-3 text-sm font-semibold text-foreground">Bekor qilish siyosati</p>
+        <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
+          Tayinlangan vaqtdan oldin istalgan paytda bekor qilishingiz mumkin.
+        </p>
+        {staff && (
+          <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock size={16} className="shrink-0" />
+            Mutaxassis: <span className="font-semibold text-foreground">{staff}</span>
+          </p>
+        )}
+      </section>
+
+      {/* Getting there */}
+      {branch && (
+        <section className="mt-9">
+          <h2 className="text-lg font-bold text-foreground">Manzil</h2>
+          <div className="mt-3 overflow-hidden rounded-2xl border border-border">
+            <iframe
+              title="Map"
+              src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
+              className="h-56 w-full border-0 sm:h-64"
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+          {address && (
+            <p className="mt-3 flex items-start gap-2.5 text-[15px] text-foreground">
+              <MapPin size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
+              <span>
+                {address}{' '}
+                {directionsHref && (
+                  <a href={directionsHref} target="_blank" rel="noreferrer" className="font-semibold text-accent">
+                    Yo&apos;l ko&apos;rsatish
+                  </a>
+                )}
+              </span>
+            </p>
+          )}
+        </section>
+      )}
+
+      {/* Booking reference */}
+      <p className="mt-9 text-sm text-muted-foreground">
+        Bandlik raqami: <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
+      </p>
 
       <button
         type="button"
         onClick={() => router.push('/')}
-        className="mt-7 flex h-16 w-full items-center justify-center rounded-full bg-foreground text-lg font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
+        className="mt-7 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
       >
-        {created ? 'Tayyor' : business.name}
+        Tayyor
       </button>
     </div>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function ActionRow({ icon, label, href, external }: { icon: React.ReactNode; label: string; href: string; external?: boolean }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-6 py-4">
-      <span className="shrink-0 text-base text-muted-foreground">{label}</span>
-      <span className="text-right text-base font-semibold text-foreground">{value}</span>
-    </div>
+    <a
+      href={href}
+      {...(external ? { target: '_blank', rel: 'noreferrer' } : {})}
+      className="flex items-center gap-3.5 border-b border-border px-4 py-3.5 transition-colors last:border-0 hover:bg-foreground/[0.03]"
+    >
+      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent/10 text-accent">{icon}</span>
+      <span className="flex-1 text-[15px] font-semibold text-foreground">{label}</span>
+      <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+    </a>
   );
 }

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { getBooking } from '@/lib/tenant';
+import { getBooking, getTenant } from '@/lib/tenant';
 import { BookingResult } from './BookingResult';
 
 export const metadata = {
@@ -16,12 +16,12 @@ export default async function BookingResultPage({
 }) {
   const { subdomain, id } = await params;
   const { created } = await searchParams;
-  const data = await getBooking(subdomain, id);
+  const [data, tenant] = await Promise.all([getBooking(subdomain, id), getTenant(subdomain)]);
   if (!data) redirect('/');
 
   return (
-    <main className="min-h-screen bg-background">
-      <BookingResult created={created === '1'} data={data} />
+    <main className="min-h-screen bg-card">
+      <BookingResult created={created === '1'} data={data} tenant={tenant} />
     </main>
   );
 }
