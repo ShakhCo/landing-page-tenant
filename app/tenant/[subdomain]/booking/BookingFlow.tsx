@@ -33,8 +33,8 @@ function addDaysIso(iso: string, days: number) {
 }
 const PERIODS = [
   { label: 'Ertalab', from: 0, to: 12 },
-  { label: 'Kunduzi', from: 12, to: 17 },
-  { label: 'Kechqurun', from: 17, to: 24 },
+  { label: 'Kunduzi', from: 12, to: 18 },
+  { label: 'Kechqurun', from: 18, to: 24 },
 ];
 
 function money(amount: number, currency: string) {
