@@ -29,8 +29,10 @@ export async function getAvailabilityAction(
   date: string,
   offeringIds: string[],
   resourceId: string,
+  excludeBookingId?: string,
 ): Promise<{ ok: true; data: AvailabilityResult } | { ok: false; error: string }> {
   const qs = new URLSearchParams({ date, offeringIds: offeringIds.join(','), resourceId });
+  if (excludeBookingId) qs.set('excludeBookingId', excludeBookingId);
   const res = await fetch(`${API_BASE}/public/tenants/${subdomain}/availability?${qs}`, {
     cache: 'no-store',
   });

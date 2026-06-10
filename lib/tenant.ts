@@ -69,6 +69,8 @@ export interface CreateBookingInput {
   phone: string;
   code: string;
   note?: string;
+  /** Reschedule: the booking being replaced, ignored in conflict checks. */
+  rescheduleId?: string;
 }
 
 export interface PublicBookingView {

@@ -198,7 +198,7 @@ export function BookingFlow({
     let alive = true;
     setAvailLoading(true);
     setSlot(null);
-    getAvailabilityAction(subdomain, date, selectedIds, staffId).then((r) => {
+    getAvailabilityAction(subdomain, date, selectedIds, staffId, rescheduleId).then((r) => {
       if (!alive) return;
       setAvail(r.ok ? r.data : null);
       setError(r.ok ? null : r.error);
@@ -210,7 +210,7 @@ export function BookingFlow({
     // durationMin only changes for hourly services (the stepper is hidden for
     // fixed) — refetching on it keeps the free windows fresh against concurrent
     // bookings while the customer adjusts the duration.
-  }, [step, date, staffId, subdomain, selectedIds, durationMin]);
+  }, [step, date, staffId, subdomain, selectedIds, durationMin, rescheduleId]);
 
   const back = () => {
     setError(null);
@@ -278,6 +278,9 @@ export function BookingFlow({
       name: name.trim() || undefined,
       phone: `+998${phone}`,
       code,
+      // Reschedule: ignore the old booking in conflict checks so an overlapping
+      // new time (e.g. 14:00-15:00 -> 14:30-15:30) is allowed.
+      rescheduleId,
     });
     if (r.ok) {
       // Rescheduling: the new booking is made, so cancel the old one (best-effort).
