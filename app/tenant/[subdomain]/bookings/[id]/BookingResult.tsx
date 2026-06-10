@@ -47,24 +47,24 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
   const when = dateParts(booking.startAt, business.timezone);
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center px-6 py-12">
+    <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-12 sm:px-6">
       {created ? (
-        <div className="mb-7 flex flex-col items-center">
+        <div className="mb-8 flex flex-col items-center">
           <motion.div
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-            className="grid size-24 place-items-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/30"
+            className="grid size-24 place-items-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/30 sm:size-28"
           >
-            <Check size={48} strokeWidth={3} />
+            <Check size={52} strokeWidth={3} />
           </motion.div>
-          <h1 className="mt-7 text-2xl font-extrabold text-foreground">Band qilindi!</h1>
-          <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
+          <h1 className="mt-7 text-3xl font-extrabold text-foreground">Band qilindi!</h1>
+          <p className="mt-2 text-center text-base text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
         </div>
       ) : (
-        <div className="mb-4 w-full">
-          <h1 className="text-2xl font-extrabold text-foreground">Bron tafsilotlari</h1>
-          <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground'}`}>
+        <div className="mb-5 w-full">
+          <h1 className="text-3xl font-extrabold text-foreground">Bron tafsilotlari</h1>
+          <span className={`mt-2.5 inline-block rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground'}`}>
             {STATUS_UZ[booking.status] ?? booking.status}
           </span>
         </div>
@@ -80,28 +80,28 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
           <Row label="Vaqt" value={when.time} />
         </div>
 
-        <div className="border-t border-border px-5 py-4">
-          <p className="mb-2.5 text-sm text-muted-foreground">Xizmatlar</p>
-          <div className="space-y-2">
+        <div className="border-t border-border px-6 py-5">
+          <p className="mb-3 text-sm text-muted-foreground">Xizmatlar</p>
+          <div className="space-y-2.5">
             {booking.items.map((it, i) => (
               <div key={`${it.offeringId}-${i}`} className="flex items-center justify-between gap-4">
-                <span className="text-sm font-medium text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
-                <span className="whitespace-nowrap text-sm font-semibold text-foreground">{money(it.price, business.currency)}</span>
+                <span className="text-base font-medium text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
+                <span className="whitespace-nowrap text-base font-semibold text-foreground">{money(it.price, business.currency)}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-border px-5 py-4">
-          <span className="text-base font-bold text-foreground">Jami</span>
-          <span className="text-base font-bold text-foreground">{money(total, business.currency)}</span>
+        <div className="flex items-center justify-between border-t border-border px-6 py-5">
+          <span className="text-lg font-bold text-foreground">Jami</span>
+          <span className="text-lg font-bold text-foreground">{money(total, business.currency)}</span>
         </div>
       </div>
 
       <button
         type="button"
         onClick={() => router.push('/')}
-        className="mt-6 flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
+        className="mt-7 flex h-16 w-full items-center justify-center rounded-full bg-foreground text-lg font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
       >
         {created ? 'Tayyor' : business.name}
       </button>
@@ -111,9 +111,9 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 px-5 py-3.5">
-      <span className="shrink-0 text-sm text-muted-foreground">{label}</span>
-      <span className="text-right text-sm font-semibold text-foreground">{value}</span>
+    <div className="flex items-center justify-between gap-4 px-6 py-4">
+      <span className="shrink-0 text-base text-muted-foreground">{label}</span>
+      <span className="text-right text-base font-semibold text-foreground">{value}</span>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight, ShieldCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -615,81 +615,71 @@ export function BookingFlow({
 
               {/* ---- contact + OTP ---- */}
               {step === 'contact' && (
-                <div className="max-w-lg">
-                  <p className="text-[15px] leading-relaxed text-muted-foreground">
-                    Bandlikni yakunlash uchun telefon raqamingizni kiriting — tasdiqlash kodini SMS orqali yuboramiz.
-                  </p>
-
-                  <div className="mt-5 rounded-3xl border border-border bg-card p-5 shadow-sm sm:p-6">
-                    <label className="mb-1.5 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                      <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20 sm:flex-1">
-                        <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
-                        <span className="font-bold text-foreground/80">+998</span>
-                        <input
-                          autoFocus
-                          value={fmtPhone(phone)}
-                          onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                          inputMode="numeric"
-                          placeholder="90 123 45 67"
-                          className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                        />
-                      </div>
-                      {!otpSent && (
-                        <button
-                          type="button"
-                          onClick={sendCode}
-                          disabled={phone.length !== 9 || busy}
-                          className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 sm:w-auto"
-                        >
-                          {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
-                        </button>
-                      )}
+                <div className="max-w-md">
+                  {/* Phone */}
+                  <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
+                  <div className="flex flex-col gap-2 sm:flex-row">
+                    <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-foreground/[0.04] px-4 focus-within:ring-2 focus-within:ring-inset focus-within:ring-foreground/20 sm:flex-1">
+                      <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
+                      <span className="font-bold text-foreground/80">+998</span>
+                      <input
+                        autoFocus
+                        value={fmtPhone(phone)}
+                        onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                        inputMode="numeric"
+                        placeholder="90 123 45 67"
+                        className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+                      />
                     </div>
-
-                    <AnimatePresence>
-                      {otpSent && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
-                          {/* New customer → ask for a name */}
-                          {isNewCustomer && (
-                            <div className="mt-4">
-                              <label className="mb-1.5 block text-sm font-semibold text-foreground">Ismingiz</label>
-                              <input
-                                autoFocus
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                                placeholder="Ism"
-                                className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
-                              />
-                            </div>
-                          )}
-
-                          <div className="mt-4">
-                            <label className="mb-1 block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
-                            <p className="mb-2 text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">+998 {fmtPhone(phone)}</span> raqamiga yuborildi
-                            </p>
-                            <input
-                              autoFocus={!isNewCustomer}
-                              value={code}
-                              onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                              inputMode="numeric"
-                              placeholder="• • • • •"
-                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
-                            />
-                            <button type="button" onClick={sendCode} disabled={busy} className="mt-2 text-sm font-semibold text-accent disabled:opacity-50">
-                              Kodni qayta yuborish
-                            </button>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
+                    {!otpSent && (
+                      <button
+                        type="button"
+                        onClick={sendCode}
+                        disabled={phone.length !== 9 || busy}
+                        className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 sm:w-auto"
+                      >
+                        {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+                      </button>
+                    )}
                   </div>
 
-                  <p className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
-                    <ShieldCheck size={15} className="shrink-0" />
-                    Raqamingiz faqat bandlikni tasdiqlash uchun ishlatiladi.
-                  </p>
+                  <AnimatePresence>
+                    {otpSent && (
+                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
+                        {/* New customer → ask for a name */}
+                        {isNewCustomer && (
+                          <div className="mt-5">
+                            <label className="mb-2 block text-sm font-semibold text-foreground">Ismingiz</label>
+                            <input
+                              autoFocus
+                              value={name}
+                              onChange={(e) => setName(e.target.value)}
+                              placeholder="Ism"
+                              className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                            />
+                          </div>
+                        )}
+
+                        <div className="mt-5">
+                          <div className="mb-2 flex items-baseline justify-between gap-2">
+                            <label className="block text-sm font-semibold text-foreground">Tasdiqlash kodi</label>
+                            <span className="text-xs tabular-nums text-muted-foreground">+998 {fmtPhone(phone)}</span>
+                          </div>
+                          <input
+                            autoFocus={!isNewCustomer}
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            inputMode="numeric"
+                            placeholder="• • • • •"
+                            className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                          />
+                          <button type="button" onClick={sendCode} disabled={busy} className="mt-2.5 text-sm font-semibold text-accent disabled:opacity-50">
+                            Kodni qayta yuborish
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               )}
 
