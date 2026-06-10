@@ -201,7 +201,9 @@ export function BookingFlow({
     getAvailabilityAction(subdomain, date, selectedIds, staffId, rescheduleId).then((r) => {
       if (!alive) return;
       setAvail(r.ok ? r.data : null);
-      setError(r.ok ? null : r.error);
+      // An availability failure just shows the empty "no free time" state —
+      // no red error banner on the time step.
+      setError(null);
       setAvailLoading(false);
     });
     return () => {
