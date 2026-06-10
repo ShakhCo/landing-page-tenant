@@ -1,9 +1,11 @@
 'use client';
 
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, MapPin } from 'lucide-react';
+import { Check, MapPin, CalendarClock, X } from 'lucide-react';
 import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
+import { cancelBookingAction } from './actions';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
@@ -67,12 +69,16 @@ export function BookingResult({
   created,
   data,
   tenant,
+  subdomain,
 }: {
   created: boolean;
   data: PublicBookingView;
   tenant: PublicTenant | null;
+  subdomain: string;
 }) {
   const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [cancelError, setCancelError] = useState<string | null>(null);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
   const address = branch?.address ? localized(branch.address) : null;
@@ -93,6 +99,30 @@ export function BookingResult({
       ? encodeURIComponent(address)
       : null;
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
+
+  // Only an upcoming, still-open booking can be rescheduled or cancelled.
+  const manageable =
+    (booking.status === 'pending' || booking.status === 'confirmed') &&
+    Date.parse(booking.startAt) > Date.now();
+
+  const reschedule = () => {
+    const service = booking.items[0]?.offeringId;
+    const qs = new URLSearchParams();
+    if (service) qs.set('service', service);
+    qs.set('reschedule', booking.id);
+    router.push(`/booking?${qs.toString()}`);
+  };
+
+  const cancel = () => {
+    if (pending) return;
+    if (!window.confirm('Bandlikni bekor qilishni xohlaysizmi?')) return;
+    setCancelError(null);
+    startTransition(async () => {
+      const r = await cancelBookingAction(subdomain, booking.id);
+      if (r.ok) router.refresh();
+      else setCancelError(r.error);
+    });
+  };
 
   return (
     <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
@@ -163,6 +193,31 @@ export function BookingResult({
             </p>
           )}
         </Section>
+      )}
+
+      {/* Manage: reschedule / cancel (only for upcoming, open bookings) */}
+      {manageable && (
+        <div className="mt-9 flex flex-col gap-2.5">
+          <button
+            type="button"
+            onClick={reschedule}
+            disabled={pending}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:bg-foreground/[0.03] disabled:opacity-50"
+          >
+            <CalendarClock size={18} className="text-muted-foreground" />
+            Vaqtni o&apos;zgartirish
+          </button>
+          <button
+            type="button"
+            onClick={cancel}
+            disabled={pending}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50"
+          >
+            <X size={18} />
+            {pending ? 'Bekor qilinmoqda…' : 'Bandlikni bekor qilish'}
+          </button>
+          {cancelError && <p className="text-sm font-medium text-destructive">{cancelError}</p>}
+        </div>
       )}
 
       {/* Booking reference — small footnote */}

@@ -12,10 +12,10 @@ export default async function BookingRoute({
   searchParams,
 }: {
   params: Promise<{ subdomain: string }>;
-  searchParams: Promise<{ service?: string }>;
+  searchParams: Promise<{ service?: string; reschedule?: string }>;
 }) {
   const { subdomain } = await params;
-  const { service } = await searchParams;
+  const { service, reschedule } = await searchParams;
   const tenant = await getTenant(subdomain);
 
   // No tenant or no bookable staff/services → back to the tenant home.
@@ -25,7 +25,7 @@ export default async function BookingRoute({
 
   return (
     <main className="min-h-screen bg-background">
-      <BookingFlow tenant={tenant} subdomain={subdomain} initialServiceId={service} />
+      <BookingFlow tenant={tenant} subdomain={subdomain} initialServiceId={service} rescheduleId={reschedule} />
     </main>
   );
 }

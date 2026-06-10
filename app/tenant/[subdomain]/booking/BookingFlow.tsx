@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
+import { cancelBookingAction } from '../bookings/[id]/actions';
 
 type Step = 'services' | 'staff' | 'time' | 'contact' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'contact'];
@@ -96,10 +97,12 @@ export function BookingFlow({
   tenant,
   subdomain,
   initialServiceId,
+  rescheduleId,
 }: {
   tenant: PublicTenant;
   subdomain: string;
   initialServiceId?: string;
+  rescheduleId?: string;
 }) {
   const router = useRouter();
   const { business } = tenant;
@@ -275,6 +278,8 @@ export function BookingFlow({
       code,
     });
     if (r.ok) {
+      // Rescheduling: the new booking is made, so cancel the old one (best-effort).
+      if (rescheduleId) await cancelBookingAction(subdomain, rescheduleId).catch(() => {});
       // Go to the booking result page on this subdomain: /bookings/<id>?created=1
       router.push(`/bookings/${r.id}?created=1`);
       return; // keep `busy` while the page navigates

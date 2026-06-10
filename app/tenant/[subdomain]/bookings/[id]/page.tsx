@@ -21,7 +21,7 @@ export default async function BookingResultPage({
 
   return (
     <main className="min-h-screen bg-card">
-      <BookingResult created={created === '1'} data={data} tenant={tenant} />
+      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} />
     </main>
   );
 }
