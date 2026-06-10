@@ -251,7 +251,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           {branch && branch.workingHours.length > 0 && (
             <div className="mt-12">
               <h2 className="text-2xl font-extrabold text-foreground lg:text-3xl">Ish vaqti</h2>
-              <div className="mt-5 max-w-md">
+              <div className="mt-5 w-full">
                 {branch.workingHours.map((w) => {
                   const isToday = w.weekday === now?.weekday;
                   const off = w.isDayOff || !w.openTime || !w.closeTime;
