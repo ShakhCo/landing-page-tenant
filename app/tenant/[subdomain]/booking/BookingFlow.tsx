@@ -330,7 +330,7 @@ export function BookingFlow({
           : { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: !otpSent || code.length < 4 || busy || (isNewCustomer && !name.trim()), onClick: confirm };
 
   return (
-    <div className="mx-auto min-h-screen max-w-6xl px-4 pb-32 lg:pb-12">
+    <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
       {/* Top chrome: back + close */}
       <div className="flex items-center justify-between py-4">
         <button type="button" onClick={back} aria-label="Orqaga" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5">
@@ -341,7 +341,7 @@ export function BookingFlow({
         </button>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
+      <div className="lg:grid lg:grid-cols-[1fr_420px] lg:items-start lg:gap-20">
         {/* ===== LEFT: breadcrumb + title + choices ===== */}
         <div className="min-w-0 lg:order-1">
           {/* breadcrumb stepper */}
