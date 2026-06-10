@@ -347,7 +347,14 @@ export function BookingFlow({
           {/* breadcrumb stepper — click a reached step to jump back to it */}
           <nav className="scrollbar-hide flex items-center gap-x-1.5 overflow-x-auto whitespace-nowrap text-sm">
             {FLOW.map((s, i) => {
-              const reached = i <= FLOW.indexOf(step);
+              // Reachable once every step before it is satisfied (so completing the
+              // current step unlocks the next breadcrumb item).
+              const reached = s === step || FLOW.slice(0, i).every((ps) =>
+                ps === 'services' ? selected.length > 0
+                : ps === 'staff' ? staffId != null
+                : ps === 'time' ? slot != null
+                : true,
+              );
               return (
                 <span key={s} className="flex items-center gap-1.5">
                   {i > 0 && <ChevronRight size={14} className="text-muted-foreground/50" />}
