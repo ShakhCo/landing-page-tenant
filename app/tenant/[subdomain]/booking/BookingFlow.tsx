@@ -1072,13 +1072,21 @@ function OtpInput({
   const refs = useRef<Array<HTMLInputElement | null>>([]);
   const [slots, setSlots] = useState<string[]>(() => Array.from({ length }, (_, i) => value[i] ?? ''));
 
+  // The only editable box: the first empty one (or the last when full).
+  const activeIndex = () => {
+    const i = slots.findIndex((s) => !s);
+    return i === -1 ? length - 1 : i;
+  };
+  const focusActive = () => refs.current[activeIndex()]?.focus();
+
   // External reset (e.g. resend clears the code) → clear the boxes.
   useEffect(() => {
     if (value === '') setSlots(Array.from({ length }, () => ''));
   }, [value, length]);
 
   useEffect(() => {
-    if (autoFocus) refs.current[0]?.focus();
+    if (autoFocus) focusActive();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocus]);
 
   const commit = (next: string[]) => {
@@ -1133,7 +1141,10 @@ function OtpInput({
           onChange={(e) => fill(i, e.target.value)}
           onKeyDown={(e) => onKeyDown(i, e)}
           onPaste={(e) => { e.preventDefault(); fill(0, e.clipboardData.getData('text')); }}
-          onFocus={(e) => e.currentTarget.select()}
+          // Only the active (first-empty) box is editable — clicking any other
+          // box redirects focus there instead of focusing the clicked one.
+          onMouseDown={(e) => { if (i !== activeIndex()) { e.preventDefault(); focusActive(); } }}
+          onFocus={(e) => { if (i !== activeIndex()) { focusActive(); return; } e.currentTarget.select(); }}
           inputMode="numeric"
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           aria-label={`Kod ${i + 1}`}
