@@ -43,6 +43,11 @@ function dateParts(iso: string, tz: string) {
   const wd = WEEKDAYS_FULL[wdMap[get('weekday')] ?? 0];
   return { day, mon, wd, date: `${wd}, ${day}-${mon}`, time: `${get('hour')}:${get('minute')}` };
 }
+/** "14:00–15:00", or "14:00" if there's no end yet. */
+function timeRange(startIso: string, endIso: string | null | undefined, tz: string) {
+  const start = dateParts(startIso, tz).time;
+  return endIso ? `${start}–${dateParts(endIso, tz).time}` : start;
+}
 /** Local YYYY-MM-DD in a timezone, for comparing calendar days. */
 function localDay(d: Date, tz: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
@@ -97,7 +102,7 @@ export function BookingResult({
           initial={created ? { scale: 0.6, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
+          className={`inline-flex mb-4 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
         >
           {badgeCheck && <Check size={15} strokeWidth={3} />}
           {statusLabel}
@@ -115,7 +120,11 @@ export function BookingResult({
             <div key={`${it.offeringId}-${i}`} className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-base font-semibold text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</p>
-                {it.resourceName && <p className="mt-0.5 text-sm text-muted-foreground">{it.resourceName}</p>}
+                <p className="mt-0.5 text-sm text-muted-foreground">
+                  {[it.startAt ? timeRange(it.startAt, it.endAt, business.timezone) : null, it.resourceName]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </p>
               </div>
               <span className="whitespace-nowrap text-base font-semibold text-foreground">{money(it.price, business.currency)}</span>
             </div>

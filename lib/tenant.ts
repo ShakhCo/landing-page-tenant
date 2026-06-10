@@ -89,6 +89,8 @@ export interface PublicBookingView {
       name: LocalizedText | null;
       resourceName: string;
       pricingMode?: string;
+      startAt?: string;
+      endAt?: string | null;
       price: number;
     }>;
   };
