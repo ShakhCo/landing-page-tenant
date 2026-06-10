@@ -215,7 +215,7 @@ export function BookingResult({
             className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50"
           >
             <X size={18} />
-            {pending ? 'Bekor qilinmoqda…' : 'Bandlikni bekor qilish'}
+            {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish'}
           </button>
           {cancelError && <p className="text-sm font-medium text-destructive">{cancelError}</p>}
         </div>
