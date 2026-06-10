@@ -223,7 +223,7 @@ export function BookingResult({
 
       {/* Booking reference — small footnote */}
       <p className="mt-8 text-sm text-muted-foreground">
-        Bandlik raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
+        Bron raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
       </p>
     </div>
   );
