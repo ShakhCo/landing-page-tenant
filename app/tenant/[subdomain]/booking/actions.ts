@@ -14,6 +14,7 @@ function mapErrorCode(code: string): string {
     INVALID_OR_EXPIRED_CODE: "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.",
     TOO_MANY_OTP_ATTEMPTS: "Juda ko'p marta noto'g'ri kod kiritildi. Iltimos, yangi kod so'rang.",
     TOO_MANY_OTP_REQUESTS: "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
+    TOO_MANY_REQUESTS: "Juda ko'p so'rov yuborildi. Iltimos, bir daqiqa kutib turing.",
     INVALID_PHONE_NUMBER: "Telefon raqami noto'g'ri. Iltimos, tekshirib qayta kiriting.",
     CODE_REQUIRED: "Tasdiqlash kodini kiriting.",
     BOOKING_NOT_FOUND: "Bandlik topilmadi. Sahifani yangilab qayta urinib ko'ring.",
