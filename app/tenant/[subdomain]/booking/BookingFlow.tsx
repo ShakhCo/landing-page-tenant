@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, LayoutGrid } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -106,7 +106,8 @@ export function BookingFlow({
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
   const staff = tenant.staff ?? [];
-  const tz = branches[0]?.timezone ?? 'Asia/Tashkent';
+  const branch = branches[0];
+  const tz = branch?.timezone ?? 'Asia/Tashkent';
   const dates = nextDates(tz);
 
   // Skip the services step and go straight to the resource/time picker when:
@@ -320,8 +321,12 @@ export function BookingFlow({
     );
   }
 
-  const idx = FLOW.indexOf(step);
-  const progress = ((idx + 1) / FLOW.length) * 100;
+  const stepShort = (s: Step) =>
+    s === 'services' ? 'Xizmatlar'
+    : s === 'staff' ? (resourcesAreAssets ? 'Joy' : 'Mutaxassis')
+    : s === 'time' ? 'Vaqt'
+    : 'Tasdiqlash';
+  const bigTitle = step === 'staff' && resourcesAreAssets ? 'Joyni tanlang' : STEP_TITLE[step];
 
   // Context-aware primary action (drives both the desktop summary and mobile bar)
   const action =
@@ -335,24 +340,31 @@ export function BookingFlow({
 
   return (
     <div className="mx-auto min-h-screen max-w-6xl px-4 pb-32 lg:pb-12">
-      {/* Header + progress */}
-      <div className="sticky top-0 z-20 -mx-4 border-b border-border bg-background/90 px-4 backdrop-blur">
-        <div className="flex items-center gap-2 py-3">
-          <button type="button" onClick={back} className="grid size-10 place-items-center rounded-full hover:bg-foreground/5">
-            <ChevronLeft size={22} className="text-foreground" />
-          </button>
-          <h1 className="text-lg font-extrabold leading-tight text-foreground">
-            {step === 'staff' && resourcesAreAssets ? 'Joyni tanlang' : STEP_TITLE[step]}
-          </h1>
-        </div>
-        <div className="-mx-4 h-1 bg-foreground/5">
-          <div className="h-full rounded-r-full bg-foreground transition-all duration-300" style={{ width: `${progress}%` }} />
-        </div>
+      {/* Top chrome: back + close */}
+      <div className="flex items-center justify-between py-4">
+        <button type="button" onClick={back} aria-label="Orqaga" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5">
+          <ChevronLeft size={22} />
+        </button>
+        <button type="button" onClick={() => router.push('/')} aria-label="Yopish" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5">
+          <X size={20} />
+        </button>
       </div>
 
-      <div className="pt-6 lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
-        {/* ===== LEFT: choices ===== */}
+      <div className="lg:grid lg:grid-cols-[1fr_380px] lg:items-start lg:gap-10">
+        {/* ===== LEFT: breadcrumb + title + choices ===== */}
         <div className="min-w-0 lg:order-1">
+          {/* breadcrumb stepper */}
+          <nav className="scrollbar-hide flex items-center gap-x-1.5 overflow-x-auto whitespace-nowrap text-sm">
+            {FLOW.map((s, i) => (
+              <span key={s} className="flex items-center gap-1.5">
+                {i > 0 && <ChevronRight size={14} className="text-muted-foreground/50" />}
+                <span className={s === step ? 'font-bold text-foreground' : 'text-muted-foreground'}>{stepShort(s)}</span>
+              </span>
+            ))}
+          </nav>
+          <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">{bigTitle}</h1>
+
+          <div className="mt-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={step}
@@ -363,7 +375,7 @@ export function BookingFlow({
             >
               {/* ---- services ---- */}
               {step === 'services' && (
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                   {services.map((s) => {
                     const on = selectedIds.includes(s.id);
                     const price =
@@ -375,18 +387,16 @@ export function BookingFlow({
                         key={s.id}
                         type="button"
                         onClick={() => toggleService(s.id)}
-                        className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+                        className={`rounded-2xl border-2 bg-card p-5 text-left transition-colors ${on ? 'border-accent' : 'border-border hover:border-foreground/20'}`}
                       >
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                          <p className="mt-0.5 text-sm text-muted-foreground">
-                            {s.durationMinutes ? `${dur(s.durationMinutes)}${price ? ' · ' : ''}` : ''}
-                            {price}
-                          </p>
+                        <h3 className="font-bold text-foreground">{localized(s.name as LocalizedText)}</h3>
+                        {s.durationMinutes != null && <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
+                        <div className="mt-4 flex items-center justify-between gap-3">
+                          {price && <p className="font-bold text-foreground">{price}</p>}
+                          <span className={`ml-auto grid size-9 shrink-0 place-items-center rounded-full border transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-foreground'}`}>
+                            {on ? <Check size={18} strokeWidth={3} /> : <Plus size={18} />}
+                          </span>
                         </div>
-                        <span className={`grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
-                          {on && <Check size={16} strokeWidth={3} />}
-                        </span>
                       </button>
                     );
                   })}
@@ -395,54 +405,39 @@ export function BookingFlow({
 
               {/* ---- staff ---- */}
               {step === 'staff' && (
-                resourcesAreAssets ? (
-                  // Units (lanes, tables, consoles…) — a visual grid, tap to pick.
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {eligibleStaff.map((st) => {
-                      const on = staffId === st.id;
-                      return (
-                        <button
-                          key={st.id}
-                          type="button"
-                          onClick={() => { setStaffId(st.id); setError(null); setStep('time'); }}
-                          className={`flex flex-col items-center gap-3 rounded-2xl border p-5 text-center transition-all active:scale-[0.98] ${on ? 'border-foreground bg-foreground/[0.03]' : 'border-border bg-card hover:-translate-y-0.5 hover:border-foreground/30 hover:shadow-sm'}`}
-                        >
-                          <span className="grid size-14 place-items-center rounded-2xl bg-foreground/5 text-foreground ring-1 ring-border">
-                            <LayoutGrid size={24} />
+                <div className="flex flex-col gap-2.5">
+                  {eligibleStaff.map((st) => {
+                    const on = staffId === st.id;
+                    return (
+                      <button
+                        key={st.id}
+                        type="button"
+                        onClick={() => {
+                          setStaffId(st.id);
+                          // Units (assets) auto-advance on pick; staff confirm via "Davom etish".
+                          if (st.type === 'asset') {
+                            setError(null);
+                            setStep('time');
+                          }
+                        }}
+                        className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+                      >
+                        {st.photoUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
+                        ) : (
+                          <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
+                            {st.name.charAt(0).toUpperCase()}
                           </span>
-                          <span className="text-sm font-bold text-foreground">{st.name}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2.5">
-                    {eligibleStaff.map((st) => {
-                      const on = staffId === st.id;
-                      return (
-                        <button
-                          key={st.id}
-                          type="button"
-                          onClick={() => setStaffId(st.id)}
-                          className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
-                        >
-                          {st.photoUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
-                          ) : (
-                            <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
-                              {st.name.charAt(0).toUpperCase()}
-                            </span>
-                          )}
-                          <span className="font-semibold text-foreground">{st.name}</span>
-                          <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
-                            {on && <Check size={16} strokeWidth={3} />}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )
+                        )}
+                        <span className="font-semibold text-foreground">{st.name}</span>
+                        <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
+                          {on && <Check size={16} strokeWidth={3} />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               )}
 
               {/* ---- time ---- */}
@@ -659,22 +654,31 @@ export function BookingFlow({
               {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
             </motion.div>
           </AnimatePresence>
+          </div>
         </div>
 
         {/* ===== RIGHT: live summary (desktop) ===== */}
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
           <motion.div layout className="rounded-3xl border border-border bg-card p-6 shadow-sm">
-            {/* business */}
-            <div className="flex items-center gap-3">
+            {/* business header */}
+            <div className="flex items-start gap-3">
               {business.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={business.avatarUrl} alt={business.name} className="size-11 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+                <img src={business.avatarUrl} alt={business.name} className="size-12 shrink-0 rounded-xl object-cover ring-1 ring-border" />
               ) : (
-                <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground/5 text-lg font-black text-foreground ring-1 ring-border">
+                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-foreground/5 text-lg font-black text-foreground ring-1 ring-border">
                   {business.name.trim().charAt(0).toUpperCase()}
                 </div>
               )}
-              <p className="min-w-0 truncate text-lg font-bold text-foreground">{business.name}</p>
+              <div className="min-w-0">
+                <p className="font-bold leading-tight text-foreground">{business.name}</p>
+                {business.category && (
+                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">{localized(business.category.name)}</p>
+                )}
+                {branch?.address && (
+                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{localized(branch.address)}</p>
+                )}
+              </div>
             </div>
 
             <div className="my-4 border-t border-border" />
@@ -689,7 +693,7 @@ export function BookingFlow({
             />
 
             <PrimaryBtn className="mt-5" disabled={action.disabled} onClick={action.onClick}>
-              {action.label}
+              <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
             </PrimaryBtn>
           </motion.div>
         </aside>
@@ -706,7 +710,7 @@ export function BookingFlow({
           </div>
         )}
         <PrimaryBtn disabled={action.disabled} onClick={action.onClick}>
-          {action.label}
+          <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
         </PrimaryBtn>
       </div>
 
