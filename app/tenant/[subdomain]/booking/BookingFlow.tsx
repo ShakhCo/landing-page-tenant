@@ -706,7 +706,20 @@ export function BookingFlow({
                 </div>
               )}
 
-              {error && !showConfirm && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+              <AnimatePresence initial={false}>
+                {error && !showConfirm && (
+                  <motion.div
+                    key="flow-error"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           </AnimatePresence>
           </div>
@@ -869,7 +882,7 @@ export function BookingFlow({
                     )}
 
                     <div className={isNewCustomer ? 'mt-5' : ''}>
-                      <OtpInput value={code} onChange={setCode} length={5} autoFocus={!isNewCustomer} />
+                      <OtpInput value={code} onChange={(v) => { setCode(v); if (error) setError(null); }} length={5} autoFocus={!isNewCustomer} />
                       <button
                         type="button"
                         onClick={sendCode}
@@ -883,7 +896,20 @@ export function BookingFlow({
                 )}
               </AnimatePresence>
 
-              {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
+              <AnimatePresence initial={false}>
+                {error && (
+                  <motion.div
+                    key="modal-error"
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+                    className="overflow-hidden"
+                  >
+                    <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* One action at a time: the new-booking phone stage uses the inline
                   "Kod yuborish" above; the bottom button appears only once it's the
