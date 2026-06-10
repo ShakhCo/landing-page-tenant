@@ -196,9 +196,9 @@ export function BookingFlow({
       : date === tomorrowIso
         ? `Ertaga, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`
         : `${WEEKDAYS_FULL[selP.wdIdx]}, ${selP.day}-${MONTHS_FULL[selP.monIdx]}`;
-  // "Bugun, 15:00–16:30" — relative day + chosen time range, for the confirm modal.
+  // "Bugun, 16:00 dan 19:30 gacha" — relative day + chosen time range, for the confirm modal.
   const dayWord = !selP ? '' : date === todayIso ? 'Bugun' : date === tomorrowIso ? 'Ertaga' : WEEKDAYS_FULL[selP.wdIdx];
-  const modalWhen = slot ? `${dayWord}, ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null;
+  const modalWhen = slot ? `${dayWord}, ${slot}${hourly ? ` dan ${addHm(slot, durationMin)} gacha` : ''}` : null;
 
   useEffect(() => {
     if (step !== 'time' || !staffId || !date) return;
@@ -776,9 +776,17 @@ export function BookingFlow({
 
               {/* compact summary — hidden once we're entering the SMS code */}
               {!otpSent && (
-                <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3">
-                  {modalWhen && <p className="text-base font-bold text-foreground">{modalWhen}</p>}
-                  <p className="mt-1 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
+                <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3.5">
+                  {modalWhen && (
+                    <p className="text-[15px] text-foreground">
+                      <span className="text-muted-foreground">Vaqt: </span>
+                      <span className="font-semibold">{modalWhen}</span>
+                    </p>
+                  )}
+                  <p className="mt-1.5 text-[15px] text-foreground">
+                    <span className="text-muted-foreground">Jami: </span>
+                    <span className="font-bold">{money(totalPrice, business.currency)}</span>
+                  </p>
                 </div>
               )}
 
