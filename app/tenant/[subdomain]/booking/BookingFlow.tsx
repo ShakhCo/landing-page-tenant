@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
@@ -833,14 +833,7 @@ export function BookingFlow({
                     )}
 
                     <div className={isNewCustomer ? 'mt-5' : ''}>
-                      <input
-                        autoFocus={!isNewCustomer}
-                        value={code}
-                        onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
-                        inputMode="numeric"
-                        placeholder="• • • • •"
-                        className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-2xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
-                      />
+                      <OtpInput value={code} onChange={setCode} length={5} autoFocus={!isNewCustomer} />
                       <button
                         type="button"
                         onClick={sendCode}
@@ -1055,6 +1048,98 @@ function SummaryRow({ icon, text }: { icon: React.ReactNode; text: string }) {
     <div className="flex items-center gap-2.5 py-0.5 text-foreground">
       <span className="text-muted-foreground">{icon}</span>
       <span className="font-semibold">{text}</span>
+    </div>
+  );
+}
+
+/**
+ * Segmented OTP input — one box per digit. Handles sequential typing,
+ * backspace (clear current, else step back), arrow keys, click-to-focus, and
+ * paste/autofill (distributes digits across boxes). `value` is the compact code
+ * string; `onChange` receives it as boxes fill left-to-right.
+ */
+function OtpInput({
+  value,
+  onChange,
+  length = 5,
+  autoFocus,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  length?: number;
+  autoFocus?: boolean;
+}) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+  const [slots, setSlots] = useState<string[]>(() => Array.from({ length }, (_, i) => value[i] ?? ''));
+
+  // External reset (e.g. resend clears the code) → clear the boxes.
+  useEffect(() => {
+    if (value === '') setSlots(Array.from({ length }, () => ''));
+  }, [value, length]);
+
+  useEffect(() => {
+    if (autoFocus) refs.current[0]?.focus();
+  }, [autoFocus]);
+
+  const commit = (next: string[]) => {
+    setSlots(next);
+    onChange(next.join(''));
+  };
+
+  // Write digits starting at `from`, then focus the next empty box.
+  const fill = (from: number, raw: string) => {
+    const ds = raw.replace(/\D/g, '');
+    if (!ds) return;
+    const next = [...slots];
+    let k = from;
+    for (const ch of ds) {
+      if (k >= length) break;
+      next[k] = ch;
+      k++;
+    }
+    commit(next);
+    refs.current[Math.min(k, length - 1)]?.focus();
+  };
+
+  const onKeyDown = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      e.preventDefault();
+      const next = [...slots];
+      if (next[i]) {
+        next[i] = '';
+        commit(next);
+        refs.current[i]?.focus();
+      } else if (i > 0) {
+        next[i - 1] = '';
+        commit(next);
+        refs.current[i - 1]?.focus();
+      }
+    } else if (e.key === 'ArrowLeft' && i > 0) {
+      e.preventDefault();
+      refs.current[i - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && i < length - 1) {
+      e.preventDefault();
+      refs.current[i + 1]?.focus();
+    }
+  };
+
+  return (
+    <div className="flex justify-between gap-2">
+      {Array.from({ length }, (_, i) => (
+        <input
+          key={i}
+          ref={(el) => { refs.current[i] = el; }}
+          value={slots[i] ?? ''}
+          onChange={(e) => fill(i, e.target.value)}
+          onKeyDown={(e) => onKeyDown(i, e)}
+          onPaste={(e) => { e.preventDefault(); fill(0, e.clipboardData.getData('text')); }}
+          onFocus={(e) => e.currentTarget.select()}
+          inputMode="numeric"
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          aria-label={`Kod ${i + 1}`}
+          className="h-14 w-full min-w-0 rounded-2xl bg-foreground/[0.04] text-center text-2xl font-bold tabular-nums text-foreground outline-none transition-shadow focus:ring-2 focus:ring-inset focus:ring-foreground/30"
+        />
+      ))}
     </div>
   );
 }
