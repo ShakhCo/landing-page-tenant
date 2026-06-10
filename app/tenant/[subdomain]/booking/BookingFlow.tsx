@@ -545,10 +545,14 @@ export function BookingFlow({
                   })()}
 
                   <div className="mt-6">
-                    {availLoading ? (
+                    {availLoading && futureSlots.length === 0 ? (
+                      // First load (no estimate yet) — generic white skeleton cards.
                       <div className="flex flex-col gap-2.5">
                         {Array.from({ length: skeletonCount }).map((_, i) => (
-                          <div key={i} className="h-14 w-full animate-pulse rounded-2xl bg-foreground/5" />
+                          <div key={i} className="flex h-16 w-full items-center justify-between rounded-2xl border border-border bg-card px-5">
+                            <span className="h-4 w-16 animate-pulse rounded-md bg-foreground/10" />
+                            <ChevronRight size={18} className="text-muted-foreground/30" />
+                          </div>
                         ))}
                       </div>
                     ) : futureSlots.length === 0 ? (
@@ -569,6 +573,16 @@ export function BookingFlow({
                             <div className="flex flex-col gap-2.5">
                               {items.map((s) => {
                                 const on = slot === s.start;
+                                // While refetching, keep the white card + period labels
+                                // but skeletonise the time (it may have just been booked).
+                                if (availLoading) {
+                                  return (
+                                    <div key={s.start} className="flex h-16 w-full items-center justify-between rounded-2xl border border-border bg-card px-5">
+                                      <span className="h-4 w-16 animate-pulse rounded-md bg-foreground/10" />
+                                      <ChevronRight size={18} className="text-muted-foreground/30" />
+                                    </div>
+                                  );
+                                }
                                 return (
                                   <button
                                     key={s.start}
