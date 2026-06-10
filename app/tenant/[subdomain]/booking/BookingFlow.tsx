@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
-import { cancelBookingAction } from '../bookings/[id]/actions';
 
 type Step = 'services' | 'staff' | 'time' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time'];
@@ -323,8 +322,8 @@ export function BookingFlow({
       rescheduleId,
     });
     if (r.ok) {
-      // Rescheduling: the new booking is made, so cancel the old one (best-effort).
-      if (rescheduleId) await cancelBookingAction(subdomain, rescheduleId).catch(() => {});
+      // Reschedule: the backend already cancelled the old booking and linked it
+      // to this new one (rescheduledToId), so nothing extra to do here.
       // Go to the booking result page on this subdomain: /bookings/<id>?created=1
       router.push(`/bookings/${r.id}?created=1`);
       return; // keep `busy` while the page navigates
