@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, X, ArrowRight, Wallet } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 
@@ -776,16 +776,16 @@ export function BookingFlow({
 
               {/* compact summary — hidden once we're entering the SMS code */}
               {!otpSent && (
-                <div className="mb-5">
+                <div className="mb-5 space-y-2.5">
                   {modalWhen && (
-                    <p className="text-[15px] text-foreground">
-                      <span className="text-muted-foreground">Vaqt: </span>
-                      <span className="font-semibold">{modalWhen}</span>
+                    <p className="flex items-center gap-2.5 text-[15px] text-foreground">
+                      <Clock size={18} className="shrink-0 text-muted-foreground" />
+                      <span><span className="text-muted-foreground">Vaqt: </span><span className="font-semibold">{modalWhen}</span></span>
                     </p>
                   )}
-                  <p className="mt-1.5 text-[15px] text-foreground">
-                    <span className="text-muted-foreground">Jami: </span>
-                    <span className="font-bold">{money(totalPrice, business.currency)}</span>
+                  <p className="flex items-center gap-2.5 text-[15px] text-foreground">
+                    <Wallet size={18} className="shrink-0 text-muted-foreground" />
+                    <span><span className="text-muted-foreground">Jami: </span><span className="font-bold">{money(totalPrice, business.currency)}</span></span>
                   </p>
                 </div>
               )}
