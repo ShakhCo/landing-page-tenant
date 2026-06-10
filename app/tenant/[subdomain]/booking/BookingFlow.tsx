@@ -748,7 +748,7 @@ export function BookingFlow({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center sm:p-4"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
           >
             <motion.div
               initial={{ y: 28, opacity: 0 }}
