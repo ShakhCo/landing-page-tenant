@@ -75,15 +75,10 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   return (
     <div className="min-h-screen bg-background pb-24 lg:pb-0">
       {/* ===== Body ===== */}
-      <div className="mx-auto max-w-6xl px-4 py-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-10">
+      <div className="mx-auto max-w-[1300px] px-4 py-8 lg:grid lg:grid-cols-[1fr_420px] lg:gap-20">
         {/* Right card (desktop) */}
         <aside className="mb-6 lg:order-2 lg:mb-0 lg:sticky lg:top-8 lg:self-start">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="-mx-4 border-b border-border px-4 pb-6 lg:mx-0 lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:px-6 lg:pb-6 lg:pt-6 lg:shadow-sm"
-          >
+          <div className="-mx-4 border-b border-border px-4 pb-6 lg:mx-0 lg:rounded-3xl lg:border lg:border-border lg:bg-card lg:px-6 lg:pb-6 lg:pt-6 lg:shadow-sm">
             <div className="flex items-start gap-3.5">
               {business.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -110,7 +105,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                 Bron qilish
               </Link>
             )}
-          </motion.div>
+          </div>
           {branch && (
             <div className="mt-4 hidden rounded-2xl border border-border bg-card p-5 lg:block lg:rounded-3xl lg:p-6 lg:shadow-sm">
               <button type="button" onClick={() => setShowHours(true)} className="flex w-full items-center gap-3 text-left">
