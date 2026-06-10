@@ -12,10 +12,10 @@ export default async function BookingRoute({
   searchParams,
 }: {
   params: Promise<{ subdomain: string }>;
-  searchParams: Promise<{ service?: string; reschedule?: string }>;
+  searchParams: Promise<{ service?: string; reschedule?: string; duration?: string }>;
 }) {
   const { subdomain } = await params;
-  const { service, reschedule } = await searchParams;
+  const { service, reschedule, duration } = await searchParams;
   const tenant = await getTenant(subdomain);
 
   // No tenant or no bookable staff/services → back to the tenant home.
@@ -23,9 +23,17 @@ export default async function BookingRoute({
     redirect('/');
   }
 
+  const dur = duration ? Number(duration) : NaN;
+
   return (
     <main className="min-h-screen bg-background">
-      <BookingFlow tenant={tenant} subdomain={subdomain} initialServiceId={service} rescheduleId={reschedule} />
+      <BookingFlow
+        tenant={tenant}
+        subdomain={subdomain}
+        initialServiceId={service}
+        rescheduleId={reschedule}
+        initialDuration={Number.isFinite(dur) && dur > 0 ? dur : undefined}
+      />
     </main>
   );
 }

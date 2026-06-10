@@ -98,11 +98,13 @@ export function BookingFlow({
   subdomain,
   initialServiceId,
   rescheduleId,
+  initialDuration,
 }: {
   tenant: PublicTenant;
   subdomain: string;
   initialServiceId?: string;
   rescheduleId?: string;
+  initialDuration?: number;
 }) {
   const router = useRouter();
   const { business } = tenant;
@@ -150,7 +152,7 @@ export function BookingFlow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
-  const [durationMin, setDurationMin] = useState(60);
+  const [durationMin, setDurationMin] = useState(initialDuration && initialDuration > 0 ? initialDuration : 60);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking

@@ -110,6 +110,9 @@ export function BookingResult({
     const qs = new URLSearchParams();
     if (service) qs.set('service', service);
     qs.set('reschedule', booking.id);
+    // Carry the current length so an hourly booking re-opens at its real
+    // duration (e.g. 1h) and the customer just shifts the start time.
+    if (durationMin != null) qs.set('duration', String(durationMin));
     router.push(`/booking?${qs.toString()}`);
   };
 
