@@ -197,7 +197,7 @@ export function BookingResult({
 /** A page section with a consistent heading, top separator, and spacing. */
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-8 border-t border-border pt-7">
+    <section className="mt-9">
       <h2 className="text-lg font-bold text-foreground">{title}</h2>
       <div className="mt-4">{children}</div>
     </section>
