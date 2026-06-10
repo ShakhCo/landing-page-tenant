@@ -893,6 +893,19 @@ export function BookingFlow({
                   <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
                 </PrimaryBtn>
               )}
+
+              {/* Wrong number? Go back to phone entry (new-booking OTP stage only —
+                  a reschedule's phone comes from the original booking). */}
+              {otpSent && !rescheduleId && (
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
+                  className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-40"
+                >
+                  Telefon raqamni o&apos;zgartirish
+                </button>
+              )}
             </motion.div>
           </motion.div>
         )}
