@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, User, Phone, Minus, Plus, LayoutGrid } from 'lucide-react';
 import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, createBookingAction } from './actions';
 
@@ -395,39 +395,54 @@ export function BookingFlow({
 
               {/* ---- staff ---- */}
               {step === 'staff' && (
-                <div className="flex flex-col gap-2.5">
-                  {eligibleStaff.map((st) => {
-                    const on = staffId === st.id;
-                    return (
-                      <button
-                        key={st.id}
-                        type="button"
-                        onClick={() => {
-                          setStaffId(st.id);
-                          // Units (assets) auto-advance on pick; staff confirm via "Davom etish".
-                          if (st.type === 'asset') {
-                            setError(null);
-                            setStep('time');
-                          }
-                        }}
-                        className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
-                      >
-                        {st.photoUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
-                        ) : (
-                          <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
-                            {st.name.charAt(0).toUpperCase()}
+                resourcesAreAssets ? (
+                  // Units (lanes, tables, consoles…) — a visual grid, tap to pick.
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {eligibleStaff.map((st) => {
+                      const on = staffId === st.id;
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => { setStaffId(st.id); setError(null); setStep('time'); }}
+                          className={`flex flex-col items-center gap-3 rounded-2xl border p-5 text-center transition-all active:scale-[0.98] ${on ? 'border-foreground bg-foreground/[0.03]' : 'border-border bg-card hover:-translate-y-0.5 hover:border-foreground/30 hover:shadow-sm'}`}
+                        >
+                          <span className="grid size-14 place-items-center rounded-2xl bg-foreground/5 text-foreground ring-1 ring-border">
+                            <LayoutGrid size={24} />
                           </span>
-                        )}
-                        <span className="font-semibold text-foreground">{st.name}</span>
-                        <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
-                          {on && <Check size={16} strokeWidth={3} />}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
+                          <span className="text-sm font-bold text-foreground">{st.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2.5">
+                    {eligibleStaff.map((st) => {
+                      const on = staffId === st.id;
+                      return (
+                        <button
+                          key={st.id}
+                          type="button"
+                          onClick={() => setStaffId(st.id)}
+                          className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+                        >
+                          {st.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
+                          ) : (
+                            <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
+                              {st.name.charAt(0).toUpperCase()}
+                            </span>
+                          )}
+                          <span className="font-semibold text-foreground">{st.name}</span>
+                          <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
+                            {on && <Check size={16} strokeWidth={3} />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )
               )}
 
               {/* ---- time ---- */}
