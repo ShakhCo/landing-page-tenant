@@ -344,14 +344,30 @@ export function BookingFlow({
       <div className="lg:grid lg:grid-cols-[1fr_420px] lg:items-start lg:gap-20">
         {/* ===== LEFT: breadcrumb + title + choices ===== */}
         <div className="min-w-0 lg:order-1">
-          {/* breadcrumb stepper */}
+          {/* breadcrumb stepper — click a reached step to jump back to it */}
           <nav className="scrollbar-hide flex items-center gap-x-1.5 overflow-x-auto whitespace-nowrap text-sm">
-            {FLOW.map((s, i) => (
-              <span key={s} className="flex items-center gap-1.5">
-                {i > 0 && <ChevronRight size={14} className="text-muted-foreground/50" />}
-                <span className={s === step ? 'font-bold text-foreground' : 'text-muted-foreground'}>{stepShort(s)}</span>
-              </span>
-            ))}
+            {FLOW.map((s, i) => {
+              const reached = i <= FLOW.indexOf(step);
+              return (
+                <span key={s} className="flex items-center gap-1.5">
+                  {i > 0 && <ChevronRight size={14} className="text-muted-foreground/50" />}
+                  <button
+                    type="button"
+                    disabled={!reached}
+                    onClick={() => { setError(null); setStep(s); }}
+                    className={`transition-colors disabled:cursor-default ${
+                      s === step
+                        ? 'font-bold text-foreground'
+                        : reached
+                          ? 'text-muted-foreground hover:text-foreground'
+                          : 'text-muted-foreground/50'
+                    }`}
+                  >
+                    {stepShort(s)}
+                  </button>
+                </span>
+              );
+            })}
           </nav>
           <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">{bigTitle}</h1>
 
@@ -444,7 +460,7 @@ export function BookingFlow({
                       <button
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
-                        className="flex h-12 items-center gap-2.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
+                        className="flex h-13 items-center gap-2.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
                       >
                         <Calendar size={16} className="text-muted-foreground" />
                         {dateLabel}
@@ -482,7 +498,7 @@ export function BookingFlow({
                     return (
                       <div className="mt-5">
                         <p className="mb-2 text-base font-bold text-foreground">Davomiyligi</p>
-                        <div className="inline-flex h-12 items-center gap-1 rounded-xl border border-border bg-card px-1">
+                        <div className="inline-flex h-14 items-center gap-1 rounded-xl border border-border bg-card px-1">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
@@ -537,7 +553,7 @@ export function BookingFlow({
                                     key={s.start}
                                     type="button"
                                     onClick={() => { setSlot(s.start); setError(null); setStep('contact'); }}
-                                    className={`flex h-14 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
+                                    className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                                   >
                                     <span className="tabular-nums">{s.start}</span>
                                     <ChevronRight size={18} className={on ? 'text-background/70' : 'text-muted-foreground'} />
@@ -785,7 +801,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-12 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
+      className={`flex h-13 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
         on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'
       }`}
     >
