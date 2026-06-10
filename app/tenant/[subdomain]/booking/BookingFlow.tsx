@@ -444,7 +444,7 @@ export function BookingFlow({
                       <button
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
-                        className="flex h-14 items-center gap-2.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
+                        className="flex h-12 items-center gap-2.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
                       >
                         <Calendar size={16} className="text-muted-foreground" />
                         {dateLabel}
@@ -482,7 +482,7 @@ export function BookingFlow({
                     return (
                       <div className="mt-5">
                         <p className="mb-2 text-base font-bold text-foreground">Davomiyligi</p>
-                        <div className="inline-flex h-14 items-center gap-1 rounded-xl border border-border bg-card px-1">
+                        <div className="inline-flex h-12 items-center gap-1 rounded-xl border border-border bg-card px-1">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
@@ -785,7 +785,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-14 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
+      className={`flex h-12 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
         on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'
       }`}
     >
