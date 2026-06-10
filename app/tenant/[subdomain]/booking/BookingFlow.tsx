@@ -888,7 +888,7 @@ function DayPicker({
           <ChevronRight size={18} />
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-y-1">
+      <div className="grid grid-cols-7 gap-1">
         {WEEK.map((w) => (
           <span key={w} className="py-1 text-center text-[11px] font-semibold text-muted-foreground">{w}</span>
         ))}
@@ -898,24 +898,23 @@ function DayPicker({
           const disabled = iso < todayIso || iso > maxIso;
           const sel = iso === value;
           return (
-            <div key={iso} className="flex justify-center py-0.5">
-              <button
-                type="button"
-                disabled={disabled}
-                onClick={() => onSelect(iso)}
-                className={`grid size-10 place-items-center rounded-full text-sm font-semibold transition-colors ${
-                  sel
-                    ? 'bg-foreground text-background'
-                    : disabled
-                      ? 'text-muted-foreground/30'
-                      : iso === todayIso
-                        ? 'text-foreground ring-1 ring-border hover:bg-foreground/5'
-                        : 'text-foreground hover:bg-foreground/5'
-                }`}
-              >
-                {d}
-              </button>
-            </div>
+            <button
+              key={iso}
+              type="button"
+              disabled={disabled}
+              onClick={() => onSelect(iso)}
+              className={`grid h-11 w-full place-items-center rounded-xl text-sm font-semibold transition-colors ${
+                sel
+                  ? 'bg-foreground text-background'
+                  : disabled
+                    ? 'text-muted-foreground/30'
+                    : iso === todayIso
+                      ? 'text-foreground ring-1 ring-border hover:bg-foreground/5'
+                      : 'text-foreground hover:bg-foreground/5'
+              }`}
+            >
+              {d}
+            </button>
           );
         })}
       </div>
