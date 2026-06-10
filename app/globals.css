@@ -22,7 +22,7 @@
   /* Theme Colors (Light Mode) */
   --accent: oklch(62.04% 0.1950 9.15);
   --accent-foreground: oklch(99.11% 0 0);
-  --background: oklch(97.02% 0.0015 9.15);
+  --background: oklch(96.00% 0.0015 9.15);
   --border: oklch(90.00% 0.0015 9.15);
   --danger: oklch(65.32% 0.2335 356.38);
   --danger-foreground: oklch(99.11% 0 0);
@@ -189,7 +189,8 @@ button:not(:disabled),
    --background / --foreground / --accent / --accent-foreground / --muted
    are intentionally omitted so HeroUI's values keep applying. */
 :root {
-  --card: var(--background);
+  /* Cards are pure white so they stand out from the soft-gray page background. */
+  --card: oklch(100% 0.0015 9.15);
   --card-foreground: var(--foreground);
   --popover: var(--background);
   --popover-foreground: var(--foreground);
