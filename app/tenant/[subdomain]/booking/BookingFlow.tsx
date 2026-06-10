@@ -444,7 +444,7 @@ export function BookingFlow({
                       <button
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
-                        className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
+                        className="flex h-14 items-center gap-2.5 rounded-xl border border-border bg-card px-4 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
                       >
                         <Calendar size={16} className="text-muted-foreground" />
                         {dateLabel}
@@ -482,7 +482,7 @@ export function BookingFlow({
                     return (
                       <div className="mt-5">
                         <p className="mb-2 text-base font-bold text-foreground">Davomiyligi</p>
-                        <div className="inline-flex items-center gap-1 rounded-xl border border-border bg-card p-1">
+                        <div className="inline-flex h-14 items-center gap-1 rounded-xl border border-border bg-card px-1">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
@@ -537,7 +537,7 @@ export function BookingFlow({
                                     key={s.start}
                                     type="button"
                                     onClick={() => { setSlot(s.start); setError(null); setStep('contact'); }}
-                                    className={`flex w-full items-center justify-between rounded-2xl border px-5 py-4 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
+                                    className={`flex h-14 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                                   >
                                     <span className="tabular-nums">{s.start}</span>
                                     <ChevronRight size={18} className={on ? 'text-background/70' : 'text-muted-foreground'} />
@@ -785,7 +785,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-xl border px-4 py-2.5 text-sm font-semibold transition-colors ${
+      className={`flex h-14 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
         on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'
       }`}
     >
