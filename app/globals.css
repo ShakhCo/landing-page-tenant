@@ -98,6 +98,13 @@
   --warning-foreground: oklch(21.03% 0.0059 46.98);
 }
 
+html {
+  /* Always reserve the vertical scrollbar gutter so content doesn't shift
+     left/right when the scrollbar appears or disappears (e.g. when the
+     time-slot list grows or shrinks). */
+  scrollbar-gutter: stable;
+}
+
 body {
   font-family:
     ui-sans-serif,
