@@ -755,21 +755,32 @@ export function BookingFlow({
               onClick={(e) => e.stopPropagation()}
               className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-card p-5 shadow-2xl sm:rounded-3xl sm:p-6"
             >
-              <div className="mb-4 flex items-center justify-between">
-                <h3 className="text-xl font-extrabold text-foreground">{rescheduleId ? "Vaqtni tasdiqlaysizmi?" : 'Bandlikni tasdiqlash'}</h3>
-                <button type="button" onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }} aria-label="Yopish" className="grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5">
+              <div className="mb-4 flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <h3 className="text-xl font-extrabold text-foreground">
+                    {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "Vaqtni tasdiqlaysizmi?" : 'Bandlikni tasdiqlash'}
+                  </h3>
+                  {otpSent && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
+                    </p>
+                  )}
+                </div>
+                <button type="button" onClick={() => { if (!busy) { setShowConfirm(false); setError(null); } }} aria-label="Yopish" className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5">
                   <X size={18} />
                 </button>
               </div>
 
-              {/* compact summary of what's being confirmed */}
-              <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3">
-                {modalWhen && <p className="text-base font-bold text-foreground">{modalWhen}</p>}
-                <p className="mt-1 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
-              </div>
+              {/* compact summary — hidden once we're entering the SMS code */}
+              {!otpSent && (
+                <div className="mb-5 rounded-2xl bg-foreground/[0.03] px-4 py-3">
+                  {modalWhen && <p className="text-base font-bold text-foreground">{modalWhen}</p>}
+                  <p className="mt-1 text-lg font-extrabold text-foreground">{money(totalPrice, business.currency)}</p>
+                </div>
+              )}
 
-              {/* New booking → phone entry. Reschedule → auto-sent OTP (loading). */}
-              {!rescheduleId && (
+              {/* New booking → phone entry (hidden once the code is sent). */}
+              {!rescheduleId && !otpSent && (
                 <>
                   <label className="mb-2 block text-sm font-semibold text-foreground">Telefon raqamingiz</label>
                   <div className="flex flex-col gap-2.5">
@@ -821,18 +832,14 @@ export function BookingFlow({
                       </div>
                     )}
 
-                    <div className={rescheduleId ? '' : 'mt-5'}>
-                      <label className="block text-base font-bold text-foreground">SMS kodni kiriting</label>
-                      <p className="mt-1 text-sm text-muted-foreground">
-                        <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
-                      </p>
+                    <div className={isNewCustomer ? 'mt-5' : ''}>
                       <input
                         autoFocus={!isNewCustomer}
                         value={code}
                         onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
                         inputMode="numeric"
                         placeholder="• • • • •"
-                        className="mt-3 h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-2xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
+                        className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-2xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
                       />
                       <button
                         type="button"
