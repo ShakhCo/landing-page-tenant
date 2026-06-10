@@ -14,13 +14,13 @@ const STATUS_UZ: Record<string, string> = {
   cancelled: 'Bekor qilingan',
   no_show: 'Kelmagan',
 };
-/** Solid status colors for the top banner. */
-const BANNER_STYLE: Record<string, string> = {
-  pending: 'bg-amber-500',
-  confirmed: 'bg-emerald-500',
-  completed: 'bg-emerald-500',
-  cancelled: 'bg-destructive',
-  no_show: 'bg-foreground/60',
+/** Light status tints for the badge. */
+const BADGE_STYLE: Record<string, string> = {
+  pending: 'bg-amber-50 text-amber-600',
+  confirmed: 'bg-emerald-50 text-emerald-600',
+  completed: 'bg-emerald-50 text-emerald-600',
+  cancelled: 'bg-destructive/10 text-destructive',
+  no_show: 'bg-foreground/5 text-muted-foreground',
 };
 
 function money(amount: number, currency: string) {
@@ -79,7 +79,8 @@ export function BookingResult({
     : null;
 
   const statusLabel = created ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
-  const bannerStyle = created ? 'bg-emerald-500' : BANNER_STYLE[booking.status] ?? 'bg-foreground/60';
+  const badgeStyle = created ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
+  const badgeCheck = created || booking.status === 'confirmed' || booking.status === 'completed';
 
   const mapsQuery = branch
     ? `${branch.latitude},${branch.longitude}`
@@ -89,21 +90,19 @@ export function BookingResult({
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
 
   return (
-    <div className="mx-auto max-w-xl px-5 pb-16 sm:px-6">
-      {/* Status banner (card width) */}
-      <motion.div
-        initial={created ? { opacity: 0, y: -8 } : false}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`mb-6 flex items-center justify-center gap-2 rounded-b-2xl px-5 py-4 text-center text-sm font-bold text-white ${bannerStyle}`}
-      >
-        {(created || booking.status === 'confirmed' || booking.status === 'completed') && <Check size={16} strokeWidth={3} />}
-        {statusLabel}
-      </motion.div>
-
-      {/* Big time + duration */}
-      <div className="mt-1">
-        <h1 className="text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
+    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+      {/* Status badge + big time + duration */}
+      <div>
+        <motion.span
+          initial={created ? { scale: 0.6, opacity: 0 } : false}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 14, stiffness: 220 }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
+        >
+          {badgeCheck && <Check size={15} strokeWidth={3} />}
+          {statusLabel}
+        </motion.span>
+        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
         {durationMin != null && (
           <p className="mt-1.5 text-base text-muted-foreground">{fmtDuration(durationMin)} davom etadi</p>
         )}
