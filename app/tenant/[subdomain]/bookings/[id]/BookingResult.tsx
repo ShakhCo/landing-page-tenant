@@ -90,19 +90,17 @@ export function BookingResult({
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
 
   return (
-    <>
-      {/* Status banner */}
+    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+      {/* Status banner (card width) */}
       <motion.div
         initial={created ? { opacity: 0, y: -8 } : false}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease: 'easeOut' }}
-        className={`flex items-center justify-center gap-2 px-5 py-3 text-center text-sm font-bold text-white ${bannerStyle}`}
+        className={`mb-6 flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-center text-sm font-bold text-white ${bannerStyle}`}
       >
         {(created || booking.status === 'confirmed' || booking.status === 'completed') && <Check size={16} strokeWidth={3} />}
         {statusLabel}
       </motion.div>
-
-      <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
 
       {/* Business header */}
       <div className="flex items-center gap-3.5">
@@ -188,8 +186,7 @@ export function BookingResult({
       >
         Tayyor
       </button>
-      </div>
-    </>
+    </div>
   );
 }
 
