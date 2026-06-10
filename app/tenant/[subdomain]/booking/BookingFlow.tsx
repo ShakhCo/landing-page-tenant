@@ -147,18 +147,7 @@ export function BookingFlow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
-  const [hourSlots, setHourSlots] = useState<{ start: string; startAt: string }[] | null>(null);
   const [durationMin, setDurationMin] = useState(60);
-
-  // Lock background scroll while the hour-picker sheet is open.
-  useEffect(() => {
-    if (!hourSlots) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [hourSlots]);
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
@@ -533,48 +522,23 @@ export function BookingFlow({
                           return h >= p.from && h < p.to;
                         });
                         if (items.length === 0) return null;
-                        // group consecutive slots by hour (items are time-sorted)
-                        const groups: { hour: string; slots: typeof items }[] = [];
-                        for (const s of items) {
-                          const h = s.start.slice(0, 2);
-                          const last = groups[groups.length - 1];
-                          if (last && last.hour === h) last.slots.push(s);
-                          else groups.push({ hour: h, slots: [s] });
-                        }
                         return (
-                          <div key={p.label} className="mb-5">
-                            <p className="mb-2 text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.label}</p>
-                            <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                              {groups.map((g) => {
-                                // >2 options in this hour → collapse into one hour button + modal
-                                if (g.slots.length > 2) {
-                                  const selIn = slot && slot.slice(0, 2) === g.hour ? slot : null;
-                                  return (
-                                    <button
-                                      key={`g${g.hour}`}
-                                      type="button"
-                                      onClick={() => setHourSlots(g.slots)}
-                                      className={`flex h-11 items-center justify-center gap-1 rounded-xl border text-sm font-semibold transition-colors ${selIn ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
-                                    >
-                                      {selIn ?? `${g.hour}:00`}
-                                      <ChevronRight size={14} className={selIn ? 'text-background/70' : 'text-muted-foreground'} />
-                                    </button>
-                                  );
-                                }
-                                // ≤2 options → render them directly
-                                return g.slots.map((s) => {
-                                  const on = slot === s.start;
-                                  return (
-                                    <button
-                                      key={s.start}
-                                      type="button"
-                                      onClick={() => setSlot(s.start)}
-                                      className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
-                                    >
-                                      {s.start}
-                                    </button>
-                                  );
-                                });
+                          <div key={p.label} className="mb-6">
+                            <p className="mb-3 text-xs font-bold uppercase tracking-wide text-muted-foreground">{p.label}</p>
+                            <div className="flex flex-col gap-2.5">
+                              {items.map((s) => {
+                                const on = slot === s.start;
+                                return (
+                                  <button
+                                    key={s.start}
+                                    type="button"
+                                    onClick={() => { setSlot(s.start); setError(null); setStep('contact'); }}
+                                    className={`flex w-full items-center justify-between rounded-2xl border px-5 py-4 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
+                                  >
+                                    <span className="tabular-nums">{s.start}</span>
+                                    <ChevronRight size={18} className={on ? 'text-background/70' : 'text-muted-foreground'} />
+                                  </button>
+                                );
                               })}
                             </div>
                           </div>
@@ -713,53 +677,6 @@ export function BookingFlow({
           <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
         </PrimaryBtn>
       </div>
-
-      {/* ===== Hour-slot picker modal ===== */}
-      <AnimatePresence>
-        {hourSlots && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center sm:p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setHourSlots(null)}
-          >
-            <motion.div
-              className="w-full overflow-hidden rounded-t-[28px] bg-card sm:max-w-md sm:rounded-3xl"
-              initial={{ y: '100%' }}
-              animate={{ y: 0 }}
-              exit={{ y: '100%' }}
-              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex justify-center pt-3 sm:hidden">
-                <div className="h-1 w-10 rounded-full bg-border" />
-              </div>
-              <div className="px-6 pb-3 pt-5">
-                <h3 className="text-xl font-bold text-foreground">Vaqtni tanlang</h3>
-                <p className="mt-0.5 text-sm text-muted-foreground">
-                  {hourSlots[0].start} – {hourSlots[hourSlots.length - 1].start}
-                </p>
-              </div>
-              <div className="grid max-h-[55vh] grid-cols-4 gap-2 overflow-y-auto px-6 pb-7">
-                {hourSlots.map((s) => {
-                  const on = slot === s.start;
-                  return (
-                    <button
-                      key={s.start}
-                      type="button"
-                      onClick={() => { setSlot(s.start); setHourSlots(null); setError(null); setStep('contact'); }}
-                      className={`h-11 rounded-xl border text-sm font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
-                    >
-                      {s.start}
-                    </button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
