@@ -435,39 +435,36 @@ export function BookingFlow({
                   <div className="flex flex-wrap items-center gap-2">
                     <Chip on={date === todayIso} onClick={() => setDate(todayIso)}>Bugun</Chip>
                     <Chip on={date === tomorrowIso} onClick={() => setDate(tomorrowIso)}>Ertaga</Chip>
-                    <div className="relative">
-                      <button
-                        type="button"
-                        onClick={() => setShowCal((v) => !v)}
-                        className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
-                      >
-                        <Calendar size={16} className="text-muted-foreground" />
-                        {dateLabel}
-                        <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showCal ? 'rotate-180' : ''}`} />
-                      </button>
-                      <AnimatePresence>
-                        {showCal && (
-                          <>
-                            <div className="fixed inset-0 z-20" onClick={() => setShowCal(false)} />
-                            <motion.div
-                              initial={{ opacity: 0, y: -6 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -6 }}
-                              transition={{ duration: 0.15 }}
-                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card p-4 shadow-xl"
-                            >
-                              <DayPicker
-                                value={date}
-                                todayIso={todayIso}
-                                maxIso={maxIso}
-                                onSelect={(iso) => { setDate(iso); setShowCal(false); }}
-                              />
-                            </motion.div>
-                          </>
-                        )}
-                      </AnimatePresence>
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCal((v) => !v)}
+                      className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-2.5 text-sm font-semibold text-foreground transition-colors hover:border-foreground/40"
+                    >
+                      <Calendar size={16} className="text-muted-foreground" />
+                      {dateLabel}
+                      <ChevronDown size={16} className={`text-muted-foreground transition-transform ${showCal ? 'rotate-180' : ''}`} />
+                    </button>
                   </div>
+                  <AnimatePresence initial={false}>
+                    {showCal && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="mt-3 w-full rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-5">
+                          <DayPicker
+                            value={date}
+                            todayIso={todayIso}
+                            maxIso={maxIso}
+                            onSelect={(iso) => { setDate(iso); setShowCal(false); }}
+                          />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* duration stepper (hourly / time-rate services) */}
                   {hourly && (() => {
