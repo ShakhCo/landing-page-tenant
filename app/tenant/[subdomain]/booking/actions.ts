@@ -12,6 +12,7 @@ function mapErrorCode(code: string): string {
     BOOKING_CONFLICT: "Bu vaqt allaqachon band — iltimos, boshqa vaqtni tanlang.",
     INVALID_BOOKING: "Bandlikni amalga oshirib bo'lmadi. Iltimos, ma'lumotlarni tekshiring.",
     INVALID_OR_EXPIRED_CODE: "Kod noto'g'ri yoki muddati o'tgan. Qaytadan urinib ko'ring.",
+    TOO_MANY_OTP_ATTEMPTS: "Juda ko'p marta noto'g'ri kod kiritildi. Iltimos, yangi kod so'rang.",
     TOO_MANY_OTP_REQUESTS: "Juda ko'p urinish bo'ldi. Bir necha daqiqadan so'ng qayta urinib ko'ring.",
     INVALID_PHONE_NUMBER: "Telefon raqami noto'g'ri. Iltimos, tekshirib qayta kiriting.",
     CODE_REQUIRED: "Tasdiqlash kodini kiriting.",
@@ -98,7 +99,7 @@ export async function requestRescheduleOtpAction(
 export async function createBookingAction(
   subdomain: string,
   input: CreateBookingInput,
-): Promise<{ ok: true; id: string } | { ok: false; error: string; needsOtp?: boolean }> {
+): Promise<{ ok: true; id: string } | { ok: false; error: string; needsOtp?: boolean; otpExhausted?: boolean }> {
   const jar = await cookies();
   // Reschedule keeps its OTP-to-original-phone path; the remembered session is
   // for normal one-tap bookings (and reschedules) by the same customer.
@@ -116,6 +117,11 @@ export async function createBookingAction(
     if (code === 'INVALID_SESSION') {
       jar.delete(SESSION_COOKIE);
       return { ok: false, error: message, needsOtp: true };
+    }
+    // Code locked after too many wrong guesses → the UI must reset it and let
+    // the customer request a fresh code.
+    if (code === 'TOO_MANY_OTP_ATTEMPTS') {
+      return { ok: false, error: message, otpExhausted: true };
     }
     return { ok: false, error: message };
   }

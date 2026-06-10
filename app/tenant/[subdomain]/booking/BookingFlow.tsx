@@ -359,6 +359,12 @@ export function BookingFlow({
       if (rescheduleId) void sendCode(); // resend to the original number
       return;
     }
+    // Code locked after too many wrong guesses → wipe it and let them request a
+    // fresh one immediately (the old code is dead server-side anyway).
+    if (r.otpExhausted) {
+      setCode('');
+      setResendIn(0);
+    }
     setError(r.error);
   };
 
