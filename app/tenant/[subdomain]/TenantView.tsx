@@ -152,7 +152,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
             </p>
           ) : (
             <div className="mt-4 flex flex-col gap-3">
-              {visible.map((s, i) => {
+              {visible.map((s) => {
                 const price =
                   s.pricingMode === 'time_rate'
                     ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
@@ -172,21 +172,12 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                     )}
                   </>
                 );
-                return (
-                  <motion.div
-                    key={s.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: Math.min(i * 0.04, 0.3) }}
-                  >
-                    {canBook ? (
-                      <Link href={`/booking?service=${s.id}`} className={`group ${cardClass} active:scale-[0.99]`}>
-                        {inner}
-                      </Link>
-                    ) : (
-                      <div className={cardClass}>{inner}</div>
-                    )}
-                  </motion.div>
+                return canBook ? (
+                  <Link key={s.id} href={`/booking?service=${s.id}`} className={`group ${cardClass} active:scale-[0.99]`}>
+                    {inner}
+                  </Link>
+                ) : (
+                  <div key={s.id} className={cardClass}>{inner}</div>
                 );
               })}
               {filtered.length > FEATURED_LIMIT && !showAll && (
