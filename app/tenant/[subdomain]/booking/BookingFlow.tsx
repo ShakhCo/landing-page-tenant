@@ -169,6 +169,11 @@ export function BookingFlow({
     ? hourlySlots(availRes, durationMin, tz)
     : (avail?.slots ?? []).filter((s) => Number(s.start.slice(3, 5)) % 10 === 0);
   const futureSlots = allSlots.filter((s) => new Date(s.startAt).getTime() > Date.now());
+  // Skeleton count = the slots we expect. While refetching after a duration
+  // change, the (still-loaded) free windows are recomputed at the NEW duration,
+  // so futureSlots already reflects "more slots if shorter, fewer if longer".
+  // First load (no data yet) falls back to a generic count.
+  const skeletonCount = futureSlots.length > 0 ? Math.min(futureSlots.length, 30) : 8;
 
   const todayIso = dates[0]?.iso ?? date;
   const tomorrowIso = addDaysIso(todayIso, 1);
@@ -541,9 +546,9 @@ export function BookingFlow({
 
                   <div className="mt-6">
                     {availLoading ? (
-                      <div className="grid grid-cols-4 gap-2 sm:grid-cols-5">
-                        {Array.from({ length: 15 }).map((_, i) => (
-                          <span key={i} className="h-11 animate-pulse rounded-xl bg-foreground/5" />
+                      <div className="flex flex-col gap-2.5">
+                        {Array.from({ length: skeletonCount }).map((_, i) => (
+                          <div key={i} className="h-14 w-full animate-pulse rounded-2xl bg-foreground/5" />
                         ))}
                       </div>
                     ) : futureSlots.length === 0 ? (
