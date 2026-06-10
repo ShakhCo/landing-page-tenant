@@ -78,7 +78,7 @@ export function BookingResult({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [cancelError, setCancelError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
   const address = branch?.address ? localized(branch.address) : null;
@@ -105,7 +105,19 @@ export function BookingResult({
     (booking.status === 'pending' || booking.status === 'confirmed') &&
     Date.parse(booking.startAt) > Date.now();
 
+  // Why a non-manageable booking can't be changed — shown as an alert on click.
+  const blockReason = (verb: string) =>
+    booking.status === 'pending' || booking.status === 'confirmed'
+      ? `Bu bandlik allaqachon boshlangan — uni ${verb} bo'lmaydi.`
+      : `Bu bandlik ${(STATUS_UZ[booking.status] ?? booking.status).toLowerCase()} — uni ${verb} bo'lmaydi.`;
+
   const reschedule = () => {
+    if (pending) return;
+    if (!manageable) {
+      setNotice(blockReason("o'zgartirib"));
+      return;
+    }
+    setNotice(null);
     const service = booking.items[0]?.offeringId;
     const qs = new URLSearchParams();
     if (service) qs.set('service', service);
@@ -116,12 +128,16 @@ export function BookingResult({
 
   const cancel = () => {
     if (pending) return;
+    if (!manageable) {
+      setNotice(blockReason('bekor qilib'));
+      return;
+    }
     if (!window.confirm('Bandlikni bekor qilishni xohlaysizmi?')) return;
-    setCancelError(null);
+    setNotice(null);
     startTransition(async () => {
       const r = await cancelBookingAction(subdomain, booking.id);
       if (r.ok) router.refresh();
-      else setCancelError(r.error);
+      else setNotice(r.error);
     });
   };
 
@@ -196,30 +212,35 @@ export function BookingResult({
         </Section>
       )}
 
-      {/* Manage: reschedule / cancel (only for upcoming, open bookings) */}
-      {manageable && (
-        <div className="mt-9 flex flex-col gap-2.5">
-          <button
-            type="button"
-            onClick={reschedule}
-            disabled={pending}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:bg-foreground/[0.03] disabled:opacity-50"
-          >
-            <CalendarClock size={18} className="text-muted-foreground" />
-            Vaqtni o&apos;zgartirish
-          </button>
-          <button
-            type="button"
-            onClick={cancel}
-            disabled={pending}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50"
-          >
-            <X size={18} />
-            {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish'}
-          </button>
-          {cancelError && <p className="text-sm font-medium text-destructive">{cancelError}</p>}
-        </div>
-      )}
+      {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
+          already started/completed/cancelled surfaces an alert explaining why. */}
+      <div className="mt-9 flex flex-col gap-2.5">
+        <button
+          type="button"
+          onClick={reschedule}
+          disabled={pending}
+          aria-disabled={!manageable}
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:bg-foreground/[0.03] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+        >
+          <CalendarClock size={18} className="text-muted-foreground" />
+          Vaqtni o&apos;zgartirish
+        </button>
+        <button
+          type="button"
+          onClick={cancel}
+          disabled={pending}
+          aria-disabled={!manageable}
+          className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+        >
+          <X size={18} />
+          {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish'}
+        </button>
+        {notice && (
+          <div className="mt-1 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+            {notice}
+          </div>
+        )}
+      </div>
 
       {/* Booking reference — small footnote */}
       <p className="mt-8 text-sm text-muted-foreground">
