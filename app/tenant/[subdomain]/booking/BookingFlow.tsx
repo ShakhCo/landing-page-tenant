@@ -821,11 +821,6 @@ export function BookingFlow({
                 </>
               )}
 
-              {rescheduleId && !otpSent && (
-                <p className="text-[15px] leading-relaxed text-muted-foreground">
-                  Yangi vaqtni tasdiqlaysizmi? Davom etsangiz, raqamingizga SMS orqali tasdiqlash kodi yuboramiz.
-                </p>
-              )}
 
               <AnimatePresence>
                 {otpSent && (
