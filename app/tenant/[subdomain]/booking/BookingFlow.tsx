@@ -267,7 +267,7 @@ export function BookingFlow({
     } else setError(r.error);
   };
   const confirm = async () => {
-    if (!slot || !staffId || code.length < 4 || busy) return;
+    if (!slot || !staffId || code.length < 5 || busy) return;
     setError(null);
     setBusy(true);
     const r = await createBookingAction(subdomain, {
@@ -347,7 +347,7 @@ export function BookingFlow({
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : step === 'time'
           ? { label: 'Davom etish', disabled: !slot, onClick: () => { setError(null); setStep('contact'); } }
-          : { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: !otpSent || code.length < 4 || busy || (isNewCustomer && !name.trim()), onClick: confirm };
+          : { label: busy ? 'Tasdiqlanmoqda…' : 'Bandlikni tasdiqlash', disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()), onClick: confirm };
 
   return (
     <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
@@ -680,7 +680,7 @@ export function BookingFlow({
                           <input
                             autoFocus={!isNewCustomer}
                             value={code}
-                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                            onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
                             inputMode="numeric"
                             placeholder="• • • • •"
                             className="h-14 w-full rounded-2xl bg-foreground/[0.04] px-4 text-center text-xl font-bold tracking-[0.4em] tabular-nums text-foreground outline-none focus:ring-2 focus:ring-inset focus:ring-foreground/20"
