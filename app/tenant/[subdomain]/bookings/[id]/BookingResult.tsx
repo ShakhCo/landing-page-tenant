@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, CalendarPlus, MapPin, Store, ChevronRight, Clock } from 'lucide-react';
+import { Check, MapPin, Store, ChevronRight, Clock } from 'lucide-react';
 import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
@@ -56,14 +56,6 @@ function whenLabel(iso: string, tz: string) {
   if (bookingDay === tomorrow) return `Ertaga, ${p.time}`;
   return `${p.wd}, ${p.day}-${p.mon} · ${p.time}`;
 }
-/** Google Calendar "add event" template URL. */
-function gcalUrl(opts: { title: string; startIso: string; endIso: string | null; location: string; details: string }) {
-  const z = (s: string) => s.replace(/[-:]/g, '').replace(/\.\d{3}/, '');
-  const dates = `${z(opts.startIso)}/${z(opts.endIso ?? opts.startIso)}`;
-  const q = new URLSearchParams({ action: 'TEMPLATE', text: opts.title, dates, location: opts.location, details: opts.details });
-  return `https://calendar.google.com/calendar/render?${q.toString()}`;
-}
-
 export function BookingResult({
   created,
   data,
@@ -97,16 +89,9 @@ export function BookingResult({
       : null;
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
 
-  const calHref = gcalUrl({
-    title: `${business.name} — ${booking.items.map((i) => localized(i.name as LocalizedText | null, 'Xizmat')).join(', ')}`,
-    startIso: booking.startAt,
-    endIso: booking.endAt,
-    location: address ?? business.name,
-    details: 'Bookup orqali bron qilingan',
-  });
-
   return (
-    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6 bg-card">
+      
       {/* Business header */}
       <div className="flex items-center gap-3.5">
         {avatarUrl ? (
@@ -142,7 +127,6 @@ export function BookingResult({
 
       {/* Quick actions */}
       <div className="mt-6 overflow-hidden rounded-2xl border border-border">
-        <ActionRow icon={<CalendarPlus size={18} />} label="Taqvimga qo'shish" href={calHref} external />
         {directionsHref && <ActionRow icon={<MapPin size={18} />} label="Yo'l ko'rsatish" href={directionsHref} external />}
         <ActionRow icon={<Store size={18} />} label="Biznes sahifasi" href="/" />
       </div>
