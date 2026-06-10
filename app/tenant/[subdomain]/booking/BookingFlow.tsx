@@ -384,8 +384,10 @@ export function BookingFlow({
                         {s.durationMinutes != null && <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                         <div className="mt-4 flex items-center justify-between gap-3">
                           {price && <p className="font-bold text-foreground">{price}</p>}
-                          <span className={`ml-auto grid size-9 shrink-0 place-items-center rounded-full border transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-foreground'}`}>
-                            {on ? <Check size={18} strokeWidth={3} /> : <Plus size={18} />}
+                          {/* A unit (time-rate) selection is exclusive — other services can't be
+                              added, only switched to — so show a select (radio) circle, not a +. */}
+                          <span className={`ml-auto grid size-9 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-foreground'}`}>
+                            {on ? <Check size={18} strokeWidth={3} /> : hourly ? null : <Plus size={18} />}
                           </span>
                         </div>
                       </button>
