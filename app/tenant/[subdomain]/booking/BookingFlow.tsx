@@ -1071,28 +1071,32 @@ function OtpInput({
 }) {
   const refs = useRef<Array<HTMLInputElement | null>>([]);
   const [slots, setSlots] = useState<string[]>(() => Array.from({ length }, (_, i) => value[i] ?? ''));
+  // Mirror of `slots` for synchronous reads (focus handlers run before re-render).
+  const slotsRef = useRef(slots);
 
   // The only editable box: the first empty one (or the last when full).
   const activeIndex = () => {
-    const i = slots.findIndex((s) => !s);
+    const i = slotsRef.current.findIndex((s) => !s);
     return i === -1 ? length - 1 : i;
   };
   const focusActive = () => refs.current[activeIndex()]?.focus();
 
+  const commit = (next: string[]) => {
+    slotsRef.current = next;
+    setSlots(next);
+    onChange(next.join(''));
+  };
+
   // External reset (e.g. resend clears the code) → clear the boxes.
   useEffect(() => {
-    if (value === '') setSlots(Array.from({ length }, () => ''));
+    if (value === '') commit(Array.from({ length }, () => ''));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, length]);
 
   useEffect(() => {
     if (autoFocus) focusActive();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoFocus]);
-
-  const commit = (next: string[]) => {
-    setSlots(next);
-    onChange(next.join(''));
-  };
 
   // Write digits starting at `from`, then focus the next empty box.
   const fill = (from: number, raw: string) => {
