@@ -289,13 +289,6 @@ export function BookingFlow({
     } else setError(r.error);
   };
 
-  // Reschedule: auto-send the OTP as soon as the confirm modal opens — there's
-  // no phone entry, so kick it off without a button press.
-  useEffect(() => {
-    if (rescheduleId && showConfirm && !otpSent && !busy) void sendCode();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showConfirm, rescheduleId]);
-
   // Lock background scroll while the confirm modal is open.
   useEffect(() => {
     if (!showConfirm) return;
@@ -391,6 +384,17 @@ export function BookingFlow({
       : step === 'staff'
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) { setError(null); setShowConfirm(true); } } };
+
+  // Modal's primary button. For a reschedule the customer first confirms the new
+  // time ("Davom etish" → sends the OTP); only then can they finalize.
+  const confirmBtn =
+    rescheduleId && !otpSent
+      ? { label: 'Davom etish', disabled: busy, onClick: sendCode }
+      : {
+          label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash',
+          disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()),
+          onClick: confirm,
+        };
 
   return (
     <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
@@ -799,13 +803,9 @@ export function BookingFlow({
               )}
 
               {rescheduleId && !otpSent && (
-                busy ? (
-                  <p className="text-[15px] text-muted-foreground">Tasdiqlash kodi yuborilmoqda…</p>
-                ) : (
-                  <button type="button" onClick={sendCode} className="text-[15px] font-semibold text-accent">
-                    Tasdiqlash kodini yuborish
-                  </button>
-                )
+                <p className="text-[15px] leading-relaxed text-muted-foreground">
+                  Yangi vaqtni tasdiqlaysizmi? Davom etsangiz, raqamingizga SMS orqali tasdiqlash kodi yuboramiz.
+                </p>
               )}
 
               <AnimatePresence>
@@ -852,12 +852,8 @@ export function BookingFlow({
 
               {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
 
-              <PrimaryBtn
-                className="mt-5"
-                disabled={!otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim())}
-                onClick={confirm}
-              >
-                <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : rescheduleId ? "Vaqtni o'zgartirish" : 'Bandlikni tasdiqlash'}<ArrowRight size={18} /></span>
+              <PrimaryBtn className="mt-5" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
+                <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
               </PrimaryBtn>
             </motion.div>
           </motion.div>
