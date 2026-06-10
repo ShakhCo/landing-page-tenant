@@ -377,7 +377,10 @@ export function BookingFlow({
     : s === 'staff' ? (resourcesAreAssets ? 'Joy' : 'Mutaxassis')
     : s === 'time' ? 'Vaqt'
     : 'Tasdiqlash';
-  const bigTitle = step === 'staff' && resourcesAreAssets ? 'Joyni tanlang' : STEP_TITLE[step];
+  const bigTitle =
+    step === 'staff' && resourcesAreAssets ? 'Joyni tanlang'
+    : step === 'time' && rescheduleId ? 'Yangi sana va vaqt'
+    : STEP_TITLE[step];
 
   // Context-aware primary action (drives both the desktop summary and mobile bar)
   const action =
