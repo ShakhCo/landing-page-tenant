@@ -26,6 +26,11 @@ function money(amount: number, currency: string) {
   const n = amount.toLocaleString('ru-RU');
   return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
 }
+function fmtDuration(min: number) {
+  const h = Math.floor(min / 60);
+  const m = min % 60;
+  return [h ? `${h} soat` : '', m ? `${m} daqiqa` : ''].filter(Boolean).join(' ') || '0 daqiqa';
+}
 function dateParts(iso: string, tz: string) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz, weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -44,6 +49,12 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
   const staff = [...new Set(booking.items.map((i) => i.resourceName))].filter(Boolean).join(', ');
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   const when = dateParts(booking.startAt, business.timezone);
+  // Hourly-charged (time-rate) bookings have a chosen duration worth showing.
+  const hourly = booking.items.some((i) => i.pricingMode === 'time_rate');
+  const end = booking.endAt ? dateParts(booking.endAt, business.timezone) : null;
+  const durationMin = booking.endAt
+    ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
+    : null;
 
   return (
     <div className="mx-auto flex min-h-screen max-w-xl flex-col items-center justify-center px-5 py-12 sm:px-6">
@@ -75,7 +86,8 @@ export function BookingResult({ created, data }: { created: boolean; data: Publi
           <Row label="Biznes" value={business.name} />
           {staff && <Row label="Mutaxassis" value={staff} />}
           <Row label="Sana" value={when.date} />
-          <Row label="Vaqt" value={when.time} />
+          <Row label="Vaqt" value={hourly && end ? `${when.time}–${end.time}` : when.time} />
+          {hourly && durationMin != null && <Row label="Davomiyligi" value={fmtDuration(durationMin)} />}
         </div>
 
         <div className="border-t border-border px-6 py-5">
