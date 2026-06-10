@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, ChevronDown } from 'lucide-react';
@@ -47,6 +47,16 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [showHours, setShowHours] = useState(false);
+
+  // Lock background scroll while the hours sheet is open.
+  useEffect(() => {
+    if (!showHours) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [showHours]);
 
   const now = branch ? nowInTz(branch.timezone) : null;
   const today = branch?.workingHours.find((w) => w.weekday === now?.weekday);

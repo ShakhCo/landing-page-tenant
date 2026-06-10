@@ -147,6 +147,16 @@ export function BookingFlow({
   const [hourSlots, setHourSlots] = useState<{ start: string; startAt: string }[] | null>(null);
   const [durationMin, setDurationMin] = useState(60);
 
+  // Lock background scroll while the hour-picker sheet is open.
+  useEffect(() => {
+    if (!hourSlots) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [hourSlots]);
+
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
   const selectedIsUnit = hourly;
