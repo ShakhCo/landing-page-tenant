@@ -14,12 +14,13 @@ const STATUS_UZ: Record<string, string> = {
   cancelled: 'Bekor qilingan',
   no_show: 'Kelmagan',
 };
-const STATUS_STYLE: Record<string, string> = {
-  pending: 'bg-amber-50 text-amber-600',
-  confirmed: 'bg-emerald-50 text-emerald-600',
-  completed: 'bg-emerald-50 text-emerald-600',
-  cancelled: 'bg-destructive/10 text-destructive',
-  no_show: 'bg-foreground/5 text-muted-foreground',
+/** Solid status colors for the top banner. */
+const BANNER_STYLE: Record<string, string> = {
+  pending: 'bg-amber-500',
+  confirmed: 'bg-emerald-500',
+  completed: 'bg-emerald-500',
+  cancelled: 'bg-destructive',
+  no_show: 'bg-foreground/60',
 };
 
 function money(amount: number, currency: string) {
@@ -79,7 +80,7 @@ export function BookingResult({
     : null;
 
   const statusLabel = created ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
-  const statusStyle = created ? 'bg-emerald-50 text-emerald-600' : STATUS_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
+  const bannerStyle = created ? 'bg-emerald-500' : BANNER_STYLE[booking.status] ?? 'bg-foreground/60';
 
   const mapsQuery = branch
     ? `${branch.latitude},${branch.longitude}`
@@ -89,8 +90,20 @@ export function BookingResult({
   const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
 
   return (
-    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6 bg-card">
-      
+    <>
+      {/* Status banner */}
+      <motion.div
+        initial={created ? { opacity: 0, y: -8 } : false}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, ease: 'easeOut' }}
+        className={`flex items-center justify-center gap-2 px-5 py-3 text-center text-sm font-bold text-white ${bannerStyle}`}
+      >
+        {(created || booking.status === 'confirmed' || booking.status === 'completed') && <Check size={16} strokeWidth={3} />}
+        {statusLabel}
+      </motion.div>
+
+      <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
+
       {/* Business header */}
       <div className="flex items-center gap-3.5">
         {avatarUrl ? (
@@ -107,18 +120,9 @@ export function BookingResult({
         </div>
       </div>
 
-      {/* Status + big time + duration */}
+      {/* Big time + duration */}
       <div className="mt-7">
-        <motion.span
-          initial={created ? { scale: 0.6, opacity: 0 } : false}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${statusStyle}`}
-        >
-          {created && <Check size={15} strokeWidth={3} />}
-          {statusLabel}
-        </motion.span>
-        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
+        <h1 className="text-3xl font-extrabold leading-tight text-foreground">{when}</h1>
         {durationMin != null && (
           <p className="mt-1.5 text-base text-muted-foreground">{fmtDuration(durationMin)} davom etadi</p>
         )}
@@ -184,7 +188,8 @@ export function BookingResult({
       >
         Tayyor
       </button>
-    </div>
+      </div>
+    </>
   );
 }
 
