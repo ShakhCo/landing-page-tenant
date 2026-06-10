@@ -885,9 +885,14 @@ export function BookingFlow({
 
               {error && <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>}
 
-              <PrimaryBtn className="mt-5" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
-                <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
-              </PrimaryBtn>
+              {/* One action at a time: the new-booking phone stage uses the inline
+                  "Kod yuborish" above; the bottom button appears only once it's the
+                  real action (after OTP, or the session/reschedule flows). */}
+              {(otpSent || sessionActive || rescheduleId) && (
+                <PrimaryBtn className="mt-5" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
+                  <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
+                </PrimaryBtn>
+              )}
             </motion.div>
           </motion.div>
         )}
