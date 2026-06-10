@@ -30,6 +30,8 @@ export interface PublicTenant {
     price: number | null;
     durationMinutes: number | null;
     ratePerHour: number | null;
+    /** Localized label for this service's bookable units ("Yo'laklar"); null → generic "Joy". */
+    unitLabel?: LocalizedText | null;
   }>;
   staff: Array<{
     id: string;

@@ -178,6 +178,14 @@ export function BookingFlow({
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
   const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
+  // Field/step label for the resource: a unit service's own localized label
+  // ("Yo'laklar", "Stollar") when set, else generic "Joy"; staff → "Mutaxassis".
+  const unitSvc = selected.find(isUnitService);
+  const resourceLabel = resourcesAreAssets
+    ? unitSvc?.unitLabel
+      ? localized(unitSvc.unitLabel)
+      : 'Joy'
+    : 'Mutaxassis';
 
   const availRes = avail?.resources?.find((r) => r.resourceId === staffId) ?? avail?.resources?.[0];
   const ratePerHour = hourly ? (availRes?.ratePerHour ?? selected[0]?.ratePerHour ?? 0) : 0;
@@ -370,7 +378,7 @@ export function BookingFlow({
         <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
         <div className="mt-7 w-full rounded-3xl border border-border bg-card p-5">
           <div className="space-y-3">
-            <FieldRow label={resourcesAreAssets ? 'Joy' : 'Mutaxassis'} value={selectedStaff?.name ?? '—'} />
+            <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
             <FieldRow label="Vaqt" value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
           </div>
           <div className="mt-3 border-t border-border pt-3">
@@ -395,11 +403,11 @@ export function BookingFlow({
 
   const stepShort = (s: Step) =>
     s === 'services' ? 'Xizmatlar'
-    : s === 'staff' ? (resourcesAreAssets ? 'Joy' : 'Mutaxassis')
+    : s === 'staff' ? resourceLabel
     : s === 'time' ? 'Vaqt'
     : 'Tasdiqlash';
   const bigTitle =
-    step === 'staff' && resourcesAreAssets ? 'Joyni tanlang'
+    step === 'staff' && resourcesAreAssets ? `${resourceLabel}ni tanlang`
     : step === 'time' && rescheduleId ? 'Yangi sana va vaqt'
     : STEP_TITLE[step];
 
@@ -734,7 +742,7 @@ export function BookingFlow({
               selected={selected}
               currency={business.currency}
               staffName={selectedStaff?.name ?? null}
-              staffIsAsset={resourcesAreAssets}
+              resourceLabel={resourceLabel}
               when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null}
               totalMin={totalMin}
               totalPrice={totalPrice}
@@ -892,7 +900,7 @@ function SummaryBody({
   selected,
   currency,
   staffName,
-  staffIsAsset = false,
+  resourceLabel,
   when,
   totalMin,
   totalPrice,
@@ -900,8 +908,8 @@ function SummaryBody({
   selected: PublicTenant['services'];
   currency: string;
   staffName: string | null;
-  /** The picked resource is a place/unit (e.g. a lane), not a person. */
-  staffIsAsset?: boolean;
+  /** Field label for the picked resource — unit label ("Yo'laklar") or "Mutaxassis". */
+  resourceLabel: string;
   when: string | null;
   totalMin: number;
   totalPrice: number;
@@ -961,7 +969,7 @@ function SummaryBody({
             className="overflow-hidden"
           >
             <div className="mt-4 space-y-3 border-t border-border pt-4">
-              {staffName && <FieldRow label={staffIsAsset ? 'Joy' : 'Mutaxassis'} value={staffName} />}
+              {staffName && <FieldRow label={resourceLabel} value={staffName} />}
               {when && <FieldRow label="Vaqt" value={when} />}
             </div>
           </motion.div>
