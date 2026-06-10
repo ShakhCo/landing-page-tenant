@@ -706,19 +706,19 @@ export function BookingFlow({
             <div className="flex items-start gap-3">
               {business.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={business.avatarUrl} alt={business.name} className="size-12 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+                <img src={business.avatarUrl} alt={business.name} className="size-14 shrink-0 rounded-xl object-cover ring-1 ring-border" />
               ) : (
-                <div className="grid size-12 shrink-0 place-items-center rounded-xl bg-foreground/5 text-lg font-black text-foreground ring-1 ring-border">
+                <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-foreground/5 text-xl font-black text-foreground ring-1 ring-border">
                   {business.name.trim().charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0">
-                <p className="font-bold leading-tight text-foreground">{business.name}</p>
+                <p className="text-lg font-bold leading-tight text-foreground">{business.name}</p>
                 {business.category && (
-                  <p className="mt-0.5 text-xs font-medium text-muted-foreground">{localized(business.category.name)}</p>
+                  <p className="mt-0.5 text-sm font-medium text-muted-foreground">{localized(business.category.name)}</p>
                 )}
                 {branch?.address && (
-                  <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{localized(branch.address)}</p>
+                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{localized(branch.address)}</p>
                 )}
               </div>
             </div>
