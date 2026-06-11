@@ -147,13 +147,6 @@ export function BookingResult({
   const badgeStyle = created ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
   const badgeCheck = created || booking.status === 'confirmed' || booking.status === 'completed';
 
-  const mapsQuery = branch
-    ? `${branch.latitude},${branch.longitude}`
-    : address
-      ? encodeURIComponent(address)
-      : null;
-  const directionsHref = mapsQuery ? `https://www.google.com/maps/search/?api=1&query=${mapsQuery}` : null;
-
   // Only an upcoming, still-open booking can be rescheduled or cancelled.
   const manageable =
     (booking.status === 'pending' || booking.status === 'confirmed') &&
@@ -343,14 +336,7 @@ export function BookingResult({
             {address && (
               <p className="mt-2 flex items-center justify-center gap-1 text-sm text-muted-foreground">
                 <MapPin className="size-4 shrink-0" />
-                <span>
-                  {address}{' '}
-                  {directionsHref && (
-                    <a href={directionsHref} target="_blank" rel="noreferrer" className="whitespace-nowrap font-semibold text-foreground underline underline-offset-4">
-                      Yo&apos;l ko&apos;rsatish
-                    </a>
-                  )}
-                </span>
+                <span>{address}</span>
               </p>
             )}
           </div>
