@@ -8,6 +8,7 @@ import { localized, mediaUrl, type LocalizedText, type PublicTenant } from '@/li
 
 const DAY_NAMES = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
 const FEATURED_LIMIT = 6;
+const TEAM_LIMIT = 5;
 
 // Lucide dropped brand icons, so Instagram is drawn locally in the same stroke style.
 function InstagramIcon({ className }: { className?: string }) {
@@ -64,6 +65,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
+  const [showAllTeam, setShowAllTeam] = useState(false);
   const [showHours, setShowHours] = useState(false);
 
   // Lock background scroll while the hours sheet is open.
@@ -128,7 +130,14 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           <BadgeCheck className="size-5 fill-blue-500 text-card" />
         </h1>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
-          {business.category && <span>{localized(business.category.name, '')}</span>}
+          {/* Category — hidden in favor of the live open status. */}
+          {false && business.category && <span>{localized(business.category!.name, '')}</span>}
+          {branch &&
+            (open ? (
+              <span className="font-semibold text-emerald-600">Ochiq{closing ? ` · ${closing} gacha` : ''}</span>
+            ) : (
+              <span className="font-semibold">Yopiq</span>
+            ))}
           {branch?.address && (
             <span className="flex items-center gap-1">
               <MapPin className="size-4" />
@@ -148,49 +157,109 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
       {/* ===== Body ===== */}
       <div className="mt-10 px-4 pb-24 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-0 lg:pb-12">
-        {/* Right column: contacts/about/team */}
+        {/* Right column: team/hours/contacts */}
         <div className="space-y-6 lg:order-2">
-          {/* Contacts */}
-          <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
-            <h2 className="text-lg font-bold text-foreground">Aloqa</h2>
-            <div className="mt-4 flex gap-3">
-              {contacts.map((c) => (
-                <a
-                  key={c.label}
-                  href={c.href ?? '#'}
-                  target={c.href?.startsWith('http') ? '_blank' : undefined}
-                  rel="noreferrer"
-                  aria-label={c.label}
-                  title={c.label}
-                  className={`flex size-12 items-center justify-center rounded-full border border-dashed transition-transform hover:scale-105 ${c.tint}`}
-                >
-                  <c.icon className="size-5" />
-                </a>
-              ))}
-            </div>
-          </section>
-
           {/* Team */}
           {team.length > 0 && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
               <h2 className="text-lg font-bold text-foreground">Mutaxassislar</h2>
               <div className="mt-2 divide-y divide-border">
-                {team.map((st) => (
-                  <div key={st.id} className="flex items-center gap-3 py-3.5">
+                {(showAllTeam ? team : team.slice(0, TEAM_LIMIT)).map((st) => (
+                  <div key={st.id} className="flex items-center gap-3.5 py-3.5">
                     {st.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={mediaUrl(st.photoUrl)} alt={st.name} className="size-10 rounded-full object-cover ring-1 ring-border" />
+                      <img src={mediaUrl(st.photoUrl)} alt={st.name} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
                     ) : (
-                      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
+                      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
                         {initials(st.name)}
                       </span>
                     )}
-                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">{st.name}</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-foreground">{st.name}</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{st.bookingsCount ?? 0} ta bron</p>
+                    </div>
+                    {canBook && (
+                      <Link
+                        href="/booking"
+                        aria-label={`${st.name} — bron qilish`}
+                        className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                      >
+                        Bron
+                      </Link>
+                    )}
                   </div>
+                ))}
+              </div>
+              {team.length > TEAM_LIMIT && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllTeam((v) => !v)}
+                  className="mt-1 flex w-full items-center justify-center gap-1 rounded-full border border-border py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                >
+                  {showAllTeam ? 'Kamroq ko‘rish' : `Barchasini ko‘rish (${team.length})`}
+                  <ChevronDown size={15} className={`transition-transform duration-200 ${showAllTeam ? 'rotate-180' : ''}`} />
+                </button>
+              )}
+            </section>
+          )}
+
+          {/* Working hours (today highlighted) — shown in place of contacts for now. */}
+          {branch && branch.workingHours.length > 0 && (
+            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-bold text-foreground">Ish vaqti</h2>
+                {open ? (
+                  <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600">
+                    Ochiq{closing ? ` · ${closing} gacha` : ''}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">Yopiq</span>
+                )}
+              </div>
+              <div className="mt-2 divide-y divide-border">
+                {branch.workingHours.map((w) => {
+                  const isToday = w.weekday === now?.weekday;
+                  const off = w.isDayOff || !w.openTime || !w.closeTime;
+                  return (
+                    <div
+                      key={w.weekday}
+                      className={`flex items-center justify-between py-3 text-sm ${
+                        isToday ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
+                      <span className="tabular-nums">
+                        {off ? 'Dam olish' : `${w.openTime!.slice(0, 5)} – ${w.closeTime!.slice(0, 5)}`}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+
+          {/* Contacts — temporarily hidden, kept for when contact data goes live. */}
+          {false && (
+            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
+              <h2 className="text-lg font-bold text-foreground">Aloqa</h2>
+              <div className="mt-4 flex gap-3">
+                {contacts.map((c) => (
+                  <a
+                    key={c.label}
+                    href={c.href ?? '#'}
+                    target={c.href?.startsWith('http') ? '_blank' : undefined}
+                    rel="noreferrer"
+                    aria-label={c.label}
+                    title={c.label}
+                    className={`flex size-12 items-center justify-center rounded-full border border-dashed transition-transform hover:scale-105 ${c.tint}`}
+                  >
+                    <c.icon className="size-5" />
+                  </a>
                 ))}
               </div>
             </section>
           )}
+
         </div>
 
         {/* Left column: services */}
@@ -209,41 +278,50 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           {services.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">Hozircha xizmatlar yo&apos;q.</p>
           ) : (
-            <div className="mt-4 flex flex-col gap-3">
+            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {visible.map((s) => {
+                const name = localized(s.name as LocalizedText);
                 const price =
                   s.pricingMode === 'time_rate'
                     ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
                     : s.price != null ? money(s.price, business.currency) : '';
                 const inner = (
                   <>
-                    {s.photoUrl && (
+                    {s.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
                         src={mediaUrl(s.photoUrl)}
-                        alt={localized(s.name as LocalizedText)}
-                        className="size-24 shrink-0 self-center object-cover sm:size-28"
+                        alt={name}
+                        className="aspect-[16/10] w-full object-cover"
                         loading="lazy"
                       />
-                    )}
-                    <div className={`flex min-w-0 flex-1 items-center gap-4 py-5 pr-5 ${s.photoUrl ? 'pl-4' : 'pl-5'}`}>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-foreground">{localized(s.name as LocalizedText)}</h3>
-                        {s.durationMinutes != null && <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
-                        {price && s.photoUrl && <p className="mt-1.5 font-semibold text-foreground">{price}</p>}
+                    ) : (
+                      <div className="flex aspect-[16/10] w-full items-center justify-center bg-muted text-5xl font-bold text-muted-foreground/30">
+                        {name.charAt(0).toUpperCase()}
                       </div>
-                      {price && !s.photoUrl && <span className="shrink-0 font-semibold text-foreground">{price}</span>}
+                    )}
+                    <div className="p-4">
+                      <h3 className="truncate font-semibold text-foreground">{name}</h3>
+                      <div className="mt-2 flex items-center justify-between gap-2">
+                        {price && <span className="font-bold text-foreground">{price}</span>}
+                        {s.durationMinutes != null && (
+                          <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock size={14} />
+                            {dur(s.durationMinutes)}
+                          </span>
+                        )}
+                      </div>
                       {canBook && (
-                        <span className="shrink-0 rounded-full border border-border px-5 py-2 text-sm font-bold text-foreground transition-colors group-hover:bg-foreground/5">
-                          Bron
+                        <span className="mt-3 block w-full rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                          Bron qilish
                         </span>
                       )}
                     </div>
                   </>
                 );
-                const cardClass = 'flex items-stretch overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5';
+                const cardClass = 'overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5';
                 return canBook ? (
-                  <Link key={s.id} href={`/booking?service=${s.id}`} className={`group ${cardClass} active:scale-[0.99]`}>
+                  <Link key={s.id} href={`/booking?service=${s.id}`} className={`group block ${cardClass} active:scale-[0.99]`}>
                     {inner}
                   </Link>
                 ) : (

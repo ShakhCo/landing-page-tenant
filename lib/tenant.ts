@@ -49,6 +49,8 @@ export interface PublicTenant {
     type?: string;
     photoUrl: string | null;
     offeringIds: string[];
+    /** Confirmed/completed bookings this member has performed; absent on older backends. */
+    bookingsCount?: number;
   }>;
 }
 
