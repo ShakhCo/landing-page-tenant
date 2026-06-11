@@ -7,6 +7,10 @@ import {
   MessageSquareText,
   Gift,
   Star,
+  UserPlus,
+  ClipboardList,
+  Share2,
+  CalendarCheck,
 } from "lucide-react";
 import Image from "next/image";
 import { Header } from "@/components/Header";
@@ -111,63 +115,93 @@ export default function SartaroshxonalarPage() {
   );
 }
 
+const HERO_STEPS = [
+  {
+    icon: UserPlus,
+    title: "Hisob oching",
+    text: "Telefon raqamingiz bilan bir necha soniyada ro'yxatdan o'ting.",
+  },
+  {
+    icon: ClipboardList,
+    title: "Biznes va xizmatlarni qo'shing",
+    text: "Sartaroshxona ma'lumotlari, ustalar, xizmatlar va narxlarni kiriting.",
+  },
+  {
+    icon: Share2,
+    title: "Bron havolasini ulashing",
+    text: "Havolani Instagram, Telegram yoki biz taklif qiladigan SMS reklama orqali mijozlarga yuboring.",
+  },
+  {
+    icon: CalendarCheck,
+    title: "Bronlarni qabul qiling",
+    text: "Mijozlar onlayn yozila boshlaydi — hammasi tayyor!",
+  },
+];
+
 function Hero() {
   return (
-    <section className="mx-auto max-w-[1360px] px-5 pt-4">
-      <div className="relative isolate overflow-hidden rounded-[2rem] bg-gray-900 md:rounded-[2.5rem]">
-        {/* Background photo */}
-        <Image
-          src="/cat-barbershop.jpg"
-          alt="Sartaroshxona"
-          fill
-          sizes="(min-width: 1360px) 1360px, 100vw"
-          className="object-cover"
-          priority
-        />
+    <section className="mx-auto max-w-[1440px] w-full px-4 pt-4">
+      <div className="relative overflow-hidden rounded-[2rem] bg-[var(--accent)] md:rounded-[2.5rem]">
+        {/* Soft blobs for depth */}
+        <div aria-hidden className="pointer-events-none absolute -left-16 -top-16 h-72 w-72 rounded-full bg-white/15 blur-2xl" />
+        <div aria-hidden className="pointer-events-none absolute right-1/3 bottom-0 h-80 w-80 rounded-full bg-white/10 blur-3xl" />
 
-        {/* Overall darken for consistent legibility */}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-black/30"
-        />
-        {/* Stronger gradient on the left where the text sits */}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/55 to-black/10"
-        />
-        {/* Bottom fade for mobile readability */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-black/80 to-transparent md:hidden"
-        />
+        <div className="relative grid items-center gap-10 px-6 py-12 md:grid-cols-2 md:gap-12 md:px-12 md:py-16 lg:px-16 lg:py-20">
+          {/* Phone mockup */}
+          <div className="order-2 flex justify-center md:order-1">
+            <div className="relative h-[26rem] w-[13rem] sm:h-[30rem] sm:w-[15rem] md:h-[34rem] md:w-[17rem]">
+              <Image
+                src="/app-mockup.png"
+                alt="BOOKUP mijoz ilovasi"
+                fill
+                sizes="(min-width: 768px) 17rem, 15rem"
+                className="object-contain drop-shadow-2xl"
+                priority
+              />
+            </div>
+          </div>
 
-        {/* Content overlay */}
-        <div className="relative flex min-h-[34rem] flex-col justify-end px-6 pb-12 pt-16 md:min-h-[40rem] md:justify-center md:px-12 md:py-20 lg:min-h-[44rem] lg:px-16 lg:py-24">
-          <div className="max-w-xl">
-            <p className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md md:text-xs">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
+          {/* Heading + vertical stepper */}
+          <div className="order-1 md:order-2">
+            <p className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-md md:text-xs">
+              <span className="h-1.5 w-1.5 rounded-full bg-white" />
               Sartaroshxonalar uchun
             </p>
-            <h1 className="mt-4 text-3xl font-extrabold leading-[1.05] tracking-tight text-white md:text-4xl lg:text-5xl">
-              Sartaroshxonangizni
-              <br />
-              <span className="text-white/60">onlayn boshqaring.</span>
+            <h1 className="mt-4 text-3xl font-extrabold leading-[1.1] tracking-tight text-white md:text-4xl lg:text-[2.75rem]">
+              Tez va oson — 4 qadamda onlayn bron tizimi
             </h1>
-            <p className="mt-6 max-w-md text-base text-white/85 md:text-lg">
-              Daftarlardan voz keching. Masterlaringiz, mijozlaringiz va har bir
-              bo&apos;sh vaqt — bitta ekranda. Mijozlar esa o&apos;zlari onlayn
-              yozilishadi.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+
+            <ol className="mt-8 space-y-0">
+              {HERO_STEPS.map((s, i) => (
+                <li key={s.title} className="relative flex gap-4 pb-7 last:pb-0">
+                  {/* dashed connector */}
+                  {i < HERO_STEPS.length - 1 && (
+                    <span
+                      aria-hidden
+                      className="absolute left-[27px] top-[56px] h-[calc(100%-40px)] w-px border-l border-dashed border-white/40"
+                    />
+                  )}
+                  <span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-white text-[var(--accent)] shadow-sm">
+                    <s.icon className="h-6 w-6" strokeWidth={2} />
+                  </span>
+                  <div className="pt-1.5">
+                    <p className="text-base font-bold text-white md:text-lg">{s.title}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-white/85 md:text-[15px]">{s.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
               <a
                 href="#"
-                className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-black/20 transition hover:brightness-110"
+                className="inline-flex items-center justify-center rounded-full bg-white px-7 py-3.5 text-sm font-bold text-[var(--accent)] shadow-lg shadow-black/10 transition hover:bg-white/90"
               >
                 Bepul boshlash
               </a>
               <a
                 href="#"
-                className="inline-flex items-center justify-center rounded-full border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
+                className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-7 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20"
               >
                 Demo ko&apos;rsatishni so&apos;rash
               </a>
