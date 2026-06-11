@@ -430,21 +430,24 @@ export function BookingResult({
           <X size={18} />
           {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
         </button>
-        <a
-          href="https://t.me/ShakhCo"
-          target="_blank"
-          rel="noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:text-foreground"
-        >
-          <Send size={16} />
-          Yordam kerakmi? Telegram orqali yozing
-        </a>
       </div>
 
-        {/* Booking reference — small footnote */}
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Bron raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
-        </p>
+        {/* Footer: booking reference + Telegram help in one quiet row */}
+        <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4 text-sm text-muted-foreground">
+          <span>
+            Bron raqami{' '}
+            <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
+          </span>
+          <a
+            href="https://t.me/ShakhCo"
+            target="_blank"
+            rel="noreferrer"
+            className="flex shrink-0 items-center gap-1.5 font-semibold transition-colors duration-200 hover:text-foreground"
+          >
+            <Send size={14} />
+            Yordam
+          </a>
+        </div>
       </div>
       </div>
     </div>
