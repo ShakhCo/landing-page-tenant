@@ -143,7 +143,6 @@ export function BookingResult({
   const matchedStaff = (tenant?.staff ?? []).filter((st) => resourceNames.includes(st.name));
   const resourcesAreAssets = matchedStaff.length > 0 && matchedStaff.every((st) => st.type === 'asset');
   const resourceLabel = resourcesAreAssets ? (firstSvc?.unitLabel ? localized(firstSvc.unitLabel) : 'Joy') : 'Mutaxassis';
-  const customerName = booking.customer?.user?.fullName ?? booking.customer?.guest?.name ?? null;
   const durationMin = booking.endAt
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
@@ -387,15 +386,10 @@ export function BookingResult({
                 {whenCompact(booking.startAt, business.timezone, booking.endAt)}
               </span>
             </div>
-            {customerName && (
+            {booking.customer?.maskedPhone && (
               <div className="flex items-baseline justify-between gap-4 text-[15px]">
                 <span className="text-muted-foreground">Mijoz</span>
-                <span className="text-right font-semibold text-foreground">
-                  {customerName}
-                  {booking.customer?.maskedPhone && (
-                    <span className="block text-sm font-normal text-muted-foreground">{booking.customer.maskedPhone}</span>
-                  )}
-                </span>
+                <span className="text-right font-semibold tabular-nums text-foreground">{booking.customer.maskedPhone}</span>
               </div>
             )}
         </div>
