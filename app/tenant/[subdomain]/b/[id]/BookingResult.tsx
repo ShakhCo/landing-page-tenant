@@ -3,8 +3,8 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, MapPin, CalendarClock, X, Send } from 'lucide-react';
-import { localized, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
+import { Check, ChevronLeft, MapPin, CalendarClock, X, Send, BadgeCheck } from 'lucide-react';
+import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 import { cancelBookingAction } from './actions';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
@@ -38,6 +38,15 @@ const BADGE_STYLE: Record<string, string> = {
 function money(amount: number, currency: string) {
   const n = amount.toLocaleString('ru-RU');
   return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
+}
+/** "Salon Momi" → "SM" — same avatar fallback as the tenant page. */
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
 }
 function fmtDuration(min: number) {
   const h = Math.floor(min / 60);
@@ -299,22 +308,73 @@ export function BookingResult({
     );
   }
 
+  const avatarUrl = tenant?.business?.avatarUrl ?? null;
   return (
-    <div className="mx-auto max-w-xl px-5 pb-16 pt-8 sm:px-6">
-      {/* Status badge + big time + duration */}
-      <div>
-        <motion.span
-          initial={created ? { scale: 0.6, opacity: 0 } : false}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-          className={`inline-flex mb-4 items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
-        >
-          {badgeCheck && <Check size={15} strokeWidth={3} />}
-          {statusLabel}
-        </motion.span>
-        <h1 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">{business.name}</p>
-      </div>
+    <div className="pb-16">
+      {/* ===== Identity header — same map hero as the tenant home ===== */}
+      {branch ? (
+        <div className="mx-auto max-w-[1350px]">
+          <div className="relative">
+            <div className="h-64 w-full overflow-hidden rounded-2xl rounded-t-none border border-t-none sm:h-80">
+              <iframe
+                title="Map"
+                src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed&iwloc=near`}
+                className="pointer-events-none -mt-20 h-[calc(100%+160px)] w-full border-0"
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+            </div>
+            <div className="absolute bottom-0 left-1/2 size-24 -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-full shadow-lg ring-4 ring-card">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={mediaUrl(avatarUrl)} alt={business.name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-600 via-zinc-800 to-zinc-950 text-3xl font-semibold tracking-wide text-white">
+                  {initials(business.name)}
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="mt-16 px-4 text-center">
+            <h1 className="flex items-center justify-center gap-1.5 text-2xl font-bold text-foreground">
+              {business.name}
+              <BadgeCheck className="size-5 fill-blue-500 text-card" />
+            </h1>
+            {address && (
+              <p className="mt-2 flex items-center justify-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="size-4 shrink-0" />
+                <span>
+                  {address}{' '}
+                  {directionsHref && (
+                    <a href={directionsHref} target="_blank" rel="noreferrer" className="whitespace-nowrap font-semibold text-foreground underline underline-offset-4">
+                      Yo&apos;l ko&apos;rsatish
+                    </a>
+                  )}
+                </span>
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="mx-auto max-w-xl px-5 pt-8 text-center sm:px-6">
+          <h1 className="text-2xl font-bold text-foreground">{business.name}</h1>
+        </div>
+      )}
+
+      <div className="mx-auto max-w-xl px-5 sm:px-6">
+        {/* Status badge + big time */}
+        <div className="mt-10">
+          <motion.span
+            initial={created ? { scale: 0.6, opacity: 0 } : false}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: 'spring', damping: 14, stiffness: 220 }}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
+          >
+            {badgeCheck && <Check size={15} strokeWidth={3} />}
+            {statusLabel}
+          </motion.span>
+          <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h2>
+        </div>
 
       {/* Overview — same labeled-field card style as the booking flow's confirm step */}
       <Section>
@@ -362,34 +422,6 @@ export function BookingResult({
         </div>
       </Section>
 
-      {/* Getting there */}
-      {branch && (
-        <Section title="Manzil">
-          <div className="overflow-hidden rounded-2xl border border-foreground/12 shadow-xs shadow-black/5">
-            <iframe
-              title="Map"
-              src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
-              className="h-56 w-full border-0 sm:h-64"
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-          {address && (
-            <p className="mt-3 flex items-start gap-2.5 text-[15px] text-foreground">
-              <MapPin size={20} className="mt-0.5 shrink-0 text-muted-foreground" />
-              <span>
-                {address}{' '}
-                {directionsHref && (
-                  <a href={directionsHref} target="_blank" rel="noreferrer" className="font-semibold text-foreground underline underline-offset-4">
-                    Yo&apos;l ko&apos;rsatish
-                  </a>
-                )}
-              </span>
-            </p>
-          )}
-        </Section>
-      )}
-
       {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
           already started/completed/cancelled surfaces an alert explaining why. */}
       <div className="mt-9 flex flex-col gap-2.5">
@@ -428,6 +460,7 @@ export function BookingResult({
       <p className="mt-8 text-sm text-muted-foreground">
         Bron raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
       </p>
+      </div>
     </div>
   );
 }
