@@ -219,7 +219,7 @@ export function BookingResult({
           type="button"
           onClick={reschedule}
           disabled={pending}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-foreground py-3.5 text-[15px] font-bold text-background transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+          className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
         >
           <CalendarClock size={18} />
           Ha, vaqtni o&apos;zgartirish
@@ -228,7 +228,7 @@ export function BookingResult({
           type="button"
           onClick={confirmCancel}
           disabled={pending}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
         >
           {pending ? 'Bekor qilinmoqda…' : "Yo'q, bekor qilish"}
         </button>
@@ -269,10 +269,10 @@ export function BookingResult({
                       window.scrollTo(0, 0);
                     }
                   }}
-                  className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+                  className="flex items-center gap-4 rounded-2xl border border-foreground/12 bg-card p-4 text-left shadow-xs shadow-black/5 transition-colors duration-200 hover:border-foreground/30"
                 >
                   <span className="font-semibold text-foreground">{localized(r.label)}</span>
-                  <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
+                  <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border'}`}>
                     {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
                   </span>
                 </button>
@@ -291,7 +291,7 @@ export function BookingResult({
           type="button"
           onClick={confirmCancel}
           disabled={pending}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl bg-destructive py-3.5 text-[15px] font-bold text-white transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+          className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
         >
           {pending ? 'Bekor qilinmoqda…' : 'Bronni bekor qilish'}
         </button>
@@ -318,29 +318,31 @@ export function BookingResult({
 
       {/* Overview — same labeled-field card style as the booking flow's confirm step */}
       <Section>
-        <div className="rounded-2xl border border-border bg-card p-5">
+        <div className="rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
           <div className="space-y-5">
-            {booking.items.map((it, i) => {
-              // Hourly services show their rate ("…/soat") so the pricing mode is
-              // visible; the actual charge is in the Jami row. Fixed → flat price.
-              const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
-              const itemPrice =
-                svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
-                  ? `${money(svc.ratePerHour, business.currency)}/soat`
-                  : money(it.price, business.currency);
-              return (
-                <div key={`${it.offeringId}-${i}`}>
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
-                  <div className="mt-0.5 flex items-baseline justify-between gap-3">
-                    <p className="text-base font-semibold text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</p>
-                    <p className="whitespace-nowrap text-sm text-muted-foreground">{itemPrice}</p>
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmatlar</p>
+              {booking.items.map((it, i) => {
+                // Hourly services show their rate ("…/soat") so the pricing mode is
+                // visible; the actual charge is in the Jami row. Fixed → flat price.
+                const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
+                const itemPrice =
+                  svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
+                    ? `${money(svc.ratePerHour, business.currency)}/soat`
+                    : money(it.price, business.currency);
+                return (
+                  <div key={`${it.offeringId}-${i}`} className="mt-0.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <p className="text-base font-semibold text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</p>
+                      <p className="whitespace-nowrap text-sm text-muted-foreground">{itemPrice}</p>
+                    </div>
+                    {booking.items.length > 1 && it.startAt && (
+                      <p className="mt-0.5 text-sm text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</p>
+                    )}
                   </div>
-                  {booking.items.length > 1 && it.startAt && (
-                    <p className="mt-0.5 text-sm text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</p>
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
             {resourceNames.length > 0 && (
               <div>
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{resourceLabel}</p>
@@ -363,7 +365,7 @@ export function BookingResult({
       {/* Getting there */}
       {branch && (
         <Section title="Manzil">
-          <div className="overflow-hidden rounded-2xl border border-border">
+          <div className="overflow-hidden rounded-2xl border border-foreground/12 shadow-xs shadow-black/5">
             <iframe
               title="Map"
               src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed`}
@@ -378,7 +380,7 @@ export function BookingResult({
               <span>
                 {address}{' '}
                 {directionsHref && (
-                  <a href={directionsHref} target="_blank" rel="noreferrer" className="font-semibold text-accent">
+                  <a href={directionsHref} target="_blank" rel="noreferrer" className="font-semibold text-foreground underline underline-offset-4">
                     Yo&apos;l ko&apos;rsatish
                   </a>
                 )}
@@ -396,7 +398,7 @@ export function BookingResult({
           onClick={reschedule}
           disabled={pending}
           aria-disabled={!manageable}
-          className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors hover:bg-foreground/[0.03] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+          className={`flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
         >
           <CalendarClock size={18} className="text-muted-foreground" />
           Vaqtni o&apos;zgartirish
@@ -406,7 +408,7 @@ export function BookingResult({
           onClick={cancel}
           disabled={pending}
           aria-disabled={!manageable}
-          className={`flex w-full items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+          className={`flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
         >
           <X size={18} />
           {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
@@ -415,7 +417,7 @@ export function BookingResult({
           href="https://t.me/ShakhCo"
           target="_blank"
           rel="noreferrer"
-          className="flex w-full items-center justify-center gap-2 rounded-2xl py-3 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+          className="flex w-full items-center justify-center gap-2 rounded-full py-3 text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:text-foreground"
         >
           <Send size={16} />
           Yordam kerakmi? Telegram orqali yozing
@@ -438,7 +440,7 @@ function TopChrome({ onBack, onClose }: { onBack: () => void; onClose: () => voi
         type="button"
         onClick={onBack}
         aria-label="Orqaga"
-        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5"
+        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
       >
         <ChevronLeft size={22} />
       </button>
@@ -446,7 +448,7 @@ function TopChrome({ onBack, onClose }: { onBack: () => void; onClose: () => voi
         type="button"
         onClick={onClose}
         aria-label="Yopish"
-        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5"
+        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
       >
         <X size={20} />
       </button>
