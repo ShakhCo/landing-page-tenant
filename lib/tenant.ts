@@ -1,5 +1,8 @@
 export type LocalizedText = { uz?: string; ru?: string; en?: string };
 
+/** Abort a stalled read so an SSR render can't hang. Client-safe (no next/headers). */
+const READ_TIMEOUT_MS = 12_000;
+
 export interface PublicTenant {
   business: {
     name: string;
@@ -109,7 +112,7 @@ export async function getBooking(subdomain: string, id: string): Promise<PublicB
   try {
     const res = await fetch(
       `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}`,
-      { cache: 'no-store' },
+      { cache: 'no-store', signal: AbortSignal.timeout(READ_TIMEOUT_MS) },
     );
     if (!res.ok) return null;
     const data = (await res.json()) as PublicBookingView;
@@ -123,6 +126,9 @@ export async function getBooking(subdomain: string, id: string): Promise<PublicB
 /** Fetch a tenant's public business + services by subdomain. Null when missing. */
 export async function getTenant(subdomain: string): Promise<PublicTenant | null> {
   try {
+    // Plain cached fetch (no per-request IP forwarding): this is a cacheable
+    // read, and calling headers() would force dynamic rendering and defeat the
+    // 60s ISR cache. Tenant reads aren't the rate-limit concern (OTP is).
     const res = await fetch(
       `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}`,
       { next: { revalidate: 60 } },

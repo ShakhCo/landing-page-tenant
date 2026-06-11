@@ -2,6 +2,7 @@
 
 import { cookies, headers } from 'next/headers';
 import { API_BASE, type AvailabilityResult, type CreateBookingInput } from '@/lib/tenant';
+import { serverFetch, NETWORK_ERROR_UZ } from '@/lib/serverFetch';
 
 /** "Remember me" session cookie, scoped to all *.bookup.uz subdomains. */
 const SESSION_COOKIE = 'bookup_session';
@@ -63,38 +64,50 @@ export async function getAvailabilityAction(
 ): Promise<{ ok: true; data: AvailabilityResult } | { ok: false; error: string }> {
   const qs = new URLSearchParams({ date, offeringIds: offeringIds.join(','), resourceId });
   if (excludeBookingId) qs.set('excludeBookingId', excludeBookingId);
-  const res = await fetch(`${API_BASE}/public/tenants/${subdomain}/availability?${qs}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) return { ok: false, error: await errorMessage(res) };
-  return { ok: true, data: (await res.json()) as AvailabilityResult };
+  try {
+    const res = await serverFetch(`${API_BASE}/public/tenants/${subdomain}/availability?${qs}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) return { ok: false, error: await errorMessage(res) };
+    return { ok: true, data: (await res.json()) as AvailabilityResult };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
 }
 
 export async function requestOtpAction(
   phone: string,
 ): Promise<{ ok: true; isNewCustomer: boolean } | { ok: false; error: string }> {
-  const res = await fetch(`${API_BASE}/public/otp/request`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ phone }),
-  });
-  if (!res.ok) return { ok: false, error: await errorMessage(res) };
-  const body = (await res.json().catch(() => ({}))) as { isNewCustomer?: boolean };
-  // Unknown (older backend) → treat as new so we still ask for a name.
-  return { ok: true, isNewCustomer: body.isNewCustomer ?? true };
+  try {
+    const res = await serverFetch(`${API_BASE}/public/otp/request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone }),
+    });
+    if (!res.ok) return { ok: false, error: await errorMessage(res) };
+    const body = (await res.json().catch(() => ({}))) as { isNewCustomer?: boolean };
+    // Unknown (older backend) → treat as new so we still ask for a name.
+    return { ok: true, isNewCustomer: body.isNewCustomer ?? true };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
 }
 
 export async function requestRescheduleOtpAction(
   subdomain: string,
   bookingId: string,
 ): Promise<{ ok: true; maskedPhone: string } | { ok: false; error: string }> {
-  const res = await fetch(
-    `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(bookingId)}/reschedule/otp`,
-    { method: 'POST', cache: 'no-store' },
-  );
-  if (!res.ok) return { ok: false, error: await errorMessage(res) };
-  const body = (await res.json().catch(() => ({}))) as { maskedPhone?: string };
-  return { ok: true, maskedPhone: body.maskedPhone ?? '' };
+  try {
+    const res = await serverFetch(
+      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(bookingId)}/reschedule/otp`,
+      { method: 'POST', cache: 'no-store' },
+    );
+    if (!res.ok) return { ok: false, error: await errorMessage(res) };
+    const body = (await res.json().catch(() => ({}))) as { maskedPhone?: string };
+    return { ok: true, maskedPhone: body.maskedPhone ?? '' };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
 }
 
 export async function createBookingAction(
@@ -106,11 +119,16 @@ export async function createBookingAction(
   // for normal one-tap bookings (and reschedules) by the same customer.
   const sessionToken = jar.get(SESSION_COOKIE)?.value;
 
-  const res = await fetch(`${API_BASE}/public/tenants/${subdomain}/bookings`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ...input, sessionToken }),
-  });
+  let res: Response;
+  try {
+    res = await serverFetch(`${API_BASE}/public/tenants/${subdomain}/bookings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...input, sessionToken }),
+    });
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
 
   if (!res.ok) {
     const { code, message } = await readError(res);

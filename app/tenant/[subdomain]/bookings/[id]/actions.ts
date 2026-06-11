@@ -1,6 +1,7 @@
 'use server';
 
 import { API_BASE } from '@/lib/tenant';
+import { serverFetch, NETWORK_ERROR_UZ } from '@/lib/serverFetch';
 
 /** Cancel a booking from its public link (no OTP — possession of the id authorizes it).
  *  `reason` is optional customer feedback; the backend may ignore it until it learns the field. */
@@ -9,15 +10,20 @@ export async function cancelBookingAction(
   id: string,
   reason?: string,
 ): Promise<{ ok: true } | { ok: false; error: string }> {
-  const res = await fetch(
-    `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}/cancel`,
-    {
-      method: 'POST',
-      cache: 'no-store',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(reason ? { reason } : {}),
-    },
-  );
+  let res: Response;
+  try {
+    res = await serverFetch(
+      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}/cancel`,
+      {
+        method: 'POST',
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reason ? { reason } : {}),
+      },
+    );
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
   if (res.ok) return { ok: true };
 
   let code = '';
