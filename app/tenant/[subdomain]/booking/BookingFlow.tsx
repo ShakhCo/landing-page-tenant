@@ -526,7 +526,7 @@ export function BookingFlow({
       : step === 'staff'
         ? { label: staffId ? 'Davom etish' : `${resourceLabel}ni tanlang`, disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : {
-            label: busy ? 'Yuborilmoqda…' : !slot ? 'Vaqtni tanlang' : sessionActive && !rescheduleId ? 'Bron qilish' : 'Davom etish',
+            label: busy ? 'Bron qilinmoqda…' : !slot ? 'Vaqtni tanlang' : sessionActive && !rescheduleId ? 'Bron qilish' : 'Davom etish',
             disabled: !slot || busy,
             onClick: () => { if (slot) openConfirm(); },
           };
@@ -659,7 +659,7 @@ export function BookingFlow({
           real action (after OTP, or the session/reschedule flows). */}
       {(otpSent || sessionActive || rescheduleId) && (
         <PrimaryBtn className="mt-6" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
-          <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
+          <span className="inline-flex items-center gap-2">{busy ? (rescheduleId ? 'O‘zgartirilmoqda…' : 'Bron qilinmoqda…') : confirmBtn.label}<ArrowRight size={18} /></span>
         </PrimaryBtn>
       )}
 
