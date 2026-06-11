@@ -101,6 +101,19 @@ function nextDates(tz: string, n = 14) {
   });
 }
 
+/** True at >= lg (1024px) — confirm shows as a modal on desktop, inline on mobile. */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+  return isDesktop;
+}
+
 export function BookingFlow({
   tenant,
   subdomain,
@@ -120,6 +133,7 @@ export function BookingFlow({
   hasSession?: boolean;
 }) {
   const router = useRouter();
+  const isDesktop = useIsDesktop();
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -336,6 +350,16 @@ export function BookingFlow({
     window.scrollTo(0, 0);
   }, [step]);
 
+  // Lock background scroll while the desktop confirm modal is open.
+  useEffect(() => {
+    if (step !== 'confirm' || !isDesktop) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [step, isDesktop]);
+
   // Tick down the resend cooldown once per second.
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -455,6 +479,137 @@ export function BookingFlow({
           disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()),
           onClick: confirm,
         };
+
+  // Confirm body — rendered inline on mobile, or inside the desktop modal below.
+  const confirmContent = (
+    <>
+      {otpSent && (
+        <p className="-mt-2 mb-6 text-sm text-muted-foreground">
+          <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
+        </p>
+      )}
+
+      {/* booking summary — hidden once we're entering the SMS code */}
+      {!otpSent && (
+        <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+          <div className="space-y-5">
+            {selected.map((s) => (
+              <div key={s.id}>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
+                <div className="mt-0.5 flex items-baseline justify-between gap-3">
+                  <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                  <p className="whitespace-nowrap text-sm text-muted-foreground">{priceLabel(s, business.currency)}</p>
+                </div>
+              </div>
+            ))}
+            <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
+            {modalWhen && <FieldRow label="Vaqt" value={modalWhen} />}
+          </div>
+          <div className="mt-5 flex justify-between border-t border-border pt-4 text-base font-bold text-foreground">
+            <span>Jami{hourly ? ` · ${dur(durationMin)}` : ''}</span>
+            <span>{money(totalPrice, business.currency)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
+      {!rescheduleId && !otpSent && !sessionActive && (
+        <>
+          <label className="mb-3 block text-lg font-extrabold text-foreground">Telefon raqamingiz</label>
+          <div className="flex flex-col gap-4">
+            <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-card px-4 ring-1 ring-border focus-within:ring-2 focus-within:ring-foreground/30">
+              <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
+              <span className="font-bold text-foreground/80">+998</span>
+              <input
+                autoFocus
+                value={fmtPhone(phone)}
+                onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
+                inputMode="numeric"
+                placeholder="90 123 45 67"
+                className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={sendCode}
+              disabled={phone.length !== 9 || busy}
+              className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+            >
+              {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+            </button>
+          </div>
+        </>
+      )}
+
+      <AnimatePresence>
+        {otpSent && (
+          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
+            {isNewCustomer && (
+              <div>
+                <label className="mb-3 block text-lg font-extrabold text-foreground">Ismingiz</label>
+                <input
+                  autoFocus
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ism"
+                  className="h-14 w-full rounded-2xl bg-card px-4 text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-foreground/30"
+                />
+              </div>
+            )}
+
+            <div className={isNewCustomer ? 'mt-5' : ''}>
+              <OtpInput value={code} onChange={(v) => { setCode(v); if (error) setError(null); }} length={5} autoFocus={!isNewCustomer} />
+              <button
+                type="button"
+                onClick={sendCode}
+                disabled={busy || resendIn > 0}
+                className="mt-3 text-sm font-semibold text-accent disabled:text-muted-foreground"
+              >
+                {resendIn > 0 ? `Kodni qayta yuborish · 0:${pad2(resendIn)}` : 'Kodni qayta yuborish'}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence initial={false}>
+        {error && (
+          <motion.div
+            key="confirm-error"
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* One action at a time: the new-booking phone stage uses the inline
+          "Kod yuborish" above; the bottom button appears only once it's the
+          real action (after OTP, or the session/reschedule flows). */}
+      {(otpSent || sessionActive || rescheduleId) && (
+        <PrimaryBtn className="mt-6" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
+          <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
+        </PrimaryBtn>
+      )}
+
+      {/* Wrong number? Go back to phone entry (new-booking OTP stage only —
+          a reschedule's phone comes from the original booking). */}
+      {otpSent && !rescheduleId && (
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
+          className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-40"
+        >
+          Telefon raqamni o&apos;zgartirish
+        </button>
+      )}
+    </>
+  );
 
   return (
     <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
@@ -746,135 +901,9 @@ export function BookingFlow({
                 </div>
               )}
 
-              {/* ---- confirm (phone + OTP, inline step) ---- */}
-              {step === 'confirm' && (
-                <div className="max-w-md">
-                  {otpSent && (
-                    <p className="-mt-2 mb-6 text-sm text-muted-foreground">
-                      <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
-                    </p>
-                  )}
-
-                  {/* booking summary — hidden once we're entering the SMS code */}
-                  {!otpSent && (
-                    <div className="mb-6 rounded-2xl border border-border bg-card p-5">
-                      <div className="space-y-5">
-                        {selected.map((s) => (
-                          <div key={s.id}>
-                            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
-                            <div className="mt-0.5 flex items-baseline justify-between gap-3">
-                              <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                              <p className="whitespace-nowrap text-sm text-muted-foreground">{priceLabel(s, business.currency)}</p>
-                            </div>
-                          </div>
-                        ))}
-                        <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
-                        {modalWhen && <FieldRow label="Vaqt" value={modalWhen} />}
-                      </div>
-                      <div className="mt-5 flex justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-                        <span>Jami{hourly ? ` · ${dur(durationMin)}` : ''}</span>
-                        <span>{money(totalPrice, business.currency)}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
-                  {!rescheduleId && !otpSent && !sessionActive && (
-                    <>
-                      <label className="mb-3 block text-lg font-extrabold text-foreground">Telefon raqamingiz</label>
-                      <div className="flex flex-col gap-4">
-                        <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-card px-4 ring-1 ring-border focus-within:ring-2 focus-within:ring-foreground/30">
-                          <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
-                          <span className="font-bold text-foreground/80">+998</span>
-                          <input
-                            autoFocus
-                            value={fmtPhone(phone)}
-                            onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
-                            inputMode="numeric"
-                            placeholder="90 123 45 67"
-                            className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={sendCode}
-                          disabled={phone.length !== 9 || busy}
-                          className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
-                        >
-                          {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
-                        </button>
-                      </div>
-                    </>
-                  )}
-
-                  <AnimatePresence>
-                    {otpSent && (
-                      <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
-                        {isNewCustomer && (
-                          <div>
-                            <label className="mb-3 block text-lg font-extrabold text-foreground">Ismingiz</label>
-                            <input
-                              autoFocus
-                              value={name}
-                              onChange={(e) => setName(e.target.value)}
-                              placeholder="Ism"
-                              className="h-14 w-full rounded-2xl bg-card px-4 text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-foreground/30"
-                            />
-                          </div>
-                        )}
-
-                        <div className={isNewCustomer ? 'mt-5' : ''}>
-                          <OtpInput value={code} onChange={(v) => { setCode(v); if (error) setError(null); }} length={5} autoFocus={!isNewCustomer} />
-                          <button
-                            type="button"
-                            onClick={sendCode}
-                            disabled={busy || resendIn > 0}
-                            className="mt-3 text-sm font-semibold text-accent disabled:text-muted-foreground"
-                          >
-                            {resendIn > 0 ? `Kodni qayta yuborish · 0:${pad2(resendIn)}` : 'Kodni qayta yuborish'}
-                          </button>
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  <AnimatePresence initial={false}>
-                    {error && (
-                      <motion.div
-                        key="confirm-error"
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
-                        className="overflow-hidden"
-                      >
-                        <p className="mt-4 rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{error}</p>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
-                  {/* One action at a time: the new-booking phone stage uses the inline
-                      "Kod yuborish" above; the bottom button appears only once it's the
-                      real action (after OTP, or the session/reschedule flows). */}
-                  {(otpSent || sessionActive || rescheduleId) && (
-                    <PrimaryBtn className="mt-6" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
-                      <span className="inline-flex items-center gap-2">{busy ? 'Yuborilmoqda…' : confirmBtn.label}<ArrowRight size={18} /></span>
-                    </PrimaryBtn>
-                  )}
-
-                  {/* Wrong number? Go back to phone entry (new-booking OTP stage only —
-                      a reschedule's phone comes from the original booking). */}
-                  {otpSent && !rescheduleId && (
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
-                      className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-40"
-                    >
-                      Telefon raqamni o&apos;zgartirish
-                    </button>
-                  )}
-                </div>
+              {/* ---- confirm — inline on mobile; on desktop it renders as the modal below ---- */}
+              {step === 'confirm' && !isDesktop && (
+                <div className="max-w-md">{confirmContent}</div>
               )}
 
               <AnimatePresence initial={false}>
@@ -958,6 +987,42 @@ export function BookingFlow({
           </PrimaryBtn>
         </div>
       )}
+
+      {/* ===== Desktop: confirm as a centered modal (mobile uses the inline step above) ===== */}
+      <AnimatePresence>
+        {step === 'confirm' && isDesktop && (
+          <motion.div
+            key="confirm-modal"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => { if (!busy) back(); }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          >
+            <motion.div
+              initial={{ y: 24, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 24, opacity: 0 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 280 }}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl"
+            >
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <h3 className="text-xl font-extrabold text-foreground">{bigTitle}</h3>
+                <button
+                  type="button"
+                  onClick={() => { if (!busy) back(); }}
+                  aria-label="Yopish"
+                  className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+              {confirmContent}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
     </div>
   );
