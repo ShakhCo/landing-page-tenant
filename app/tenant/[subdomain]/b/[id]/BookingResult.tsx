@@ -399,14 +399,17 @@ export function BookingResult({
             </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-          <span>Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}</span>
-          <span>{money(liveTotal ?? total, business.currency)}</span>
+        {/* Total — same shape as the booking flow's summary card */}
+        <div className="mt-5 border-t border-border pt-4">
+          <p className="text-sm text-muted-foreground">
+            Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}
+          </p>
+          <p className="text-3xl font-extrabold text-foreground">{money(liveTotal ?? total, business.currency)}</p>
         </div>
 
       {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
           already started/completed/cancelled surfaces an alert explaining why. */}
-      <div className="mt-6 flex flex-col gap-2.5 border-t border-border pt-5">
+      <div className="mt-7 flex flex-col gap-2.5">
         <button
           type="button"
           onClick={reschedule}
