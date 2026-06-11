@@ -157,18 +157,8 @@ export function BookingResult({
     (booking.status === 'pending' || booking.status === 'confirmed') &&
     Date.parse(booking.startAt) > Date.now();
 
-  // Why a non-manageable booking can't be changed — shown as an alert on click.
-  const blockReason = (verb: string) =>
-    booking.status === 'pending' || booking.status === 'confirmed'
-      ? `Bu bron allaqachon boshlangan — uni ${verb} bo'lmaydi.`
-      : `Bu bron ${(STATUS_UZ[booking.status] ?? booking.status).toLowerCase()} — uni ${verb} bo'lmaydi.`;
-
   const reschedule = () => {
-    if (pending) return;
-    if (!manageable) {
-      window.alert(blockReason("o'zgartirib"));
-      return;
-    }
+    if (pending || !manageable) return;
     setNotice(null);
     const service = booking.items[0]?.offeringId;
     const qs = new URLSearchParams();
@@ -179,11 +169,7 @@ export function BookingResult({
   };
 
   const cancel = () => {
-    if (pending) return;
-    if (!manageable) {
-      window.alert(blockReason('bekor qilib'));
-      return;
-    }
+    if (pending || !manageable) return;
     setNotice(null);
     setView('cancel');
     window.scrollTo(0, 0);
@@ -404,7 +390,12 @@ export function BookingResult({
             {customerName && (
               <div className="flex items-baseline justify-between gap-4 text-[15px]">
                 <span className="text-muted-foreground">Mijoz</span>
-                <span className="text-right font-semibold text-foreground">{customerName}</span>
+                <span className="text-right font-semibold text-foreground">
+                  {customerName}
+                  {booking.customer?.maskedPhone && (
+                    <span className="block text-sm font-normal text-muted-foreground">{booking.customer.maskedPhone}</span>
+                  )}
+                </span>
               </div>
             )}
         </div>
@@ -417,35 +408,35 @@ export function BookingResult({
           <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency)}</span>
         </div>
 
-        {/* Manage: borderless list rows — icon, label, chevron. Shown always; a
-            click on a started/closed booking surfaces an alert explaining why. */}
-        <div className="-mx-2 mt-5 border-t border-border pt-2">
-          <button
-            type="button"
-            onClick={reschedule}
-            disabled={pending}
-            aria-disabled={!manageable}
-            className={`flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
-          >
-            <CalendarClock size={20} className="shrink-0" />
-            Vaqtni o&apos;zgartirish
-            <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
-          </button>
-          <button
-            type="button"
-            onClick={cancel}
-            disabled={pending}
-            aria-disabled={!manageable}
-            className={`flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
-          >
-            <CalendarX2 size={20} className="shrink-0" />
-            {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
-            <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
-          </button>
-        </div>
+        {/* Manage: borderless list rows — only while the booking is still
+            upcoming and open; started/cancelled/completed hide them entirely. */}
+        {manageable && (
+          <div className="-mx-2 mt-5 border-t border-border pt-2">
+            <button
+              type="button"
+              onClick={reschedule}
+              disabled={pending}
+              className="flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50"
+            >
+              <CalendarClock size={20} className="shrink-0" />
+              Vaqtni o&apos;zgartirish
+              <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
+            </button>
+            <button
+              type="button"
+              onClick={cancel}
+              disabled={pending}
+              className="flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
+            >
+              <CalendarX2 size={20} className="shrink-0" />
+              {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
+              <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
+            </button>
+          </div>
+        )}
 
         {/* Footer: booking reference + Telegram help — quiet, no extra border */}
-        <div className="mt-4 flex items-center justify-between gap-3 text-sm text-muted-foreground">
+        <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable ? 'mt-4' : 'mt-6 border-t border-border pt-4'}`}>
           <span>
             Bron raqami{' '}
             <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>

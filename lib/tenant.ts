@@ -108,6 +108,8 @@ export interface PublicBookingView {
     totalPrice: number | null;
     customer?: {
       type: 'user' | 'guest';
+      /** Pre-masked contact ("••• •• 40 20"); absent on older backends. */
+      maskedPhone?: string | null;
       user: { id: string; fullName: string } | null;
       guest: { name: string; phone: string } | null;
     } | null;
