@@ -66,6 +66,21 @@ export function mediaUrl(url: string): string {
   return url.startsWith('/') ? `${API_BASE}${url}` : url;
 }
 
+/** Resolve a short booking id to its tenant subdomain; null when unknown/ambiguous. */
+export async function locateBooking(shortId: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `${API_BASE}/public/bookings/${encodeURIComponent(shortId)}/locate`,
+      { cache: 'no-store', signal: AbortSignal.timeout(READ_TIMEOUT_MS) },
+    );
+    if (!res.ok) return null;
+    const data = (await res.json()) as { subdomain?: string };
+    return data?.subdomain ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export interface AvailabilitySlot {
   start: string;
   startAt: string;
