@@ -362,49 +362,46 @@ export function BookingResult({
         </motion.span>
         <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h2>
 
-        {/* Overview — same labeled-field rows as the booking flow's summary card */}
-        <div className="mt-6 space-y-5 border-t border-border pt-5">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmatlar</p>
-              {booking.items.map((it, i) => {
-                // Hourly services show their rate ("…/soat") so the pricing mode is
-                // visible; the actual charge is in the Jami row. Fixed → flat price.
-                const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
-                const itemPrice =
-                  svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
-                    ? `${money(svc.ratePerHour, business.currency)}/soat`
-                    : money(it.price, business.currency);
-                return (
-                  <div key={`${it.offeringId}-${i}`} className="mt-0.5">
-                    <div className="flex items-baseline justify-between gap-3">
-                      <p className="text-base font-semibold text-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</p>
-                      <p className="whitespace-nowrap text-sm text-muted-foreground">{itemPrice}</p>
-                    </div>
+        {/* Overview — receipt-style rows: muted label left, value right */}
+        <div className="mt-6 space-y-3.5 border-t border-border pt-5">
+            {booking.items.map((it, i) => {
+              // Hourly services show their rate ("…/soat") so the pricing mode is
+              // visible; the actual charge is in the Jami row. Fixed → flat price.
+              const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
+              const itemPrice =
+                svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
+                  ? `${money(svc.ratePerHour, business.currency)}/soat`
+                  : money(it.price, business.currency);
+              return (
+                <div key={`${it.offeringId}-${i}`} className="flex items-baseline justify-between gap-4">
+                  <span className="text-[15px] text-muted-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
+                  <span className="text-right text-[15px] font-semibold text-foreground">
+                    {itemPrice}
                     {booking.items.length > 1 && it.startAt && (
-                      <p className="mt-0.5 text-sm text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</p>
+                      <span className="block text-sm font-normal text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</span>
                     )}
-                  </div>
-                );
-              })}
-            </div>
+                  </span>
+                </div>
+              );
+            })}
             {resourceNames.length > 0 && (
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{resourceLabel}</p>
-                <p className="mt-0.5 text-base font-semibold text-foreground">{resourceNames.join(', ')}</p>
+              <div className="flex items-baseline justify-between gap-4">
+                <span className="text-[15px] text-muted-foreground">{resourceLabel}</span>
+                <span className="text-right text-[15px] font-semibold text-foreground">{resourceNames.join(', ')}</span>
               </div>
             )}
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vaqt</p>
-              <p className="mt-0.5 text-base font-semibold text-foreground">{when}</p>
+            <div className="flex items-baseline justify-between gap-4">
+              <span className="text-[15px] text-muted-foreground">Vaqt</span>
+              <span className="text-right text-[15px] font-semibold text-foreground">{when}</span>
             </div>
         </div>
 
-        {/* Total — same shape as the booking flow's summary card */}
-        <div className="mt-5 border-t border-border pt-4">
-          <p className="text-sm text-muted-foreground">
+        {/* Total — same receipt row, just louder */}
+        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4">
+          <span className="text-[15px] text-muted-foreground">
             Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}
-          </p>
-          <p className="text-3xl font-extrabold text-foreground">{money(liveTotal ?? total, business.currency)}</p>
+          </span>
+          <span className="text-right text-xl font-extrabold text-foreground">{money(liveTotal ?? total, business.currency)}</span>
         </div>
 
       {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
