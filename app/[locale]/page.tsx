@@ -55,6 +55,10 @@ function isPageLocale(value: string): value is PageLocale {
   return value === 'oz' || value === 'ru' || value === 'en';
 }
 
+// Only the three known locales exist at the root — anything else is a hard 404,
+// never an SSR pass through this page.
+export const dynamicParams = false;
+
 export function generateStaticParams() {
   return [{ locale: 'oz' }, { locale: 'ru' }, { locale: 'en' }];
 }

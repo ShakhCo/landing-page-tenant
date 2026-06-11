@@ -1,10 +1,21 @@
 'use server';
 
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { API_BASE } from '@/lib/tenant';
 import { serverFetch, NETWORK_ERROR_UZ } from '@/lib/serverFetch';
 
 const SESSION_COOKIE = 'bookup_session';
+
+/**
+ * Clear the session cookie with the SAME domain/path it was set with
+ * (`.bookup.uz` in prod) — a bare delete(name) doesn't match the scoped cookie,
+ * so the browser would keep the stale session and loop on INVALID_SESSION.
+ */
+async function clearSession(jar: Awaited<ReturnType<typeof cookies>>) {
+  const host = (await headers()).get('host') ?? '';
+  const onBookup = host === 'bookup.uz' || host.endsWith('.bookup.uz');
+  jar.delete({ name: SESSION_COOKIE, path: '/', ...(onBookup ? { domain: '.bookup.uz' } : {}) });
+}
 
 /**
  * Send the cancel-confirmation OTP to the booking's own phone (server-resolved,
@@ -82,7 +93,7 @@ export async function cancelBookingAction(
   // Stale/expired session, or a session that doesn't own this booking → the UI
   // must fall back to the OTP path (the cookie is cleared so we don't loop).
   if (code === 'INVALID_SESSION' || code === 'FORBIDDEN') {
-    if (sessionToken) jar.delete(SESSION_COOKIE);
+    if (sessionToken) await clearSession(jar);
     return { ok: false, error: '', needsOtp: true };
   }
   if (code === 'TOO_MANY_OTP_ATTEMPTS') {

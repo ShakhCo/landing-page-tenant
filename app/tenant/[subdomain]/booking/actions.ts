@@ -65,7 +65,7 @@ export async function getAvailabilityAction(
   const qs = new URLSearchParams({ date, offeringIds: offeringIds.join(','), resourceId });
   if (excludeBookingId) qs.set('excludeBookingId', excludeBookingId);
   try {
-    const res = await serverFetch(`${API_BASE}/public/tenants/${subdomain}/availability?${qs}`, {
+    const res = await serverFetch(`${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/availability?${qs}`, {
       cache: 'no-store',
     });
     if (!res.ok) return { ok: false, error: await errorMessage(res) };
@@ -121,7 +121,7 @@ export async function createBookingAction(
 
   let res: Response;
   try {
-    res = await serverFetch(`${API_BASE}/public/tenants/${subdomain}/bookings`, {
+    res = await serverFetch(`${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...input, sessionToken }),
