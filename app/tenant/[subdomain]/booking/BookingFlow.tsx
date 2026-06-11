@@ -134,6 +134,9 @@ export function BookingFlow({
 }) {
   const router = useRouter();
   const isDesktop = useIsDesktop();
+  // Desktop shows confirm as a modal overlay WITHOUT advancing the step, so the
+  // time step stays mounted behind it (no availability refetch when it closes).
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -274,6 +277,17 @@ export function BookingFlow({
     // bookings while the customer adjusts the duration.
   }, [step, date, staffId, subdomain, selectedIds, durationMin, rescheduleId]);
 
+  // Open confirm: a modal on desktop (step stays where it is), inline step on mobile.
+  const openConfirm = () => {
+    setError(null);
+    if (isDesktop) setConfirmOpen(true);
+    else setStep('confirm');
+  };
+  const closeConfirm = () => {
+    setError(null);
+    setConfirmOpen(false);
+  };
+
   const back = () => {
     if (busy) return;
     setError(null);
@@ -352,13 +366,13 @@ export function BookingFlow({
 
   // Lock background scroll while the desktop confirm modal is open.
   useEffect(() => {
-    if (step !== 'confirm' || !isDesktop) return;
+    if (!confirmOpen || !isDesktop) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [step, isDesktop]);
+  }, [confirmOpen, isDesktop]);
 
   // Tick down the resend cooldown once per second.
   useEffect(() => {
@@ -464,7 +478,7 @@ export function BookingFlow({
       ? { label: 'Davom etish', disabled: selected.length === 0, onClick: goFromServices }
       : step === 'staff'
         ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
-        : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) { setError(null); setStep('confirm'); } } };
+        : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) openConfirm(); } };
 
   // Confirm step's primary button:
   //  - remembered session → one tap, no OTP;
@@ -884,7 +898,7 @@ export function BookingFlow({
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.025, 0.6), ease: 'easeOut' }}
-                                    onClick={() => { setSlot(s.start); setError(null); setStep('confirm'); }}
+                                    onClick={() => { setSlot(s.start); openConfirm(); }}
                                     className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
                                   >
                                     <span className="tabular-nums">{s.start}</span>
@@ -907,7 +921,7 @@ export function BookingFlow({
               )}
 
               <AnimatePresence initial={false}>
-                {error && step !== 'confirm' && (
+                {error && step !== 'confirm' && !confirmOpen && (
                   <motion.div
                     key="flow-error"
                     initial={{ opacity: 0, height: 0 }}
@@ -962,7 +976,7 @@ export function BookingFlow({
             />
 
             {/* The confirm step carries its own actions (send code / book) inline. */}
-            {step !== 'confirm' && (
+            {step !== 'confirm' && !confirmOpen && (
               <PrimaryBtn className="mt-5" disabled={action.disabled} onClick={action.onClick}>
                 <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
               </PrimaryBtn>
@@ -990,13 +1004,13 @@ export function BookingFlow({
 
       {/* ===== Desktop: confirm as a centered modal (mobile uses the inline step above) ===== */}
       <AnimatePresence>
-        {step === 'confirm' && isDesktop && (
+        {confirmOpen && isDesktop && (
           <motion.div
             key="confirm-modal"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => { if (!busy) back(); }}
+            onClick={() => { if (!busy) closeConfirm(); }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
           >
             <motion.div
@@ -1008,10 +1022,12 @@ export function BookingFlow({
               className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl"
             >
               <div className="mb-5 flex items-start justify-between gap-3">
-                <h3 className="text-xl font-extrabold text-foreground">{bigTitle}</h3>
+                <h3 className="text-xl font-extrabold text-foreground">
+                  {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : STEP_TITLE.confirm}
+                </h3>
                 <button
                   type="button"
-                  onClick={() => { if (!busy) back(); }}
+                  onClick={() => { if (!busy) closeConfirm(); }}
                   aria-label="Yopish"
                   className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5"
                 >
