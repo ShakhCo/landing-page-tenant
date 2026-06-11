@@ -1,7 +1,13 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+};
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -24,15 +30,24 @@ export const metadata: Metadata = {
   description:
     "BOOKUP — biznesingiz uchun onlayn band qilish tizimi. Mijozlar xizmatlaringizni 24/7 bron qiladi; jadval, mijozlar va to‘lovlarni bitta joyda boshqaring. Sartaroshxona, go‘zallik saloni, klinika, sport va boshqa xizmatlar uchun.",
   applicationName: "BOOKUP",
+  manifest: "/manifest.webmanifest",
   keywords: [
+    // brand
+    "bookup", "bookup uz", "bookup.uz", "BOOKUP",
     // uz
-    "onlayn band qilish", "onlayn bron", "navbat olish", "bron qilish", "sartaroshxona", "go‘zallik saloni", "biznes CRM",
+    "onlayn band qilish", "onlayn bron", "onlayn navbat", "navbat olish", "online yozilish", "bron qilish",
+    "sartaroshxona uchun navbat", "go‘zallik saloni navbat", "biznes uchun CRM", "mijozlar bazasi",
     // ru
-    "онлайн запись", "бронирование", "запись клиентов", "онлайн бронирование", "Узбекистан", "Ташкент",
+    "онлайн запись", "запись на услуги", "бронирование", "запись клиентов", "онлайн бронирование",
+    "система записи", "CRM для бизнеса", "Узбекистан", "Ташкент",
     // en
-    "online booking", "appointment scheduling", "booking system", "reservations", "Uzbekistan", "Tashkent",
+    "online booking", "online appointments", "appointment scheduling", "booking system",
+    "appointment booking software", "reservations", "salon booking", "Uzbekistan", "Tashkent",
   ],
-  authors: [{ name: "BOOKUP" }],
+  authors: [{ name: "BOOKUP", url: "https://bookup.uz" }],
+  creator: "BOOKUP",
+  publisher: "BOOKUP",
+  category: "business",
   alternates: { canonical: "https://bookup.uz" },
   icons: {
     icon: "/favicon.png",
@@ -48,15 +63,24 @@ export const metadata: Metadata = {
     url: "https://bookup.uz",
     locale: "uz_UZ",
     alternateLocale: ["ru_RU", "en_US"],
-    images: [{ url: "/og.jpg", width: 640, height: 360, alt: "BOOKUP — bookup.uz" }],
+    // og image comes from app/opengraph-image.tsx (1200×630), applied site-wide.
   },
   twitter: {
     card: "summary_large_image",
     title: "BOOKUP — Onlayn band qilish platformasi",
     description: "Biznesingiz uchun onlayn band qilish va boshqaruv platformasi.",
-    images: ["/og.jpg"],
   },
-  robots: { index: true, follow: true },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
 };
 
 export default function RootLayout({

@@ -1,12 +1,55 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GradientCard } from "@/components/ui/gradient-card";
 import { PricingSection } from "@/components/Pricing";
+import { JsonLd } from "@/components/JsonLd";
+import { SITE_URL, breadcrumbSchema, organizationSchema } from "@/lib/seo";
+
+const PAGE_URL = `${SITE_URL}/business/sartaroshxonalar`;
+
+export const metadata: Metadata = {
+  title: "Sartaroshxonalar uchun onlayn navbat va boshqaruv",
+  description:
+    "Sartaroshxonangiz uchun BOOKUP — ustalar bo‘yicha onlayn navbat, xizmatlar narxi, SMS eslatma va mijozlar bazasi. Mijozlar Telegram, Instagram yoki bepul saytingiz orqali 24/7 yoziladi.",
+  keywords: [
+    "sartaroshxona uchun navbat", "sartaroshxona onlayn yozilish", "barbershop CRM",
+    "usta jadvali", "sartaroshxona dasturi", "barber booking",
+  ],
+  alternates: { canonical: PAGE_URL },
+  openGraph: {
+    type: "website",
+    siteName: "BOOKUP",
+    title: "Sartaroshxonalar uchun onlayn navbat — BOOKUP",
+    description:
+      "Ustalar bo‘yicha onlayn navbat, narxlar, SMS eslatma va mijozlar bazasi — bitta panelda.",
+    url: PAGE_URL,
+    locale: "uz_UZ",
+  },
+};
 
 export default function SartaroshxonalarPage() {
   return (
     <div className="min-h-screen overflow-x-clip bg-white text-[oklch(0.18_0_0)]">
+      <JsonLd
+        schema={[
+          organizationSchema(),
+          {
+            "@context": "https://schema.org",
+            "@type": "Service",
+            name: "Sartaroshxonalar uchun onlayn band qilish",
+            serviceType: "Online appointment booking for barbershops",
+            provider: { "@id": `${SITE_URL}/#organization` },
+            areaServed: { "@type": "Country", name: "Uzbekistan" },
+            url: PAGE_URL,
+          },
+          breadcrumbSchema([
+            { name: "Bosh sahifa", url: SITE_URL },
+            { name: "Sartaroshxonalar", url: PAGE_URL },
+          ]),
+        ]}
+      />
       <Header />
       <main className="pb-8 md:pb-24">
         <Hero />
