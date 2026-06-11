@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Menu, X } from "lucide-react";
 import { PhoneIcon } from "./icons";
 import homeUz, { type HomeDict } from "@/lib/dictionaries/home.uz";
@@ -15,6 +16,10 @@ export function Header({
   dict?: HomeDict['header'];
 }) {
   const [open, setOpen] = useState(false);
+  // The Biznes/Mijozlar audience tabs only make sense on the landing home —
+  // hide them on sub-pages (narxlar, business categories, etc.).
+  const pathname = usePathname();
+  const isHome = ["/", "/oz", "/ru", "/en"].includes(pathname);
 
   const navItems: Array<{ label: string; href: string }> = [
     { label: dict.nav.home, href: localePath(locale) },
@@ -81,8 +86,13 @@ export function Header({
       </div>
 
       {/* Brand bar + drawer — sticky on mobile (it holds the menu button),
-          scrolls away on desktop. */}
-      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur md:static md:z-auto md:bg-transparent md:backdrop-blur-none">
+          scrolls away on desktop. Hidden on desktop sub-pages (the top utility
+          bar already carries the nav there); kept on mobile for the logo + menu. */}
+      <header
+        className={`sticky top-0 z-20 bg-white/90 backdrop-blur md:static md:z-auto md:bg-transparent md:backdrop-blur-none ${
+          isHome ? "" : "md:hidden"
+        }`}
+      >
       {/* Main brand bar */}
       <div className="mx-auto flex max-w-[1360px] items-center gap-3 px-5 py-4 md:gap-5 md:py-5">
         <a href={localePath(locale)} className="flex items-center">
@@ -157,14 +167,16 @@ export function Header({
                 <MobileLanguageList locale={locale} />
               </div>
 
-              <div className="mt-3 flex gap-2">
-                <button className="flex-1 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-                  {dict.businessTab}
-                </button>
-                <button className="flex-1 rounded-full bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-700">
-                  {dict.customersTab}
-                </button>
-              </div>
+              {isHome && (
+                <div className="mt-3 flex gap-2">
+                  <button className="flex-1 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
+                    {dict.businessTab}
+                  </button>
+                  <button className="flex-1 rounded-full bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-700">
+                    {dict.customersTab}
+                  </button>
+                </div>
+              )}
 
               <a
                 href="tel:+998883634020"
