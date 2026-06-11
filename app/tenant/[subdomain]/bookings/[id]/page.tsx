@@ -1,27 +1,19 @@
-import { redirect } from 'next/navigation';
-import { getBooking, getTenant } from '@/lib/tenant';
-import { BookingResult } from './BookingResult';
+import { permanentRedirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Bron tafsilotlari',
-  robots: { index: false, follow: false }, // private booking — never index
-};
-
-export default async function BookingResultPage({
+/** Legacy path — the booking page moved to /b/[id]; old shared links live on. */
+export default async function LegacyBookingRoute({
   params,
   searchParams,
 }: {
-  params: Promise<{ subdomain: string; id: string }>;
-  searchParams: Promise<{ created?: string }>;
+  params: Promise<{ id: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { subdomain, id } = await params;
-  const { created } = await searchParams;
-  const [data, tenant] = await Promise.all([getBooking(subdomain, id), getTenant(subdomain)]);
-  if (!data) redirect('/');
-
-  return (
-    <main className="min-h-screen bg-card">
-      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} />
-    </main>
-  );
+  const { id } = await params;
+  const sp = await searchParams;
+  const qs = new URLSearchParams();
+  for (const [k, v] of Object.entries(sp)) {
+    if (typeof v === 'string') qs.set(k, v);
+  }
+  const q = qs.toString();
+  permanentRedirect(`/b/${encodeURIComponent(id)}${q ? `?${q}` : ''}`);
 }

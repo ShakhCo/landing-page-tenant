@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/booking', '/bookings/'],
+        disallow: ['/booking', '/bookings/', '/b/'],
       },
     ],
     sitemap: 'https://bookup.uz/sitemap.xml',

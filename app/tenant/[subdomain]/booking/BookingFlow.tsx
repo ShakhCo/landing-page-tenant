@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
-import { localized, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
+import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
@@ -40,6 +40,15 @@ const PERIODS = [
 function money(amount: number, currency: string) {
   const n = amount.toLocaleString('ru-RU');
   return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
+}
+/** "Salon Momi" → "SM" — same avatar fallback as the tenant page. */
+function initials(name: string) {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join('');
 }
 function dur(min: number) {
   if (!min) return '';
@@ -117,7 +126,7 @@ function useIsDesktop() {
 export function BookingFlow({
   tenant,
   subdomain,
-  initialServiceId,
+  initialServiceIds,
   rescheduleId,
   initialDuration,
   initialStaffId,
@@ -125,7 +134,8 @@ export function BookingFlow({
 }: {
   tenant: PublicTenant;
   subdomain: string;
-  initialServiceId?: string;
+  /** Preselected services (full ids, already validated against this tenant by the page). */
+  initialServiceIds?: string[];
   rescheduleId?: string;
   initialDuration?: number;
   /** Reschedule: the original booking's resource — preselected so only the time is re-picked. */
@@ -152,7 +162,17 @@ export function BookingFlow({
   //  - the entry service is fixed-price but every OTHER service is a unit —
   //    units can't be co-selected with it, so the list offers no real choice.
   const onlyService = services.length === 1 ? services[0] : null;
-  const initService = initialServiceId ? services.find((s) => s.id === initialServiceId) ?? null : null;
+  // Sanitize the preselection: a unit (time-rate) service is exclusive, so if
+  // one sneaks into a multi-select URL it wins alone.
+  const initIds = (() => {
+    const valid = (initialServiceIds ?? []).filter((id) => services.some((s) => s.id === id));
+    const unit = valid.find((id) => {
+      const s = services.find((x) => x.id === id);
+      return s ? isUnitService(s) : false;
+    });
+    return unit ? [unit] : valid;
+  })();
+  const initService = initIds.length === 1 ? services.find((s) => s.id === initIds[0]) ?? null : null;
   const initSkip =
     initService && (isUnitService(initService) || services.every((s) => s.id === initService.id || isUnitService(s)))
       ? initService
@@ -170,11 +190,7 @@ export function BookingFlow({
     return 'services'; // no eligible resource → keep on services
   });
   const [selectedIds, setSelectedIds] = useState<string[]>(() =>
-    skipService
-      ? [skipService.id]
-      : initialServiceId && services.some((s) => s.id === initialServiceId)
-        ? [initialServiceId]
-        : [],
+    skipService ? [skipService.id] : initIds,
   );
   const [staffId, setStaffId] = useState<string | null>(
     initStaff ? initStaff.id : skipService && skipEligible.length === 1 ? skipEligible[0].id : null,
@@ -203,13 +219,18 @@ export function BookingFlow({
   // Category filter for the services step (mirrors the landing page pills).
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))));
-  const shownServices = activeCat
+  const filteredServices = activeCat
     ? services.filter((s) => localized(s.category as LocalizedText | null, 'Boshqa') === activeCat)
     : services;
+  // Services preselected via the URL float to the top — fixed at load time
+  // (a reload shows your picks first), NOT re-sorted as you toggle live.
+  const shownServices =
+    initIds.length > 0
+      ? [...filteredServices].sort((a, b) => Number(initIds.includes(b.id)) - Number(initIds.includes(a.id)))
+      : filteredServices;
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
-  const selectedIsUnit = hourly;
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
   const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
@@ -278,8 +299,14 @@ export function BookingFlow({
   }, [step, date, staffId, subdomain, selectedIds, durationMin, rescheduleId]);
 
   // Open confirm: a modal on desktop (step stays where it is), inline step on mobile.
+  // A remembered customer skips it entirely — the live summary card IS the recap,
+  // so their "Bron qilish" books straight from the time step.
   const openConfirm = () => {
     setError(null);
+    if (sessionActive && !rescheduleId) {
+      void confirm();
+      return;
+    }
     if (isDesktop) setConfirmOpen(true);
     else setStep('confirm');
   };
@@ -364,6 +391,17 @@ export function BookingFlow({
     window.scrollTo(0, 0);
   }, [step]);
 
+  // Mirror the selection into the URL (short 8-char id prefixes) so a reload —
+  // or a shared link — restores it. replaceState keeps it shallow: no
+  // navigation, no server roundtrip, and no history spam while toggling.
+  useEffect(() => {
+    const qs = new URLSearchParams();
+    if (selectedIds.length > 0) qs.set('services', selectedIds.map((id) => id.slice(0, 8)).join(','));
+    if (rescheduleId) qs.set('reschedule', rescheduleId);
+    const q = qs.toString();
+    window.history.replaceState(window.history.state, '', q ? `/booking?${q}` : '/booking');
+  }, [selectedIds, rescheduleId]);
+
   // Lock background scroll while the desktop confirm modal is open.
   useEffect(() => {
     if (!confirmOpen || !isDesktop) return;
@@ -402,14 +440,17 @@ export function BookingFlow({
     if (r.ok) {
       // Reschedule: the backend already cancelled the old booking and linked it
       // to this new one (rescheduledToId), so nothing extra to do here.
-      router.push(`/bookings/${r.id}?created=1`);
+      router.push(`/b/${r.id.slice(0, 8)}?created=1`);
       return; // keep `busy` while the page navigates
     }
     setBusy(false);
-    // Session expired → drop one-tap and fall back to the OTP flow.
+    // Session expired → drop one-tap and fall back to the OTP flow. The direct
+    // book path never opened the confirm UI, so open it for the phone entry.
     if (r.needsOtp) {
       setSessionActive(false);
       if (rescheduleId) void sendCode(); // resend to the original number
+      else if (isDesktop) setConfirmOpen(true);
+      else setStep('confirm');
       return;
     }
     // Code locked after too many wrong guesses → wipe it and let them request a
@@ -424,18 +465,18 @@ export function BookingFlow({
   // ---- success ----
   if (step === 'done') {
     return (
-      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-6">
+      <div className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-card px-6">
         <motion.div
           initial={{ scale: 0, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 12, stiffness: 200 }}
-          className="grid size-24 place-items-center rounded-full bg-accent text-accent-foreground shadow-lg shadow-accent/30"
+          className="grid size-24 place-items-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/30"
         >
           <Check size={48} strokeWidth={3} />
         </motion.div>
         <h1 className="mt-7 text-2xl font-extrabold text-foreground">Band qilindi!</h1>
         <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
-        <div className="mt-7 w-full rounded-3xl border border-border bg-card p-5">
+        <div className="mt-7 w-full rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
           <div className="space-y-3">
             <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
             <FieldRow label="Vaqt" value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
@@ -465,6 +506,12 @@ export function BookingFlow({
     : s === 'staff' ? resourceLabel
     : s === 'time' ? 'Vaqt'
     : 'Tasdiqlash';
+  // Where the back button leads — mirrors back()'s routing exactly.
+  const backLabel =
+    step === 'confirm' ? stepShort('time')
+    : step === 'staff' ? stepShort('services')
+    : step === 'time' ? (eligibleStaff.length > 1 ? stepShort('staff') : stepShort('services'))
+    : business.name;
   const bigTitle =
     step === 'confirm'
       ? otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : STEP_TITLE.confirm
@@ -475,10 +522,14 @@ export function BookingFlow({
   // Context-aware primary action (drives both the desktop summary and mobile bar)
   const action =
     step === 'services'
-      ? { label: 'Davom etish', disabled: selected.length === 0, onClick: goFromServices }
+      ? { label: selected.length > 0 ? 'Davom etish' : 'Xizmatlarni tanlash', disabled: selected.length === 0, onClick: goFromServices }
       : step === 'staff'
-        ? { label: 'Davom etish', disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
-        : { label: 'Davom etish', disabled: !slot, onClick: () => { if (slot) openConfirm(); } };
+        ? { label: staffId ? 'Davom etish' : `${resourceLabel}ni tanlang`, disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
+        : {
+            label: busy ? 'Yuborilmoqda…' : !slot ? 'Vaqtni tanlang' : sessionActive && !rescheduleId ? 'Bron qilish' : 'Davom etish',
+            disabled: !slot || busy,
+            onClick: () => { if (slot) openConfirm(); },
+          };
 
   // Confirm step's primary button:
   //  - remembered session → one tap, no OTP;
@@ -503,19 +554,21 @@ export function BookingFlow({
         </p>
       )}
 
-      {/* booking summary — hidden once we're entering the SMS code */}
-      {!otpSent && (
-        <div className="mb-6 rounded-2xl border border-border bg-card p-5">
+      {/* Booking recap — only where confirming is the whole point: the one-tap
+          session flow and reschedules. The normal OTP flow jumps straight to the
+          phone field (the live summary card already shows what's being booked). */}
+      {!otpSent && (sessionActive || rescheduleId) && (
+        <div className="mb-6 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
           <div className="space-y-5">
-            {selected.map((s) => (
-              <div key={s.id}>
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
-                <div className="mt-0.5 flex items-baseline justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmatlar</p>
+              {selected.map((s) => (
+                <div key={s.id} className="mt-0.5 flex items-baseline justify-between gap-3">
                   <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
                   <p className="whitespace-nowrap text-sm text-muted-foreground">{priceLabel(s, business.currency)}</p>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
             <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
             {modalWhen && <FieldRow label="Vaqt" value={modalWhen} />}
           </div>
@@ -529,9 +582,9 @@ export function BookingFlow({
       {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
       {!rescheduleId && !otpSent && !sessionActive && (
         <>
-          <label className="mb-3 block text-lg font-extrabold text-foreground">Telefon raqamingiz</label>
+          <label className="mb-3 block text-lg font-bold text-foreground">Telefon raqamingiz</label>
           <div className="flex flex-col gap-4">
-            <div className="flex h-14 w-full min-w-0 items-center rounded-2xl bg-card px-4 ring-1 ring-border focus-within:ring-2 focus-within:ring-foreground/30">
+            <div className="flex h-14 w-full min-w-0 items-center rounded-full border border-border bg-card px-5 transition-colors duration-200 focus-within:border-foreground">
               <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
               <span className="font-bold text-foreground/80">+998</span>
               <input
@@ -547,7 +600,7 @@ export function BookingFlow({
               type="button"
               onClick={sendCode}
               disabled={phone.length !== 9 || busy}
-              className="h-14 w-full shrink-0 whitespace-nowrap rounded-2xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40"
+              className="h-14 w-full shrink-0 whitespace-nowrap rounded-full bg-foreground px-5 text-sm font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
             >
               {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
             </button>
@@ -560,13 +613,13 @@ export function BookingFlow({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
             {isNewCustomer && (
               <div>
-                <label className="mb-3 block text-lg font-extrabold text-foreground">Ismingiz</label>
+                <label className="mb-3 block text-lg font-bold text-foreground">Ismingiz</label>
                 <input
                   autoFocus
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ism"
-                  className="h-14 w-full rounded-2xl bg-card px-4 text-foreground outline-none ring-1 ring-border focus:ring-2 focus:ring-foreground/30"
+                  className="h-14 w-full rounded-full border border-border bg-card px-5 text-foreground outline-none transition-colors duration-200 focus:border-foreground"
                 />
               </div>
             )}
@@ -577,7 +630,7 @@ export function BookingFlow({
                 type="button"
                 onClick={sendCode}
                 disabled={busy || resendIn > 0}
-                className="mt-3 text-sm font-semibold text-accent disabled:text-muted-foreground"
+                className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
               >
                 {resendIn > 0 ? `Kodni qayta yuborish · 0:${pad2(resendIn)}` : 'Kodni qayta yuborish'}
               </button>
@@ -617,7 +670,7 @@ export function BookingFlow({
           type="button"
           disabled={busy}
           onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
-          className="mt-3 h-12 w-full rounded-2xl text-sm font-semibold text-muted-foreground transition-colors hover:bg-foreground/[0.04] disabled:opacity-40"
+          className="mt-3 h-12 w-full rounded-full text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-40"
         >
           Telefon raqamni o&apos;zgartirish
         </button>
@@ -629,10 +682,16 @@ export function BookingFlow({
     <div className="mx-auto min-h-screen max-w-[1300px] px-4 pb-32 lg:pb-12">
       {/* Top chrome: back + close */}
       <div className="flex items-center justify-between py-4">
-        <button type="button" onClick={back} aria-label="Orqaga" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5">
-          <ChevronLeft size={22} />
+        <button
+          type="button"
+          onClick={back}
+          aria-label="Orqaga"
+          className="flex h-11 max-w-[60vw] items-center gap-1 rounded-full border border-border bg-card pl-2.5 pr-4 text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+        >
+          <ChevronLeft size={20} className="shrink-0" />
+          <span className="truncate text-sm font-semibold">{backLabel}</span>
         </button>
-        <button type="button" onClick={() => router.push('/')} aria-label="Yopish" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-sm transition-colors hover:bg-foreground/5">
+        <button type="button" onClick={() => router.push('/')} aria-label="Yopish" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5">
           <X size={20} />
         </button>
       </div>
@@ -694,40 +753,75 @@ export function BookingFlow({
                       ))}
                     </div>
                   )}
-                  <div className="flex flex-col gap-3">
-                  {shownServices.map((s, i) => {
-                    const on = selectedIds.includes(s.id);
-                    const price = priceLabel(s, business.currency);
+                  {(() => {
+                    // Mirror the tenant page: photo-led cards in a 2-col grid when the
+                    // salon uses photos; compact text cards when it doesn't.
+                    const withPhotos = services.some((s) => s.photoUrl);
                     return (
-                      <motion.button
-                        key={s.id}
-                        type="button"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
-                        onClick={() => toggleService(s.id)}
-                        className={`rounded-2xl border-2 bg-card p-5 text-left transition-colors ${on ? 'border-accent' : 'border-border hover:border-foreground/20'}`}
-                      >
-                        <h3 className="font-bold text-foreground">{localized(s.name as LocalizedText)}</h3>
-                        {s.durationMinutes != null && <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
-                        <div className="mt-4 flex items-center justify-between gap-3">
-                          {price && <p className="font-bold text-foreground">{price}</p>}
-                          {/* A unit (time-rate) selection is exclusive — other services can't be
-                              added, only switched to — so show a select (radio) circle, not a +. */}
-                          <span className={`ml-auto grid size-9 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border text-foreground'}`}>
-                            {/* "+" only for fixed services that can be added (not units, and not
-                                while a unit/hourly service is selected); otherwise a select dot. */}
-                            {on
-                              ? <Check size={18} strokeWidth={3} />
-                              : !isUnitService(s) && !hourly
-                                ? <Plus size={18} />
-                                : <span className="size-2.5 rounded-full bg-foreground/30" />}
-                          </span>
-                        </div>
-                      </motion.button>
+                      <div className={withPhotos ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : 'flex flex-col gap-3'}>
+                        {shownServices.map((s, i) => {
+                          const on = selectedIds.includes(s.id);
+                          const sName = localized(s.name as LocalizedText);
+                          const price = priceLabel(s, business.currency);
+                          // A unit (time-rate) selection is exclusive — other services can't be
+                          // added, only switched to — so it gets "Tanlash", addable fixed
+                          // services get "Qo'shish", and a selected one shows "Tanlandi".
+                          const canAdd = !isUnitService(s) && !hourly;
+                          const actionBtn = (
+                            <span
+                              className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border py-2.5 text-center text-sm font-bold transition-colors duration-200 ${
+                                on
+                                  ? 'border-foreground bg-foreground text-background'
+                                  : 'border-border text-foreground group-hover:bg-foreground/5'
+                              }`}
+                            >
+                              {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
+                              {on ? 'Tanlandi' : canAdd ? "Qo'shish" : 'Tanlash'}
+                              {!on && !canAdd && <ChevronRight size={15} />}
+                            </span>
+                          );
+                          return (
+                            <motion.button
+                              key={s.id}
+                              type="button"
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
+                              onClick={() => toggleService(s.id)}
+                              className={`group overflow-hidden rounded-2xl border bg-card text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 ${
+                                on ? 'border-foreground' : 'border-foreground/12'
+                              } ${withPhotos ? '' : 'p-5'}`}
+                            >
+                              {/* Identical layout to the home page service card: photo,
+                                  name, price | duration, then the action button. */}
+                              {withPhotos &&
+                                (s.photoUrl ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img src={mediaUrl(s.photoUrl)} alt={sName} className="aspect-[16/10] w-full object-cover" loading="lazy" />
+                                ) : (
+                                  <div className="flex aspect-[16/10] w-full items-center justify-center bg-muted text-5xl font-bold text-muted-foreground/30">
+                                    {sName.charAt(0).toUpperCase()}
+                                  </div>
+                                ))}
+                              <div className={withPhotos ? 'p-4' : ''}>
+                                <h3 className="truncate font-semibold text-foreground">{sName}</h3>
+                                <div className="mt-2 flex items-center justify-between gap-2">
+                                  {price && <span className="font-bold text-foreground">{price}</span>}
+                                  {s.durationMinutes != null && (
+                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                      <Clock size={14} />
+                                      {dur(s.durationMinutes)}
+                                    </span>
+                                  )}
+                                </div>
+                                {actionBtn}
+                              </div>
+                            </motion.button>
+                          );
+                        })}
+                      </div>
                     );
-                  })}
-                  </div>
+                  })()}
                 </div>
               )}
 
@@ -751,19 +845,32 @@ export function BookingFlow({
                             setStep('time');
                           }
                         }}
-                        className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-foreground/20"
+                        className={`flex items-center gap-3.5 rounded-2xl border bg-card p-4 text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 ${
+                          on ? 'border-foreground' : 'border-foreground/12'
+                        }`}
                       >
                         {st.photoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <img src={st.photoUrl} alt={st.name} className="size-12 rounded-full object-cover" />
+                          <img src={mediaUrl(st.photoUrl)} alt={st.name} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
                         ) : (
-                          <span className="grid size-12 place-items-center rounded-full bg-foreground/5 text-lg font-bold text-foreground ring-1 ring-border">
-                            {st.name.charAt(0).toUpperCase()}
+                          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
+                            {initials(st.name)}
                           </span>
                         )}
-                        <span className="font-semibold text-foreground">{st.name}</span>
-                        <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-accent bg-accent text-accent-foreground' : 'border-border'}`}>
-                          {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-semibold text-foreground">{st.name}</span>
+                          {st.type !== 'asset' && (st.bookingsCount ?? 0) > 0 && (
+                            <span className="mt-0.5 block text-sm text-muted-foreground">{st.bookingsCount} ta bron</span>
+                          )}
+                        </span>
+                        <span
+                          className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 ${
+                            on ? 'border-foreground bg-foreground text-background' : 'border-border text-foreground'
+                          }`}
+                        >
+                          {on && <Check size={15} strokeWidth={3} />}
+                          {on ? 'Tanlandi' : 'Tanlash'}
+                          {!on && <ChevronRight size={15} />}
                         </span>
                       </motion.button>
                     );
@@ -784,10 +891,10 @@ export function BookingFlow({
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
                         aria-label="Sana tanlash"
-                        className={`flex h-13 items-center gap-2 rounded-xl border px-4 text-sm font-semibold transition-colors ${
+                        className={`flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors duration-200 ${
                           date !== todayIso && date !== tomorrowIso
                             ? 'border-foreground bg-foreground text-background'
-                            : 'border-border bg-card text-foreground hover:border-foreground/40'
+                            : 'border-border bg-card text-foreground hover:bg-foreground/5'
                         }`}
                       >
                         <Calendar size={18} className={date !== todayIso && date !== tomorrowIso ? '' : 'text-muted-foreground'} />
@@ -804,7 +911,7 @@ export function BookingFlow({
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -6 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-border bg-card p-4 shadow-xl"
+                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-card p-4 shadow-xl shadow-black/10"
                             >
                               <DayPicker
                                 value={date}
@@ -826,14 +933,14 @@ export function BookingFlow({
                     const setDur = (d: number) => { setDurationMin(Math.min(maxDur, Math.max(minDur, d))); setSlot(null); };
                     return (
                       <div className="mt-5">
-                        <p className="mb-3 text-lg font-extrabold text-foreground">Davomiyligi</p>
-                        <div className="inline-flex h-14 items-center gap-1 rounded-xl border border-border bg-card px-1">
+                        <p className="mb-3 text-lg font-bold text-foreground">Davomiyligi</p>
+                        <div className="inline-flex h-13 items-center gap-1 rounded-full border border-border bg-card px-1.5">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
                             disabled={durationMin <= minDur}
                             aria-label="Kamaytirish"
-                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25"
+                            className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Minus size={18} />
                           </button>
@@ -843,7 +950,7 @@ export function BookingFlow({
                             onClick={() => setDur(durationMin + 30)}
                             disabled={durationMin >= maxDur}
                             aria-label="Ko&apos;paytirish"
-                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25"
+                            className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Plus size={18} />
                           </button>
@@ -854,17 +961,14 @@ export function BookingFlow({
 
                   <div className="mt-6">
                     {availLoading && futureSlots.length === 0 ? (
-                      // First load (no estimate yet) — generic white skeleton cards.
-                      <div className="flex flex-col gap-2.5">
+                      // First load (no estimate yet) — generic skeleton chips.
+                      <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
                         {Array.from({ length: skeletonCount }).map((_, i) => (
-                          <div key={i} className="flex h-16 w-full items-center justify-between rounded-2xl border border-border bg-card px-5">
-                            <span className="h-4 w-16 animate-pulse rounded-md bg-foreground/10" />
-                            <ChevronRight size={18} className="text-muted-foreground/30" />
-                          </div>
+                          <div key={i} className="h-12 animate-pulse rounded-full border border-foreground/12 bg-foreground/5" />
                         ))}
                       </div>
                     ) : futureSlots.length === 0 ? (
-                      <div className="py-14 text-center">
+                      <div className="rounded-2xl border border-foreground/12 bg-card py-14 text-center shadow-xs shadow-black/5">
                         <Clock size={28} className="mx-auto text-muted-foreground/40" />
                         <p className="mt-3 text-sm text-muted-foreground">Bu kunga bo&apos;sh vaqt yo&apos;q.</p>
                       </div>
@@ -877,19 +981,14 @@ export function BookingFlow({
                         if (items.length === 0) return null;
                         return (
                           <div key={p.label} className="mb-6">
-                            <p className="mb-3 text-lg font-extrabold text-foreground">{p.label}</p>
-                            <div className="flex flex-col gap-2.5">
+                            <p className="mb-3 text-lg font-bold text-foreground">{p.label}</p>
+                            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
                               {items.map((s) => {
                                 const on = slot === s.start;
-                                // While refetching, keep the white card + period labels
-                                // but skeletonise the time (it may have just been booked).
+                                // While refetching, keep the grid + period labels but
+                                // skeletonise the chips (a slot may have just been booked).
                                 if (availLoading) {
-                                  return (
-                                    <div key={s.start} className="flex h-16 w-full items-center justify-between rounded-2xl border border-border bg-card px-5">
-                                      <span className="h-4 w-16 animate-pulse rounded-md bg-foreground/10" />
-                                      <ChevronRight size={18} className="text-muted-foreground/30" />
-                                    </div>
-                                  );
+                                  return <div key={s.start} className="h-12 animate-pulse rounded-full border border-foreground/12 bg-foreground/5" />;
                                 }
                                 return (
                                   <motion.button
@@ -897,12 +996,15 @@ export function BookingFlow({
                                     type="button"
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.025, 0.6), ease: 'easeOut' }}
-                                    onClick={() => { setSlot(s.start); openConfirm(); }}
-                                    className={`flex h-16 w-full items-center justify-between rounded-2xl border px-5 text-base font-semibold transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'}`}
+                                    transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.015, 0.45), ease: 'easeOut' }}
+                                    onClick={() => setSlot(s.start)}
+                                    className={`flex h-12 items-center justify-center rounded-full border text-sm font-semibold tabular-nums transition-colors duration-200 ${
+                                      on
+                                        ? 'border-foreground bg-foreground text-background'
+                                        : 'border-border bg-card text-foreground hover:bg-foreground/5'
+                                    }`}
                                   >
-                                    <span className="tabular-nums">{s.start}</span>
-                                    <ChevronRight size={18} className={on ? 'text-background/70' : 'text-muted-foreground'} />
+                                    {s.start}
                                   </motion.button>
                                 );
                               })}
@@ -941,24 +1043,25 @@ export function BookingFlow({
 
         {/* ===== RIGHT: live summary (desktop) ===== */}
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
-          <motion.div layout className="rounded-3xl border border-border bg-card p-6 shadow-sm">
+          <motion.div
+            layout
+            transition={{ layout: { duration: 0.2, ease: 'easeOut' } }}
+            className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5"
+          >
             {/* business header */}
             <div className="flex items-start gap-3">
               {business.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={business.avatarUrl} alt={business.name} className="size-14 shrink-0 rounded-xl object-cover ring-1 ring-border" />
+                <img src={mediaUrl(business.avatarUrl)} alt={business.name} className="size-14 shrink-0 rounded-full object-cover ring-1 ring-border" />
               ) : (
-                <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-foreground/5 text-xl font-black text-foreground ring-1 ring-border">
-                  {business.name.trim().charAt(0).toUpperCase()}
+                <div className="grid size-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 via-zinc-800 to-zinc-950 text-lg font-semibold tracking-wide text-white">
+                  {initials(business.name)}
                 </div>
               )}
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-tight text-foreground">{business.name}</p>
-                {business.category && (
-                  <p className="mt-0.5 text-sm font-medium text-muted-foreground">{localized(business.category.name)}</p>
-                )}
                 {branch?.address && (
-                  <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{localized(branch.address)}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">{localized(branch.address)}</p>
                 )}
               </div>
             </div>
@@ -1019,7 +1122,7 @@ export function BookingFlow({
               exit={{ y: 24, opacity: 0 }}
               transition={{ type: 'spring', damping: 26, stiffness: 280 }}
               onClick={(e) => e.stopPropagation()}
-              className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-background p-6 shadow-2xl"
+              className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-3xl bg-card p-6 shadow-2xl"
             >
               <div className="mb-5 flex items-start justify-between gap-3">
                 <h3 className="text-xl font-extrabold text-foreground">
@@ -1065,20 +1168,36 @@ function SummaryBody({
 }) {
   return (
     <>
-      <AnimatePresence initial={false} mode="wait">
+      {/* popLayout (not "wait"): the leaving element pops out of the flow at
+          once, so the incoming one and the card's layout resize move together —
+          a "wait" here stacks fade-out → resize → fade-in and reads as a glitch. */}
+      <AnimatePresence initial={false} mode="popLayout">
         {selected.length === 0 ? (
           <motion.p
             key="empty"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.18 }}
+            transition={{ duration: 0.12 }}
             className="py-1 text-base text-muted-foreground"
           >
             Hali xizmat tanlanmagan.
           </motion.p>
         ) : (
-          <motion.div key="list" layout>
+          <motion.div
+            key="list"
+            layout
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            // The last row's pb-3.5 would stack with the next section's mt-4,
+            // making Xizmatlar visually bottom-heavy vs the other sections.
+            className="[&>div:last-child>div]:pb-0"
+          >
+            <p className="pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Xizmatlar
+            </p>
             <AnimatePresence initial={false}>
               {selected.map((s) => (
                 <motion.div
@@ -1092,8 +1211,7 @@ function SummaryBody({
                 >
                   <div className="flex items-start justify-between gap-3 pb-3.5">
                     <div className="min-w-0">
-                      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmat</p>
-                      <p className="mt-0.5 text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                      <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
                       {s.durationMinutes != null && <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
                     </div>
                     <span className="whitespace-nowrap text-base font-semibold text-foreground">
@@ -1163,8 +1281,8 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-13 items-center justify-center rounded-xl border px-5 text-sm font-semibold transition-colors ${
-        on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:border-foreground/40'
+      className={`flex h-12 items-center justify-center rounded-full border px-5 text-sm font-semibold transition-colors duration-200 ${
+        on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:bg-foreground/5'
       }`}
     >
       {children}
@@ -1356,7 +1474,7 @@ function OtpInput({
           inputMode="numeric"
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           aria-label={`Kod ${i + 1}`}
-          className="h-14 w-full min-w-0 rounded-2xl bg-foreground/[0.04] text-center text-2xl font-bold tabular-nums text-foreground outline-none transition-shadow focus:ring-2 focus:ring-inset focus:ring-foreground/30"
+          className="h-14 w-full min-w-0 rounded-xl border border-foreground/12 bg-muted/50 text-center text-2xl font-bold tabular-nums text-foreground outline-none transition-colors duration-200 focus:border-foreground"
         />
       ))}
     </div>
@@ -1379,7 +1497,7 @@ function PrimaryBtn({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex h-14 w-full items-center justify-center rounded-2xl bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none ${className}`}
+      className={`flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none ${className}`}
     >
       {children}
     </button>

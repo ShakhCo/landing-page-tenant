@@ -321,7 +321,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                 );
                 const cardClass = 'overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5';
                 return canBook ? (
-                  <Link key={s.id} href={`/booking?service=${s.id}`} className={`group block ${cardClass} active:scale-[0.99]`}>
+                  <Link key={s.id} href={`/booking?services=${s.id.slice(0, 8)}`} className={`group block ${cardClass} active:scale-[0.99]`}>
                     {inner}
                   </Link>
                 ) : (

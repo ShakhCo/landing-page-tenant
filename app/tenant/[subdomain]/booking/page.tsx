@@ -15,16 +15,35 @@ export default async function BookingRoute({
   searchParams,
 }: {
   params: Promise<{ subdomain: string }>;
-  searchParams: Promise<{ service?: string; reschedule?: string }>;
+  searchParams: Promise<{ service?: string; services?: string; reschedule?: string }>;
 }) {
   const { subdomain } = await params;
-  const { service, reschedule } = await searchParams;
+  const { service, services, reschedule } = await searchParams;
   const tenant = await getTenant(subdomain);
 
   // No tenant or no bookable staff/services → back to the tenant home.
   if (!tenant || tenant.services.length === 0 || tenant.staff.length === 0) {
     redirect('/');
   }
+
+  // Preselected services: `services` is a comma list of short (8-char) id
+  // prefixes; the legacy `service` (full uuid) still resolves. Tokens match by
+  // unique prefix against THIS tenant's services only — an unknown or ambiguous
+  // token is silently dropped (worst case: nothing preselected).
+  const svcParam = services ?? service ?? '';
+  const initialServiceIds = Array.from(
+    new Set(
+      svcParam
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t.length >= 4)
+        .map((tok) => {
+          const matches = tenant.services.filter((s) => s.id.startsWith(tok));
+          return matches.length === 1 ? matches[0].id : null;
+        })
+        .filter((id): id is string => id !== null),
+    ),
+  );
 
   // Reschedule: load the original booking up front. A reschedule link whose id
   // is missing/expired/foreign must NOT silently proceed — availability is a
@@ -36,7 +55,7 @@ export default async function BookingRoute({
     const original = await getBooking(subdomain, reschedule);
     if (!original) {
       return (
-        <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-background px-6 text-center">
+        <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-card px-6 text-center">
           <div className="grid size-20 place-items-center rounded-full bg-foreground/5 text-foreground ring-1 ring-border">
             <CalendarX2 size={40} strokeWidth={2} />
           </div>
@@ -45,7 +64,7 @@ export default async function BookingRoute({
             Bu o&apos;zgartirish havolasi eskirgan yoki yaroqsiz. Yangi bron qilishingiz mumkin.
           </p>
           <Link
-            href={service ? `/booking?service=${encodeURIComponent(service)}` : '/'}
+            href={initialServiceIds.length ? `/booking?services=${initialServiceIds.map((id) => id.slice(0, 8)).join(',')}` : '/'}
             className="mt-7 flex h-14 w-full max-w-xs items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
           >
             Yangi bron qilish
@@ -70,11 +89,11 @@ export default async function BookingRoute({
   const hasSession = (await cookies()).has('bookup_session');
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-card">
       <BookingFlow
         tenant={tenant}
         subdomain={subdomain}
-        initialServiceId={service}
+        initialServiceIds={initialServiceIds}
         rescheduleId={reschedule}
         initialDuration={initialDuration}
         initialStaffId={initialStaffId}
