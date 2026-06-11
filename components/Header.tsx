@@ -36,9 +36,9 @@ export function Header({
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur md:static md:z-auto md:bg-transparent md:backdrop-blur-none">
-      {/* Top utility bar — desktop only; the only sticky part on desktop. */}
-      <div className="hidden border-b border-black/10 md:sticky md:top-0 md:z-30 md:block md:bg-white/90 md:backdrop-blur">
+    <>
+      {/* Top utility bar — desktop only; sticks across the whole page. */}
+      <div className="sticky top-0 z-30 hidden border-b border-black/10 bg-white/90 backdrop-blur md:block">
         <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 py-3">
           <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
             {navItems.map((item, i) => (
@@ -80,6 +80,9 @@ export function Header({
         </div>
       </div>
 
+      {/* Brand bar + drawer — sticky on mobile (it holds the menu button),
+          scrolls away on desktop. */}
+      <header className="sticky top-0 z-20 bg-white/90 backdrop-blur md:static md:z-auto md:bg-transparent md:backdrop-blur-none">
       {/* Main brand bar */}
       <div className="mx-auto flex max-w-[1360px] items-center gap-3 px-5 py-4 md:gap-5 md:py-5">
         <a href={localePath(locale)} className="flex items-center">
@@ -179,7 +182,8 @@ export function Header({
           </div>
         </>
       )}
-    </header>
+      </header>
+    </>
   );
 }
 
