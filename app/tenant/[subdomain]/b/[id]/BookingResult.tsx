@@ -69,6 +69,11 @@ function timeRange(startIso: string, endIso: string | null | undefined, tz: stri
   const start = dateParts(startIso, tz).time;
   return endIso ? `${start}–${dateParts(endIso, tz).time}` : start;
 }
+/** "Iyun 11, 18:30–19:30" — compact date + time range for receipt rows. */
+function whenCompact(iso: string, tz: string, endIso?: string | null) {
+  const p = dateParts(iso, tz);
+  return `${p.mon} ${p.day}, ${timeRange(iso, endIso, tz)}`;
+}
 /** Local YYYY-MM-DD in a timezone, for comparing calendar days. */
 function localDay(d: Date, tz: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
@@ -107,7 +112,6 @@ export function BookingResult({
   const address = branch?.address ? localized(branch.address) : null;
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
-  const when = whenLabel(booking.startAt, business.timezone, booking.endAt);
   // Hourly (time-rate) booking that has started and is still running — open OR
   // fixed-end: show a LIVE running total, rate × elapsed so far. Once it ends,
   // the stored total takes over. Re-rendered every minute via the tick below.
@@ -392,7 +396,9 @@ export function BookingResult({
             )}
             <div className="flex items-baseline justify-between gap-4">
               <span className="text-[15px] text-muted-foreground">Vaqt</span>
-              <span className="text-right text-[15px] font-semibold text-foreground">{when}</span>
+              <span className="text-right text-[15px] font-semibold text-foreground">
+                {whenCompact(booking.startAt, business.timezone, booking.endAt)}
+              </span>
             </div>
         </div>
 
