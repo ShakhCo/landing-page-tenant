@@ -436,7 +436,7 @@ export function BookingResult({
         )}
 
         {/* Footer: booking reference + Telegram help — quiet, no extra border */}
-        <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable ? 'mt-4' : 'mt-6 border-t border-border pt-4'}`}>
+        <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable ? 'mt-4' : 'mt-4 border-t border-border pt-4'}`}>
           <span>
             Bron raqami{' '}
             <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
