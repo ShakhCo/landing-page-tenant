@@ -36,9 +36,9 @@ export function Header({
   }, [open]);
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur">
-      {/* Top utility bar — desktop only */}
-      <div className="hidden border-b border-black/10 md:block">
+    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur md:static md:z-auto md:bg-transparent md:backdrop-blur-none">
+      {/* Top utility bar — desktop only; the only sticky part on desktop. */}
+      <div className="hidden border-b border-black/10 md:sticky md:top-0 md:z-30 md:block md:bg-white/90 md:backdrop-blur">
         <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 py-3">
           <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
             {navItems.map((item, i) => (
