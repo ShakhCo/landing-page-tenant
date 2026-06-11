@@ -19,7 +19,6 @@ const STEP_TITLE: Record<Step, string> = {
 const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
 const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
 const WEEK = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
 const pad2 = (n: number) => String(n).padStart(2, '0');
 function isoParts(iso: string) {
@@ -274,8 +273,6 @@ export function BookingFlow({
   const selP = date ? isoParts(date) : null;
   const selDate = selP ? { day: selP.day, mon: MONTHS[selP.monIdx] } : null;
   // "Bugun, 16:00 dan 19:30 gacha" — relative day + chosen time range, for the confirm modal.
-  const dayWord = !selP ? '' : date === todayIso ? 'Bugun' : date === tomorrowIso ? 'Ertaga' : WEEKDAYS_FULL[selP.wdIdx];
-  const modalWhen = slot ? `${dayWord}, ${slot}${hourly ? ` dan ${addHm(slot, durationMin)} gacha` : ''}` : null;
 
   useEffect(() => {
     if (step !== 'time' || !staffId || !date) return;
@@ -299,12 +296,22 @@ export function BookingFlow({
   }, [step, date, staffId, subdomain, selectedIds, durationMin, rescheduleId]);
 
   // Open confirm: a modal on desktop (step stays where it is), inline step on mobile.
-  // A remembered customer skips it entirely — the live summary card IS the recap,
-  // so their "Bron qilish" books straight from the time step.
+  // The live summary card IS the recap, so there's no intermediate confirm view:
+  //  - remembered customer → "Bron qilish"/"O'zgartirish" acts straight from the time step;
+  //  - reschedule without a session → the OTP is sent first, and the code entry
+  //    opens only once it actually went out (a failure surfaces on the time step).
   const openConfirm = () => {
     setError(null);
-    if (sessionActive && !rescheduleId) {
+    if (sessionActive) {
       void confirm();
+      return;
+    }
+    if (rescheduleId && !otpSent) {
+      void sendCode().then((ok) => {
+        if (!ok) return;
+        if (isDesktop) setConfirmOpen(true);
+        else setStep('confirm');
+      });
       return;
     }
     if (isDesktop) setConfirmOpen(true);
@@ -357,8 +364,9 @@ export function BookingFlow({
       return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
     });
   };
-  const sendCode = async () => {
-    if (busy) return;
+  /** Sends the OTP; resolves true when it actually went out. */
+  const sendCode = async (): Promise<boolean> => {
+    if (busy) return false;
     // Reschedule: OTP goes to the ORIGINAL booking's phone (server-resolved) —
     // the customer never re-enters their number.
     if (rescheduleId) {
@@ -371,10 +379,12 @@ export function BookingFlow({
         setIsNewCustomer(false); // existing customer → no name needed
         setOtpSent(true);
         setResendIn(60);
-      } else setError(r.error);
-      return;
+        return true;
+      }
+      setError(r.error);
+      return false;
     }
-    if (phone.length !== 9) return;
+    if (phone.length !== 9) return false;
     setError(null);
     setBusy(true);
     const r = await requestOtpAction(`+998${phone}`);
@@ -383,7 +393,10 @@ export function BookingFlow({
       setIsNewCustomer(r.isNewCustomer);
       setOtpSent(true);
       setResendIn(60);
-    } else setError(r.error);
+      return true;
+    }
+    setError(r.error);
+    return false;
   };
 
   // Each step starts at the top (the time step's slot list can be very long).
@@ -445,11 +458,17 @@ export function BookingFlow({
     }
     setBusy(false);
     // Session expired → drop one-tap and fall back to the OTP flow. The direct
-    // book path never opened the confirm UI, so open it for the phone entry.
+    // book path never opened the confirm UI, so open it once the OTP is on its way.
     if (r.needsOtp) {
       setSessionActive(false);
-      if (rescheduleId) void sendCode(); // resend to the original number
-      else if (isDesktop) setConfirmOpen(true);
+      if (rescheduleId) {
+        // OTP goes to the original booking's phone; show the code entry when sent.
+        void sendCode().then((ok) => {
+          if (!ok) return;
+          if (isDesktop) setConfirmOpen(true);
+          else setStep('confirm');
+        });
+      } else if (isDesktop) setConfirmOpen(true);
       else setStep('confirm');
       return;
     }
@@ -526,7 +545,17 @@ export function BookingFlow({
       : step === 'staff'
         ? { label: staffId ? 'Davom etish' : `${resourceLabel}ni tanlang`, disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : {
-            label: busy ? 'Bron qilinmoqda…' : !slot ? 'Vaqtni tanlang' : sessionActive && !rescheduleId ? 'Bron qilish' : 'Davom etish',
+            label: busy
+              ? rescheduleId
+                ? sessionActive ? 'O‘zgartirilmoqda…' : 'Yuborilmoqda…'
+                : 'Bron qilinmoqda…'
+              : !slot
+                ? 'Vaqtni tanlang'
+                : rescheduleId
+                  ? 'O‘zgartirish'
+                  : sessionActive
+                    ? 'Bron qilish'
+                    : 'Davom etish',
             disabled: !slot || busy,
             onClick: () => { if (slot) openConfirm(); },
           };
@@ -554,30 +583,8 @@ export function BookingFlow({
         </p>
       )}
 
-      {/* Booking recap — only where confirming is the whole point: the one-tap
-          session flow and reschedules. The normal OTP flow jumps straight to the
-          phone field (the live summary card already shows what's being booked). */}
-      {!otpSent && (sessionActive || rescheduleId) && (
-        <div className="mb-6 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
-          <div className="space-y-5">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmatlar</p>
-              {selected.map((s) => (
-                <div key={s.id} className="mt-0.5 flex items-baseline justify-between gap-3">
-                  <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                  <p className="whitespace-nowrap text-sm text-muted-foreground">{priceLabel(s, business.currency)}</p>
-                </div>
-              ))}
-            </div>
-            <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
-            {modalWhen && <FieldRow label="Vaqt" value={modalWhen} />}
-          </div>
-          <div className="mt-5 flex justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-            <span>Jami{hourly ? ` · ${dur(durationMin)}` : ''}</span>
-            <span>{money(totalPrice, business.currency)}</span>
-          </div>
-        </div>
-      )}
+      {/* No recap here — the live summary card is the recap; every path lands
+          straight on its action (phone entry, OTP code, or one-tap). */}
 
       {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
       {!rescheduleId && !otpSent && !sessionActive && (
