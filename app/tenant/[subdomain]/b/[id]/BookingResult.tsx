@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft, MapPin, CalendarClock, X, Send, BadgeCheck } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, X, Send, BadgeCheck } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 import { cancelBookingAction } from './actions';
 
@@ -143,6 +143,7 @@ export function BookingResult({
   const matchedStaff = (tenant?.staff ?? []).filter((st) => resourceNames.includes(st.name));
   const resourcesAreAssets = matchedStaff.length > 0 && matchedStaff.every((st) => st.type === 'asset');
   const resourceLabel = resourcesAreAssets ? (firstSvc?.unitLabel ? localized(firstSvc.unitLabel) : 'Joy') : 'Mutaxassis';
+  const customerName = booking.customer?.user?.fullName ?? booking.customer?.guest?.name ?? null;
   const durationMin = booking.endAt
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
@@ -354,7 +355,7 @@ export function BookingResult({
       <div className="mx-auto max-w-xl px-4 sm:px-6">
       {/* ===== One card: status, time, details, total, actions, reference ===== */}
       <div className="mt-10 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6">
-        {/* Status badge + big time */}
+        {/* Status badge + time — one heading size for the whole card */}
         <motion.span
           initial={created ? { scale: 0.6, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
@@ -364,10 +365,10 @@ export function BookingResult({
           {badgeCheck && <Check size={15} strokeWidth={3} />}
           {statusLabel}
         </motion.span>
-        <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h2>
+        <h2 className="mt-3 text-2xl font-bold leading-tight text-foreground">{whenShort}</h2>
 
-        {/* Overview — receipt-style rows: muted label left, value right */}
-        <div className="mt-6 space-y-3.5 border-t border-border pt-5">
+        {/* Receipt rows — muted label left, value right, all 15px */}
+        <div className="mt-6 space-y-3.5">
             {booking.items.map((it, i) => {
               // Hourly services show their rate ("…/soat") so the pricing mode is
               // visible; the actual charge is in the Jami row. Fixed → flat price.
@@ -377,9 +378,9 @@ export function BookingResult({
                   ? `${money(svc.ratePerHour, business.currency)}/soat`
                   : money(it.price, business.currency);
               return (
-                <div key={`${it.offeringId}-${i}`} className="flex items-baseline justify-between gap-4">
-                  <span className="text-[15px] text-muted-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
-                  <span className="text-right text-[15px] font-semibold text-foreground">
+                <div key={`${it.offeringId}-${i}`} className="flex items-baseline justify-between gap-4 text-[15px]">
+                  <span className="text-muted-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
+                  <span className="text-right font-semibold text-foreground">
                     {itemPrice}
                     {booking.items.length > 1 && it.startAt && (
                       <span className="block text-sm font-normal text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</span>
@@ -389,54 +390,62 @@ export function BookingResult({
               );
             })}
             {resourceNames.length > 0 && (
-              <div className="flex items-baseline justify-between gap-4">
-                <span className="text-[15px] text-muted-foreground">{resourceLabel}</span>
-                <span className="text-right text-[15px] font-semibold text-foreground">{resourceNames.join(', ')}</span>
+              <div className="flex items-baseline justify-between gap-4 text-[15px]">
+                <span className="text-muted-foreground">{resourceLabel}</span>
+                <span className="text-right font-semibold text-foreground">{resourceNames.join(', ')}</span>
               </div>
             )}
-            <div className="flex items-baseline justify-between gap-4">
-              <span className="text-[15px] text-muted-foreground">Vaqt</span>
-              <span className="text-right text-[15px] font-semibold text-foreground">
+            <div className="flex items-baseline justify-between gap-4 text-[15px]">
+              <span className="text-muted-foreground">Vaqt</span>
+              <span className="text-right font-semibold text-foreground">
                 {whenCompact(booking.startAt, business.timezone, booking.endAt)}
               </span>
             </div>
+            {customerName && (
+              <div className="flex items-baseline justify-between gap-4 text-[15px]">
+                <span className="text-muted-foreground">Mijoz</span>
+                <span className="text-right font-semibold text-foreground">{customerName}</span>
+              </div>
+            )}
         </div>
 
-        {/* Total — same receipt row, just louder */}
-        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4">
-          <span className="text-[15px] text-muted-foreground">
+        {/* Total — the only divider in the card body */}
+        <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4 text-[15px]">
+          <span className="text-muted-foreground">
             Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}
           </span>
-          <span className="text-right text-xl font-extrabold text-foreground">{money(liveTotal ?? total, business.currency)}</span>
+          <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency)}</span>
         </div>
 
-      {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
-          already started/completed/cancelled surfaces an alert explaining why. */}
-      <div className="mt-7 flex flex-col gap-2.5">
-        <button
-          type="button"
-          onClick={reschedule}
-          disabled={pending}
-          aria-disabled={!manageable}
-          className={`flex w-full items-center justify-center gap-2 rounded-full border border-border bg-card py-3.5 text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
-        >
-          <CalendarClock size={18} className="text-muted-foreground" />
-          Vaqtni o&apos;zgartirish
-        </button>
-        <button
-          type="button"
-          onClick={cancel}
-          disabled={pending}
-          aria-disabled={!manageable}
-          className={`flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
-        >
-          <X size={18} />
-          {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
-        </button>
-      </div>
+        {/* Manage: borderless list rows — icon, label, chevron. Shown always; a
+            click on a started/closed booking surfaces an alert explaining why. */}
+        <div className="-mx-2 mt-5 border-t border-border pt-2">
+          <button
+            type="button"
+            onClick={reschedule}
+            disabled={pending}
+            aria-disabled={!manageable}
+            className={`flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+          >
+            <CalendarClock size={20} className="shrink-0" />
+            Vaqtni o&apos;zgartirish
+            <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
+          </button>
+          <button
+            type="button"
+            onClick={cancel}
+            disabled={pending}
+            aria-disabled={!manageable}
+            className={`flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50 ${manageable ? '' : 'opacity-60'}`}
+          >
+            <CalendarX2 size={20} className="shrink-0" />
+            {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
+            <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
+          </button>
+        </div>
 
-        {/* Footer: booking reference + Telegram help in one quiet row */}
-        <div className="mt-6 flex items-center justify-between gap-3 border-t border-border pt-4 text-sm text-muted-foreground">
+        {/* Footer: booking reference + Telegram help — quiet, no extra border */}
+        <div className="mt-4 flex items-center justify-between gap-3 text-sm text-muted-foreground">
           <span>
             Bron raqami{' '}
             <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
