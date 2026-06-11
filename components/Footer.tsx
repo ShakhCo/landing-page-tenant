@@ -80,7 +80,7 @@ export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) 
           <div className="md:col-span-2 lg:col-span-1">
             <Image
               src="/bookup-logo.png"
-              alt="Bookup"
+              alt="BOOKUP"
               width={600}
               height={112}
               className="h-7 w-auto brightness-0 invert"
@@ -90,7 +90,7 @@ export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) 
             </p>
 
             <div className="mt-7 flex gap-2.5">
-              <FooterSocial label="Telegram" href="#">
+              <FooterSocial label="Telegram" href="https://t.me/ShakhCo">
                 <SocialTelegramIcon />
               </FooterSocial>
               <FooterSocial label="Instagram" href="#">
@@ -129,7 +129,7 @@ export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) 
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1360px] flex-col items-start justify-between gap-4 px-5 py-6 text-xs text-gray-500 sm:flex-row sm:items-center">
           <p>
-            © {new Date().getFullYear()} Bookup. {dict.rights}
+            © {new Date().getFullYear()} BOOKUP. {dict.rights}
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href="#" className="transition hover:text-white">

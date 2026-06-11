@@ -107,7 +107,7 @@ function PainPoints() {
           </span>{" "}
           degan gaplar kuniga bir necha marta bo&apos;ladi.
           Qo&apos;ng&apos;iroq, Instagram DM yoki qog&apos;ozdagi yozuvlar —
-          har safar qidirishga to&apos;g&apos;ri keladi. Bookupda esa
+          har safar qidirishga to&apos;g&apos;ri keladi. BOOKUPda esa
           hammasi ko&apos;rinib turadi.
         </p>
       </article>
@@ -122,7 +122,7 @@ function PainPoints() {
             &ldquo;Kelaman degan edi, lekin kelmadi&rdquo;
           </span>{" "}
           — shu gap ko&apos;p eshitiladi. Natijada bo&apos;sh vaqt ham,
-          daromad ham ketadi. Bookup esa tashrifdan 2 soat oldin mijozga
+          daromad ham ketadi. BOOKUP esa tashrifdan 2 soat oldin mijozga
           avtomatik SMS eslatma yuboradi — mijoz unutib qo&apos;ymaydi.
         </p>
       </article>
@@ -300,7 +300,7 @@ function ClosingCta() {
           <div className="max-w-xl">
             <h2 className="text-2xl font-extrabold leading-[1.1] tracking-tight md:text-3xl lg:text-4xl">
               Sartaroshxonangizni bugun{" "}
-              <span className="text-gray-500">Bookup&apos;ga ulang.</span>
+              <span className="text-gray-500">BOOKUP&apos;ga ulang.</span>
             </h2>
             <p className="mt-5 text-base text-gray-300">
               14 kun bepul. Bank kartasi talab qilinmaydi. Menejerimiz

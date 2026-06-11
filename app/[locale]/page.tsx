@@ -22,19 +22,19 @@ const DICTS: Record<PageLocale, HomeDict> = {
 
 const META: Record<PageLocale, { title: string; description: string }> = {
   oz: {
-    title: "Bookup — Онлайн банд қилиш платформаси",
+    title: "BOOKUP — Онлайн банд қилиш платформаси",
     description:
-      "Bookup — бизнесингиз учун онлайн банд қилиш тизими. Мижозлар хизматларингизни 24/7 брон қилади; жадвал, мижозлар ва тўловларни битта жойда бошқаринг. Сартарошхона, гўзаллик салони, клиника, спорт ва бошқа хизматлар учун.",
+      "BOOKUP — бизнесингиз учун онлайн банд қилиш тизими. Мижозлар хизматларингизни 24/7 брон қилади; жадвал, мижозлар ва тўловларни битта жойда бошқаринг. Сартарошхона, гўзаллик салони, клиника, спорт ва бошқа хизматлар учун.",
   },
   ru: {
-    title: "Bookup — Платформа онлайн-записи",
+    title: "BOOKUP — Платформа онлайн-записи",
     description:
-      "Bookup — система онлайн-записи для вашего бизнеса. Клиенты бронируют ваши услуги 24/7; расписание, клиенты и оплаты — в одном месте. Для барбершопов, салонов красоты, клиник, спорта и других услуг.",
+      "BOOKUP — система онлайн-записи для вашего бизнеса. Клиенты бронируют ваши услуги 24/7; расписание, клиенты и оплаты — в одном месте. Для барбершопов, салонов красоты, клиник, спорта и других услуг.",
   },
   en: {
-    title: "Bookup — Online Booking Platform",
+    title: "BOOKUP — Online Booking Platform",
     description:
-      "Bookup is an online booking system for your business. Customers book your services 24/7; manage your schedule, clients, and payments in one place. For barbershops, beauty salons, clinics, sports, and other services.",
+      "BOOKUP is an online booking system for your business. Customers book your services 24/7; manage your schedule, clients, and payments in one place. For barbershops, beauty salons, clinics, sports, and other services.",
   },
 };
 
@@ -67,12 +67,30 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isPageLocale(locale)) return {};
   const meta = META[locale];
+  // OG/Twitter must be fully overridden here — page-level openGraph replaces
+  // the layout's whole block, otherwise /ru and /en would ship Uzbek OG text.
+  const ogLocale: Record<PageLocale, string> = { oz: 'uz_UZ', ru: 'ru_RU', en: 'en_US' };
   return {
     title: { absolute: meta.title },
     description: meta.description,
     alternates: {
       canonical: CANONICALS[locale],
       languages: LANGUAGES,
+    },
+    openGraph: {
+      type: 'website',
+      siteName: 'BOOKUP',
+      title: meta.title,
+      description: meta.description,
+      url: CANONICALS[locale],
+      locale: ogLocale[locale],
+      images: [{ url: '/og.jpg', width: 640, height: 360, alt: 'BOOKUP — bookup.uz' }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: meta.title,
+      description: meta.description,
+      images: ['/og.jpg'],
     },
   };
 }

@@ -122,7 +122,7 @@ const dict: HomeDict = {
       },
       {
         title: "Connects with the tools you love",
-        intro: "Bookup plugs easily into the platforms you already use.",
+        intro: "BOOKUP plugs easily into the platforms you already use.",
         bullets: [
           "Bookings and messages via a Telegram bot",
           "Direct connection from your Instagram profile",
@@ -156,7 +156,7 @@ const dict: HomeDict = {
       p1Quote1: '"the data will get lost"',
       p1Quote2: '"work will grind to a halt"',
       p1Post:
-        "— the usual worries. Not with Bookup — we migrate your existing clients, booking history, and schedule ourselves.",
+        "— the usual worries. Not with BOOKUP — we migrate your existing clients, booking history, and schedule ourselves.",
       p2Pre: "You do nothing, and your business",
       p2Bold: "doesn't stop for a single day",
       cta: "Talk to a manager",
@@ -167,7 +167,7 @@ const dict: HomeDict = {
     titleMain: "Connects with the tools",
     titleAccent: "you already love",
     subtitle:
-      "Bookup plugs easily into the platforms you already use — no need to start anything from scratch.",
+      "BOOKUP plugs easily into the platforms you already use — no need to start anything from scratch.",
     more: "Learn more",
     slideLabel: "Slide",
     items: [
@@ -222,7 +222,7 @@ const dict: HomeDict = {
     titleLine1: "Run your business",
     titleAccent: "from your pocket",
     titlePost: "anywhere",
-    body: "Bookup Business is a mobile app for business owners. Accept bookings, work with clients, and track revenue in real time.",
+    body: "BOOKUP Business is a mobile app for business owners. Accept bookings, work with clients, and track revenue in real time.",
     features: [
       "Online schedule and calendar",
       "Client database and visit history",
@@ -232,7 +232,7 @@ const dict: HomeDict = {
     download: "Download",
     ios: "for iOS",
     android: "for Android",
-    imageAlt: "Bookup Business mobile app",
+    imageAlt: "BOOKUP Business mobile app",
   },
   faq: {
     eyebrow: "FAQ",
@@ -243,8 +243,8 @@ const dict: HomeDict = {
     popular: "Most frequently asked",
     items: [
       {
-        q: "What is Bookup?",
-        a: "Bookup is an online booking and client management platform for businesses in Uzbekistan. It's built for barbershops, salons, dental clinics, billiards, tennis, and other service businesses.",
+        q: "What is BOOKUP?",
+        a: "BOOKUP is an online booking and client management platform for businesses in Uzbekistan. It's built for barbershops, salons, dental clinics, billiards, tennis, and other service businesses.",
       },
       {
         q: "What kinds of businesses can join?",
@@ -260,7 +260,7 @@ const dict: HomeDict = {
       },
       {
         q: "What's the commission?",
-        a: "Bookup takes no commission on bookings. There's only a monthly subscription — plans vary with the size of your business. A manager will walk you through detailed pricing.",
+        a: "BOOKUP takes no commission on bookings. There's only a monthly subscription — plans vary with the size of your business. A manager will walk you through detailed pricing.",
       },
       {
         q: "Can I try a demo?",
@@ -278,7 +278,7 @@ const dict: HomeDict = {
   },
   footer: {
     ctaTitleLine1: "Connect your business",
-    ctaTitleLine2: "to Bookup today.",
+    ctaTitleLine2: "to BOOKUP today.",
     ctaStart: "Get started",
     about:
       "An online booking and client management platform for businesses in Uzbekistan.",

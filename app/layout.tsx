@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://bookup.uz"),
   title: {
-    default: "Bookup — Onlayn band qilish platformasi",
-    template: "%s — Bookup",
+    default: "BOOKUP — Onlayn band qilish platformasi",
+    template: "%s — BOOKUP",
   },
   description:
-    "Bookup — biznesingiz uchun onlayn band qilish tizimi. Mijozlar xizmatlaringizni 24/7 bron qiladi; jadval, mijozlar va to‘lovlarni bitta joyda boshqaring. Sartaroshxona, go‘zallik saloni, klinika, sport va boshqa xizmatlar uchun.",
-  applicationName: "Bookup",
+    "BOOKUP — biznesingiz uchun onlayn band qilish tizimi. Mijozlar xizmatlaringizni 24/7 bron qiladi; jadval, mijozlar va to‘lovlarni bitta joyda boshqaring. Sartaroshxona, go‘zallik saloni, klinika, sport va boshqa xizmatlar uchun.",
+  applicationName: "BOOKUP",
   keywords: [
     // uz
     "onlayn band qilish", "onlayn bron", "navbat olish", "bron qilish", "sartaroshxona", "go‘zallik saloni", "biznes CRM",
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     // en
     "online booking", "appointment scheduling", "booking system", "reservations", "Uzbekistan", "Tashkent",
   ],
-  authors: [{ name: "Bookup" }],
+  authors: [{ name: "BOOKUP" }],
   alternates: { canonical: "https://bookup.uz" },
   icons: {
     icon: "/favicon.png",
@@ -41,18 +41,18 @@ export const metadata: Metadata = {
   },
   openGraph: {
     type: "website",
-    siteName: "Bookup",
-    title: "Bookup — Onlayn band qilish platformasi",
+    siteName: "BOOKUP",
+    title: "BOOKUP — Onlayn band qilish platformasi",
     description:
       "Mijozlar xizmatlaringizni onlayn bron qiladi, siz esa jadval, mijozlar va to‘lovlarni bitta joyda boshqarasiz.",
     url: "https://bookup.uz",
     locale: "uz_UZ",
     alternateLocale: ["ru_RU", "en_US"],
-    images: [{ url: "/og.jpg", width: 640, height: 360, alt: "Bookup — bookup.uz" }],
+    images: [{ url: "/og.jpg", width: 640, height: 360, alt: "BOOKUP — bookup.uz" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Bookup — Onlayn band qilish platformasi",
+    title: "BOOKUP — Onlayn band qilish platformasi",
     description: "Biznesingiz uchun onlayn band qilish va boshqaruv platformasi.",
     images: ["/og.jpg"],
   },

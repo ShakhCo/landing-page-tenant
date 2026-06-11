@@ -182,7 +182,7 @@ export function StickyFeatureSection({
                         const target = e.currentTarget;
                         target.onerror = null;
                         target.src =
-                          'https://placehold.co/600x400/eeeeee/999999?text=Bookup';
+                          'https://placehold.co/600x400/eeeeee/999999?text=BOOKUP';
                       }}
                     />
                   </div>

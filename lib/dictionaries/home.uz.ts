@@ -126,7 +126,7 @@ const dict = {
       },
       {
         title: "Sevimli vositalaringiz bilan ulanadi",
-        intro: "Bookup siz ishlatib turgan platformalarga oson bog'lanadi.",
+        intro: "BOOKUP siz ishlatib turgan platformalarga oson bog'lanadi.",
         bullets: [
           "Telegram bot orqali yozilish va xabarlar",
           "Instagram profilidan to'g'ridan-to'g'ri ulanish",
@@ -160,7 +160,7 @@ const dict = {
       p1Quote1: '"ma\'lumotlar yo\'qoladi"',
       p1Quote2: '"ish to\'xtaydi"',
       p1Post:
-        "deb qo'rqadi. Bookup'da bunday muammo yo'q — mavjud mijozlaringiz, yozilishlar tarixi va jadvalingizni biz o'zimiz ko'chirib o'tkazamiz.",
+        "deb qo'rqadi. BOOKUP'da bunday muammo yo'q — mavjud mijozlaringiz, yozilishlar tarixi va jadvalingizni biz o'zimiz ko'chirib o'tkazamiz.",
       p2Pre: "Siz hech narsa qilmaysiz, biznesingiz esa",
       p2Bold: "bir kun ham to'xtamaydi",
       cta: "Menejer bilan bog'lanish",
@@ -171,7 +171,7 @@ const dict = {
     titleMain: "Sevimli vositalaringiz",
     titleAccent: "bilan ulanadi",
     subtitle:
-      "Bookup siz ishlatib turgan platformalarga osongina bog'lanadi — hech narsani yangidan boshlashga hojat yo'q.",
+      "BOOKUP siz ishlatib turgan platformalarga osongina bog'lanadi — hech narsani yangidan boshlashga hojat yo'q.",
     more: "Batafsil",
     slideLabel: "Slayd",
     items: [
@@ -226,7 +226,7 @@ const dict = {
     titleLine1: "Biznesni",
     titleAccent: "cho'ntakda",
     titlePost: "olib yuring",
-    body: "Bookup Business — biznes egalari uchun mobil ilova. Yozilishlarni qabul qiling, mijozlar bilan ishlang va daromadni real vaqtda kuzating.",
+    body: "BOOKUP Business — biznes egalari uchun mobil ilova. Yozilishlarni qabul qiling, mijozlar bilan ishlang va daromadni real vaqtda kuzating.",
     features: [
       "Onlayn jadval va kalendar",
       "Mijozlar bazasi va tashriflar tarixi",
@@ -236,7 +236,7 @@ const dict = {
     download: "Yuklash",
     ios: "iOS uchun",
     android: "Android uchun",
-    imageAlt: "Bookup Business mobil ilova",
+    imageAlt: "BOOKUP Business mobil ilova",
   },
   faq: {
     eyebrow: "FAQ",
@@ -247,8 +247,8 @@ const dict = {
     popular: "Eng ko'p so'raladigan",
     items: [
       {
-        q: "Bookup nima?",
-        a: "Bookup — O'zbekiston bizneslari uchun onlayn yozilish va mijozlar bazasini boshqarish platformasi. Sartaroshxona, salon, stomatologiya, bilyard, tennis va boshqa xizmat ko'rsatish bizneslari uchun mo'ljallangan.",
+        q: "BOOKUP nima?",
+        a: "BOOKUP — O'zbekiston bizneslari uchun onlayn yozilish va mijozlar bazasini boshqarish platformasi. Sartaroshxona, salon, stomatologiya, bilyard, tennis va boshqa xizmat ko'rsatish bizneslari uchun mo'ljallangan.",
       },
       {
         q: "Qanday biznes turlari ulanadi?",
@@ -264,7 +264,7 @@ const dict = {
       },
       {
         q: "Komissiya qancha?",
-        a: "Bookup bronlardan komissiya olmaydi. Faqat oylik obuna to'lovi mavjud — biznes hajmiga qarab tariflar farq qiladi. Batafsil narxlar bilan menejer tanishtiradi.",
+        a: "BOOKUP bronlardan komissiya olmaydi. Faqat oylik obuna to'lovi mavjud — biznes hajmiga qarab tariflar farq qiladi. Batafsil narxlar bilan menejer tanishtiradi.",
       },
       {
         q: "Demo versiyani sinab ko'rsa bo'ladimi?",
@@ -282,7 +282,7 @@ const dict = {
   },
   footer: {
     ctaTitleLine1: "Biznesingizni bugun",
-    ctaTitleLine2: "Bookup'ga ulang.",
+    ctaTitleLine2: "BOOKUP'ga ulang.",
     ctaStart: "Hoziroq boshlash",
     about:
       "O'zbekiston bizneslari uchun onlayn yozilish va mijozlar bazasini boshqarish platformasi.",

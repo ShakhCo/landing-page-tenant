@@ -60,9 +60,15 @@ export function Header({
           </nav>
           <div className="flex items-center gap-2 text-sm">
             <LanguageSwitcher locale={locale} />
-            <IconButton aria-label="Telegram">
+            <a
+              href="https://t.me/ShakhCo"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Telegram"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 transition hover:bg-gray-100"
+            >
               <TelegramIcon />
-            </IconButton>
+            </a>
             <a
               href="tel:+998883634020"
               className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-3 py-2 font-medium"
@@ -79,7 +85,7 @@ export function Header({
         <a href={localePath(locale)} className="flex items-center">
           <Image
             src="/bookup-logo.png"
-            alt="Bookup"
+            alt="BOOKUP"
             width={600}
             height={112}
             priority
@@ -262,24 +268,21 @@ function LocaleRow({ locale, current }: { locale: Locale; current: Locale }) {
   );
 }
 
-function IconButton({
-  children,
-  ...rest
-}: React.ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-700 hover:bg-gray-200"
-      {...rest}
-    >
-      {children}
-    </button>
-  );
-}
-
+/** The real Telegram logo — blue circle, white paper plane. */
 function TelegramIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-      <path d="M9.04 15.39 8.86 19c.27 0 .39-.12.53-.26l1.27-1.22 2.64 1.93c.48.27.83.13.96-.45l1.75-8.18c.16-.74-.26-1.03-.74-.85L4.49 13.62c-.71.27-.7.66-.12.83l2.6.81 6.04-3.8c.28-.18.55-.08.33.1L9.04 15.39Z" />
+    <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden>
+      <defs>
+        <linearGradient id="tg-grad" x1="12" y1="0" x2="12" y2="24" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#2AABEE" />
+          <stop offset="1" stopColor="#229ED9" />
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="12" fill="url(#tg-grad)" />
+      <path
+        fill="#fff"
+        d="M17.34 7.13 15.5 15.99c-.13.62-.5.77-1.02.48l-2.82-2.08-1.36 1.31c-.15.15-.28.28-.57.28l.2-2.87 5.23-4.72c.23-.2-.05-.31-.35-.11l-6.46 4.07-2.78-.87c-.6-.19-.62-.6.13-.9l10.86-4.18c.5-.18.94.12.78.73Z"
+      />
     </svg>
   );
 }

@@ -19,11 +19,12 @@ export async function generateMetadata({
   const url = `https://${subdomain}.bookup.uz`;
   const bits = [cat, city].filter(Boolean).join(' · ');
   const title = `${b.name} — Onlayn bron qilish`;
-  const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling. Онлайн запись · Online booking.`;
+  // Tenant pages are uz-only — single-language meta (default uz, no mixing).
+  const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling.`;
   const images = [{ url: b.avatarUrl ?? 'https://bookup.uz/og.jpg' }];
 
   return {
-    title: { absolute: `${title} | Bookup` },
+    title: { absolute: `${title} | BOOKUP` },
     description,
     applicationName: b.name,
     alternates: { canonical: url },
@@ -34,7 +35,6 @@ export async function generateMetadata({
       description,
       url,
       locale: 'uz_UZ',
-      alternateLocale: ['ru_RU', 'en_US'],
       images,
     },
     twitter: { card: b.avatarUrl ? 'summary' : 'summary_large_image', title, description, images: [b.avatarUrl ?? 'https://bookup.uz/og.jpg'] },

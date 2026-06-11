@@ -86,7 +86,7 @@ export function PricingSection() {
                   Asosiy tarif
                 </p>
                 <h3 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
-                  Bookup Standard
+                  BOOKUP Standard
                 </h3>
               </div>
               <div className="text-right">
