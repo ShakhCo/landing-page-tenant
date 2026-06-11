@@ -10,6 +10,11 @@ export interface PublicTenant {
     avatarUrl: string | null;
     currency: string;
     category: { slug: string; name: LocalizedText } | null;
+    /** Optional public contacts — absent until the API exposes them. */
+    phone?: string | null;
+    telegram?: string | null;
+    instagram?: string | null;
+    website?: string | null;
   };
   branches: Array<{
     id: string;
@@ -35,6 +40,8 @@ export interface PublicTenant {
     ratePerHour: number | null;
     /** Localized label for this service's bookable units ("Yo'laklar"); null → generic "Joy". */
     unitLabel?: LocalizedText | null;
+    /** Owner-uploaded photo of the service; null/absent = none. */
+    photoUrl?: string | null;
   }>;
   staff: Array<{
     id: string;
@@ -47,6 +54,15 @@ export interface PublicTenant {
 
 export const API_BASE =
   process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://bookup-api.automations.uz';
+
+/**
+ * Resolves a backend media URL for <img src>. The API stores relative paths
+ * ("/uploads/…") when its APP_PUBLIC_URL is unset — resolve those against the
+ * API origin, not this site's.
+ */
+export function mediaUrl(url: string): string {
+  return url.startsWith('/') ? `${API_BASE}${url}` : url;
+}
 
 export interface AvailabilitySlot {
   start: string;
