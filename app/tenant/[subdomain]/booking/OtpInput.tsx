@@ -102,7 +102,7 @@ export function OtpInput({
           inputMode="numeric"
           autoComplete={i === 0 ? 'one-time-code' : 'off'}
           aria-label={`Kod ${i + 1}`}
-          className="h-14 w-full min-w-0 rounded-xl border border-foreground/12 bg-muted/50 text-center text-2xl font-bold tabular-nums text-foreground outline-none transition-colors duration-200 focus:border-foreground"
+          className="h-14 w-full min-w-0 rounded-xl border border-border bg-card text-center text-2xl font-bold tabular-nums text-foreground shadow-xs shadow-black/5 outline-none transition-colors duration-200 focus:border-foreground focus:ring-2 focus:ring-foreground/10"
         />
       ))}
     </div>
