@@ -14,7 +14,6 @@ const dict = {
       partners: "Hamkorlar",
       about: "Biz haqimizda",
     },
-    a11yEye: "Версия для слабовидящих",
     businessTab: "Biznes uchun",
     customersTab: "Mijozlar uchun",
     connectBusiness: "Biznesni ulash",

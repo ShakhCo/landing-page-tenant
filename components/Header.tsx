@@ -1,11 +1,11 @@
 'use client';
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Check, ChevronDown, Menu, X } from "lucide-react";
 import { PhoneIcon } from "./icons";
 import homeUz, { type HomeDict } from "@/lib/dictionaries/home.uz";
-import { LOCALES, localePath, type Locale } from "@/lib/i18n";
+import { LOCALES, LOCALE_META, localePath, type Locale } from "@/lib/i18n";
 
 export function Header({
   locale = 'uz',
@@ -60,9 +60,6 @@ export function Header({
           </nav>
           <div className="flex items-center gap-2 text-sm">
             <LanguageSwitcher locale={locale} />
-            <IconButton aria-label={dict.a11yEye}>
-              <EyeIcon />
-            </IconButton>
             <IconButton aria-label="Telegram">
               <TelegramIcon />
             </IconButton>
@@ -147,8 +144,8 @@ export function Header({
                 </a>
               ))}
 
-              <div className="mt-2 px-4">
-                <LanguageSwitcher locale={locale} />
+              <div className="mt-2">
+                <MobileLanguageList locale={locale} />
               </div>
 
               <div className="mt-3 flex gap-2">
@@ -181,27 +178,87 @@ export function Header({
 }
 
 function LanguageSwitcher({ locale }: { locale: Locale }) {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const current = LOCALE_META[locale];
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (e: PointerEvent) => {
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-full bg-gray-50 px-2 py-2 text-sm font-medium">
-      {LOCALES.map((l, i) => (
-        <span key={l} className="inline-flex items-center">
-          {i > 0 && (
-            <span aria-hidden className="mx-1 h-3.5 w-px bg-gray-200" />
-          )}
-          <a
-            href={localePath(l)}
-            aria-current={l === locale ? "true" : undefined}
-            className={`rounded-full px-1.5 uppercase transition ${
-              l === locale
-                ? "font-semibold text-gray-900"
-                : "text-gray-400 hover:text-gray-700"
-            }`}
-          >
-            {l}
-          </a>
-        </span>
+    <div ref={rootRef} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-3 py-2 text-sm font-medium text-gray-900 transition hover:bg-gray-100"
+      >
+        <span aria-hidden>{current.flag}</span>
+        <span>{current.code}</span>
+        <ChevronDown
+          aria-hidden
+          className={`size-3.5 text-gray-500 transition-transform ${open ? "rotate-180" : ""}`}
+          strokeWidth={2.25}
+        />
+      </button>
+
+      {open && (
+        <div
+          role="menu"
+          className="absolute right-0 top-full z-40 mt-2 min-w-44 rounded-2xl bg-white p-2 shadow-lg ring-1 ring-black/5"
+        >
+          {LOCALES.map((l) => (
+            <LocaleRow key={l} locale={l} current={locale} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileLanguageList({ locale }: { locale: Locale }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      {LOCALES.map((l) => (
+        <LocaleRow key={l} locale={l} current={locale} />
       ))}
     </div>
+  );
+}
+
+function LocaleRow({ locale, current }: { locale: Locale; current: Locale }) {
+  const meta = LOCALE_META[locale];
+  const active = locale === current;
+  return (
+    <a
+      href={localePath(locale)}
+      aria-current={active ? "true" : undefined}
+      className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+        active
+          ? "bg-[var(--accent)]/10 text-[var(--accent)]"
+          : "text-gray-700 hover:bg-gray-50"
+      }`}
+    >
+      <span aria-hidden>{meta.flag}</span>
+      <span className="flex-1">{meta.native}</span>
+      {active && <Check aria-hidden className="size-4" strokeWidth={2.5} />}
+    </a>
   );
 }
 
@@ -216,15 +273,6 @@ function IconButton({
     >
       {children}
     </button>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-      <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12Z" stroke="currentColor" strokeWidth="1.7" />
-      <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.7" />
-    </svg>
   );
 }
 

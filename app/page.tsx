@@ -8,6 +8,7 @@ export const metadata: Metadata = {
     canonical: "https://bookup.uz",
     languages: {
       uz: "https://bookup.uz",
+      "uz-Cyrl": "https://bookup.uz/oz",
       ru: "https://bookup.uz/ru",
       en: "https://bookup.uz/en",
     },

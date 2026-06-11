@@ -12,7 +12,6 @@ const dict: HomeDict = {
       partners: "Partners",
       about: "About us",
     },
-    a11yEye: "Accessibility version",
     businessTab: "For business",
     customersTab: "For customers",
     connectBusiness: "Connect your business",

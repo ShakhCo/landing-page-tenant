@@ -1,24 +1,31 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { HomePage } from "@/components/home/HomePage";
+import ozDict from "@/lib/dictionaries/home.oz";
 import ruDict from "@/lib/dictionaries/home.ru";
 import enDict from "@/lib/dictionaries/home.en";
 import type { HomeDict } from "@/lib/dictionaries/home.uz";
 
 /**
- * Localized marketing landing page: /ru and /en. The default (uz) lives at /.
- * Tenant subdomains never reach this route — the middleware rewrites them to
- * /tenant/<sub>/..., which has no [locale] segment.
+ * Localized marketing landing page: /oz, /ru and /en. The default (uz) lives
+ * at /. Tenant subdomains never reach this route — the middleware rewrites
+ * them to /tenant/<sub>/..., which has no [locale] segment.
  */
 
-type PageLocale = 'ru' | 'en';
+type PageLocale = 'oz' | 'ru' | 'en';
 
 const DICTS: Record<PageLocale, HomeDict> = {
+  oz: ozDict,
   ru: ruDict,
   en: enDict,
 };
 
 const META: Record<PageLocale, { title: string; description: string }> = {
+  oz: {
+    title: "Bookup — Онлайн банд қилиш платформаси",
+    description:
+      "Bookup — бизнесингиз учун онлайн банд қилиш тизими. Мижозлар хизматларингизни 24/7 брон қилади; жадвал, мижозлар ва тўловларни битта жойда бошқаринг. Сартарошхона, гўзаллик салони, клиника, спорт ва бошқа хизматлар учун.",
+  },
   ru: {
     title: "Bookup — Платформа онлайн-записи",
     description:
@@ -33,16 +40,23 @@ const META: Record<PageLocale, { title: string; description: string }> = {
 
 const LANGUAGES = {
   uz: "https://bookup.uz",
+  "uz-Cyrl": "https://bookup.uz/oz",
   ru: "https://bookup.uz/ru",
   en: "https://bookup.uz/en",
 };
 
+const CANONICALS: Record<PageLocale, string> = {
+  oz: LANGUAGES["uz-Cyrl"],
+  ru: LANGUAGES.ru,
+  en: LANGUAGES.en,
+};
+
 function isPageLocale(value: string): value is PageLocale {
-  return value === 'ru' || value === 'en';
+  return value === 'oz' || value === 'ru' || value === 'en';
 }
 
 export function generateStaticParams() {
-  return [{ locale: 'ru' }, { locale: 'en' }];
+  return [{ locale: 'oz' }, { locale: 'ru' }, { locale: 'en' }];
 }
 
 export async function generateMetadata({
@@ -57,7 +71,7 @@ export async function generateMetadata({
     title: { absolute: meta.title },
     description: meta.description,
     alternates: {
-      canonical: LANGUAGES[locale],
+      canonical: CANONICALS[locale],
       languages: LANGUAGES,
     },
   };
