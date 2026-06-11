@@ -228,19 +228,19 @@ const FEATURES: Array<{
     title: "Aqlli jadval",
     text: "Kun, hafta va oy bo'yicha jonli jadval. Bron qo'yilganda vaqt avtomatik band bo'ladi — to'qnashuv bo'lmaydi.",
     icon: <CalendarClock className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-blue-500 shadow-lg shadow-blue-500/30",
+    tile: "bg-blue-500",
   },
   {
     title: "Ustalar va xizmatlar",
     text: "Har bir master uchun alohida xizmatlar, narxlar va ish vaqti. Mijoz o'zi yoqtirgan ustani tanlaydi.",
     icon: <Scissors className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-[var(--accent)] shadow-lg shadow-[var(--accent)]/30",
+    tile: "bg-[var(--accent)]",
   },
   {
     title: "Tayyor sayt va onlayn bron",
     text: "Bepul saytingiz tayyor: sizning-biznes.bookup.uz. Linkni Instagram bio'ga qo'ying — mijozlar to'g'ridan-to'g'ri bron qiladi.",
     icon: <Globe className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-violet-500 shadow-lg shadow-violet-500/30",
+    tile: "bg-violet-500",
   },
   {
     title: "Telegram bot",
@@ -260,25 +260,25 @@ const FEATURES: Array<{
     title: "Mijozlar bazasi",
     text: "Har bir mijozning tashriflar tarixi, sevimli xizmatlari va shaxsiy izohlar avtomatik saqlanadi.",
     icon: <Users className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-emerald-500 shadow-lg shadow-emerald-500/30",
+    tile: "bg-emerald-500",
   },
   {
     title: "SMS tasdiq va eslatma",
     text: "Bron tasdig'i va tashrifdan 2 soat oldin avtomatik eslatma — har bir mijozga yetib boradi.",
     icon: <MessageSquareText className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-amber-500 shadow-lg shadow-amber-500/30",
+    tile: "bg-amber-500",
   },
   {
     title: "Chegirma va sodiqlik dasturi",
     text: "Chegirma kodlari, takroriy tashriflar uchun bonus ballar va tug'ilgan kun aksiyalari.",
     icon: <Gift className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-fuchsia-500 shadow-lg shadow-fuchsia-500/30",
+    tile: "bg-fuchsia-500",
   },
   {
     title: "Mijoz baholari",
     text: "Tashrifdan keyin mijoz baho va izoh qoldiradi. Eng kuchli ustalaringizni ajratib ko'rsating, sifatni nazorat qiling.",
     icon: <Star className="h-6 w-6 text-white" strokeWidth={2} />,
-    tile: "bg-yellow-400 shadow-lg shadow-yellow-400/30",
+    tile: "bg-yellow-400",
   },
 ];
 
