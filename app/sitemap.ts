@@ -8,6 +8,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const base = 'https://bookup.uz';
   return [
     { url: base, changeFrequency: 'weekly', priority: 1 },
+    { url: `${base}/ru`, changeFrequency: 'weekly', priority: 0.9 },
+    { url: `${base}/en`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${base}/narxlar`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${base}/business/sartaroshxonalar`, changeFrequency: 'monthly', priority: 0.7 },
   ];

@@ -1,69 +1,57 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import homeUz, { type HomeDict } from '@/lib/dictionaries/home.uz';
 
-// --- Data for the feature cards ---
-const features = [
+type StickyDict = HomeDict['sticky'];
+
+// --- Visual config for the feature cards (copy comes from the dictionary) ---
+const FEATURE_STYLES = [
   {
-    title: "Aqlli jadval va kalendar",
-    intro: "Xodimlar, xonalar va stollar — bitta panelda.",
-    bullets: [
-      "Vaqt to'qnashuvlari avtomatik oldini olinadi",
-      "Real vaqt rejimidagi jonli jadval",
-      "Bir nechta xodim va xizmat turi qo'llab-quvvatlanadi",
-    ],
     imageUrl: "/schedule-photo.jpg",
     bgColor: "bg-rose-100 dark:bg-rose-950/40",
     textColor: "text-gray-700 dark:text-gray-200",
     checkColor: "bg-rose-500 text-white",
   },
   {
-    title: "Onlayn yozilish 24/7",
-    intro: "Mijozlar siz uxlayotganingizda ham yozilishadi.",
-    bullets: [
-      <>
-        Bepul shaxsiy sayt:{" "}
-        <strong className="font-semibold text-gray-900">
-          sizning-biznes.bookup.uz
-        </strong>
-      </>,
-      "Instagram va Telegramdan to'g'ridan-to'g'ri ulanish",
-      "Ilova o'rnatish shart emas",
-      "Tasdiqlash va SMS eslatmalar avtomatik",
-    ],
     imageUrl: "/booking-mobile.png",
     bgColor: "bg-cyan-100 dark:bg-cyan-950/40",
     textColor: "text-gray-700 dark:text-gray-200",
     checkColor: "bg-cyan-500 text-white",
   },
   {
-    title: "Mijozlar bazasi va eslatmalar",
-    intro: "Hech bir mijoz yo'qolmaydi, hech bir tashrif unutilmaydi.",
-    bullets: [
-      "Tashriflar tarixi va shaxsiy izohlar",
-      "SMS va push xabarnomalar",
-      "Sodiqlik dasturlari va bonus ballar",
-      "Tug'ilgan kun va aksiya eslatmalari",
-    ],
     imageUrl: "/cat-salon.jpg",
     bgColor: "bg-amber-100 dark:bg-amber-950/40",
     textColor: "text-gray-700 dark:text-gray-200",
     checkColor: "bg-amber-500 text-white",
   },
   {
-    title: "Sevimli vositalaringiz bilan ulanadi",
-    intro: "Bookup siz ishlatib turgan platformalarga oson bog'lanadi.",
-    bullets: [
-      "Telegram bot orqali yozilish va xabarlar",
-      "Instagram profilidan to'g'ridan-to'g'ri ulanish",
-      "Veb-sayt vidjeti — bir qator kod bilan",
-    ],
     imageUrl: "/app-mockup.png",
     bgColor: "bg-stone-200 dark:bg-stone-900/60",
     textColor: "text-gray-700 dark:text-gray-200",
     checkColor: "bg-stone-600 text-white",
   },
 ];
+
+function buildFeatures(dict: StickyDict) {
+  return dict.features.map((f, i) => ({
+    ...FEATURE_STYLES[i],
+    title: f.title,
+    intro: f.intro,
+    bullets:
+      i === 1
+        ? ([
+            <>
+              {dict.freeSitePrefix}{" "}
+              <strong className="font-semibold text-gray-900">
+                sizning-biznes.bookup.uz
+              </strong>
+            </>,
+            ...f.bullets,
+          ] as React.ReactNode[])
+        : ([...f.bullets] as React.ReactNode[]),
+  }));
+}
 
 // --- Check icon for bullets ---
 const CheckIcon = () => (
@@ -109,14 +97,14 @@ const useScrollAnimation = () => {
 };
 
 // --- Header Component ---
-const AnimatedHeader = () => {
+const AnimatedHeader = ({ dict }: { dict: StickyDict }) => {
   const [headerRef, headerInView] = useScrollAnimation();
   const [pRef, pInView] = useScrollAnimation();
 
   return (
     <div className="mx-auto mb-16 max-w-3xl text-center">
       <p className="text-sm font-medium uppercase tracking-wider text-[var(--accent)]">
-        Imkoniyatlar
+        {dict.eyebrow}
       </p>
       <h2
         ref={headerRef as React.RefObject<HTMLHeadingElement>}
@@ -125,7 +113,7 @@ const AnimatedHeader = () => {
         } text-gray-900 dark:text-white`}
         style={{ transformStyle: 'preserve-3d' }}
       >
-        Bitta platforma — to&apos;liq nazorat
+        {dict.title}
       </h2>
       <p
         ref={pRef as React.RefObject<HTMLParagraphElement>}
@@ -134,20 +122,26 @@ const AnimatedHeader = () => {
         }`}
         style={{ transformStyle: 'preserve-3d' }}
       >
-        Yozilishdan tahlilgacha — biznesni boshqarishning hamma jarayonlari bitta joyda.
+        {dict.subtitle}
       </p>
     </div>
   );
 };
 
 // This is the main component that orchestrates everything.
-export function StickyFeatureSection() {
+export function StickyFeatureSection({
+  dict = homeUz.sticky,
+}: {
+  dict?: StickyDict;
+}) {
+  const features = buildFeatures(dict);
+
   return (
     <div className="bg-gray-50 rounded-2xl font-sans dark:bg-gray-950">
       <div className="px-[5%]">
         <div className="mx-auto max-w-7xl">
           <section className="flex flex-col items-center py-16 md:py-24">
-            <AnimatedHeader />
+            <AnimatedHeader dict={dict} />
 
             <div className="w-full">
               {features.map((feature, index) => (

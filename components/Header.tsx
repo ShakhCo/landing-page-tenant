@@ -4,19 +4,27 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { PhoneIcon } from "./icons";
+import homeUz, { type HomeDict } from "@/lib/dictionaries/home.uz";
+import { LOCALES, localePath, type Locale } from "@/lib/i18n";
 
-const NAV_ITEMS: Array<{ label: string; href: string }> = [
-  { label: "Bosh sahifa", href: "/" },
-  { label: "Imkoniyatlar", href: "#" },
-  { label: "Biznesga", href: "#" },
-  { label: "Mijozlarga", href: "#" },
-  { label: "Narxlar", href: "/narxlar" },
-  { label: "Hamkorlar", href: "#" },
-  { label: "Biz haqimizda", href: "#" },
-];
-
-export function Header() {
+export function Header({
+  locale = 'uz',
+  dict = homeUz.header,
+}: {
+  locale?: Locale;
+  dict?: HomeDict['header'];
+}) {
   const [open, setOpen] = useState(false);
+
+  const navItems: Array<{ label: string; href: string }> = [
+    { label: dict.nav.home, href: localePath(locale) },
+    { label: dict.nav.features, href: "#" },
+    { label: dict.nav.forBusiness, href: "#" },
+    { label: dict.nav.forCustomers, href: "#" },
+    { label: dict.nav.pricing, href: "/narxlar" },
+    { label: dict.nav.partners, href: "#" },
+    { label: dict.nav.about, href: "#" },
+  ];
 
   useEffect(() => {
     if (!open) return;
@@ -33,7 +41,7 @@ export function Header() {
       <div className="hidden border-b border-black/10 md:block">
         <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 py-3">
           <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
-            {NAV_ITEMS.map((item, i) => (
+            {navItems.map((item, i) => (
               <a
                 key={item.label}
                 href={item.href}
@@ -51,11 +59,8 @@ export function Header() {
             ))}
           </nav>
           <div className="flex items-center gap-2 text-sm">
-            <button className="inline-flex items-center gap-1 rounded-full bg-gray-50 px-3 py-2 font-medium">
-              RU
-              <span className="text-gray-400">▾</span>
-            </button>
-            <IconButton aria-label="Версия для слабовидящих">
+            <LanguageSwitcher locale={locale} />
+            <IconButton aria-label={dict.a11yEye}>
               <EyeIcon />
             </IconButton>
             <IconButton aria-label="Telegram">
@@ -74,7 +79,7 @@ export function Header() {
 
       {/* Main brand bar */}
       <div className="mx-auto flex max-w-[1360px] items-center gap-3 px-5 py-4 md:gap-5 md:py-5">
-        <a href="/" className="flex items-center">
+        <a href={localePath(locale)} className="flex items-center">
           <Image
             src="/bookup-logo.png"
             alt="Bookup"
@@ -86,21 +91,21 @@ export function Header() {
         </a>
         <div className="ml-3 hidden items-center gap-2 text-sm md:flex">
           <button className="rounded-full bg-[var(--accent)] px-5 py-2 font-medium text-white">
-            Biznes uchun
+            {dict.businessTab}
           </button>
           <button className="rounded-full px-5 py-2 font-medium text-gray-700 hover:bg-gray-50">
-            Mijozlar uchun
+            {dict.customersTab}
           </button>
         </div>
         <div className="ml-auto flex items-center gap-2">
           <button className="hidden items-center gap-2 rounded-full border-2 border-[var(--accent)] bg-white px-5 py-2.5 text-sm font-medium text-gray-900 transition hover:bg-[var(--accent)]/5 md:inline-flex">
             <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-            Biznesni ulash
+            {dict.connectBusiness}
           </button>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
-            aria-label={open ? "Menyu yopish" : "Menyu ochish"}
+            aria-label={open ? dict.menuClose : dict.menuOpen}
             aria-expanded={open}
             className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-gray-50 text-gray-700 transition hover:bg-gray-100 md:hidden"
           >
@@ -124,7 +129,7 @@ export function Header() {
           />
           <div className="relative z-30 border-t border-black/10 bg-white md:hidden">
             <nav className="mx-auto flex max-w-[1360px] flex-col gap-1 px-5 py-4">
-              {NAV_ITEMS.map((item, i) => (
+              {navItems.map((item, i) => (
                 <a
                   key={item.label}
                   href={item.href}
@@ -142,12 +147,16 @@ export function Header() {
                 </a>
               ))}
 
+              <div className="mt-2 px-4">
+                <LanguageSwitcher locale={locale} />
+              </div>
+
               <div className="mt-3 flex gap-2">
                 <button className="flex-1 rounded-full bg-[var(--accent)] px-5 py-3 text-sm font-semibold text-white">
-                  Biznes uchun
+                  {dict.businessTab}
                 </button>
                 <button className="flex-1 rounded-full bg-gray-50 px-5 py-3 text-sm font-semibold text-gray-700">
-                  Mijozlar uchun
+                  {dict.customersTab}
                 </button>
               </div>
 
@@ -161,13 +170,38 @@ export function Header() {
 
               <button className="mt-2 inline-flex items-center justify-center gap-2 rounded-full border-2 border-[var(--accent)] bg-white px-5 py-3 text-sm font-semibold text-gray-900">
                 <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-                Biznesni ulash
+                {dict.connectBusiness}
               </button>
             </nav>
           </div>
         </>
       )}
     </header>
+  );
+}
+
+function LanguageSwitcher({ locale }: { locale: Locale }) {
+  return (
+    <div className="inline-flex items-center gap-0.5 rounded-full bg-gray-50 px-2 py-2 text-sm font-medium">
+      {LOCALES.map((l, i) => (
+        <span key={l} className="inline-flex items-center">
+          {i > 0 && (
+            <span aria-hidden className="mx-1 h-3.5 w-px bg-gray-200" />
+          )}
+          <a
+            href={localePath(l)}
+            aria-current={l === locale ? "true" : undefined}
+            className={`rounded-full px-1.5 uppercase transition ${
+              l === locale
+                ? "font-semibold text-gray-900"
+                : "text-gray-400 hover:text-gray-700"
+            }`}
+          >
+            {l}
+          </a>
+        </span>
+      ))}
+    </div>
   );
 }
 

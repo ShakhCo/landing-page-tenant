@@ -8,50 +8,39 @@ import {
   SocialTelegramIcon,
   SocialYoutubeIcon,
 } from "./icons";
+import homeUz, { type HomeDict } from "@/lib/dictionaries/home.uz";
 
-const COLS = [
-  {
-    heading: "Biznes uchun",
-    links: [
-      { label: "Sartaroshxonalar", href: "/business/sartaroshxonalar" },
-      { label: "Salonlar", href: "/business/salonlar" },
-      { label: "Stomatologiya", href: "/business/stomatologiya" },
-      { label: "Bilyard", href: "/business/bilyard" },
-      { label: "Tennis", href: "/business/tennis" },
-      { label: "Fitness", href: "/business/fitness" },
-    ],
-  },
-  {
-    heading: "Imkoniyatlar",
-    links: [
-      { label: "Onlayn jadval", href: "#" },
-      { label: "Mijozlar bazasi", href: "#" },
-      { label: "SMS xabarnomalar", href: "#" },
-      { label: "Telegram bot", href: "#" },
-      { label: "Instagram ulanish", href: "#" },
-      { label: "Tahlil va hisobotlar", href: "#" },
-    ],
-  },
-  {
-    heading: "Kompaniya",
-    links: [
-      { label: "Biz haqimizda", href: "#" },
-      { label: "Hamkorlar", href: "#" },
-      { label: "Vakansiyalar", href: "#" },
-      { label: "Aloqa", href: "#" },
-    ],
-  },
-  {
-    heading: "Hujjatlar",
-    links: [
-      { label: "Foydalanish shartlari", href: "#" },
-      { label: "Maxfiylik siyosati", href: "#" },
-      { label: "Oferta", href: "#" },
-    ],
-  },
-];
+/** Link targets per column — labels come from the dictionary, zipped by index. */
+const COLUMN_HREFS = {
+  business: [
+    "/business/sartaroshxonalar",
+    "/business/salonlar",
+    "/business/stomatologiya",
+    "/business/bilyard",
+    "/business/tennis",
+    "/business/fitness",
+  ],
+  features: ["#", "#", "#", "#", "#", "#"],
+  company: ["#", "#", "#", "#"],
+  docs: ["#", "#", "#"],
+};
 
-export function Footer() {
+export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) {
+  const cols = (
+    [
+      ['business', dict.columns.business],
+      ['features', dict.columns.features],
+      ['company', dict.columns.company],
+      ['docs', dict.columns.docs],
+    ] as const
+  ).map(([key, col]) => ({
+    heading: col.heading,
+    links: col.links.map((label, i) => ({
+      label,
+      href: COLUMN_HREFS[key][i] ?? "#",
+    })),
+  }));
+
   return (
     <footer className="mt-12 rounded-t-[2rem] bg-gray-950 text-white md:mt-24 md:rounded-t-[3rem] lg:rounded-t-[5rem] 2xl:rounded-t-[10rem]">
       {/* Top CTA strip */}
@@ -59,9 +48,9 @@ export function Footer() {
         <div className="flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between md:gap-12">
           <div>
             <h2 className="text-3xl font-extrabold leading-[1.05] tracking-tight md:text-4xl lg:text-5xl">
-              Biznesingizni bugun
+              {dict.ctaTitleLine1}
               <br />
-              <span className="text-gray-500">Bookup&apos;ga ulang.</span>
+              <span className="text-gray-500">{dict.ctaTitleLine2}</span>
             </h2>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -69,7 +58,7 @@ export function Footer() {
               href="#"
               className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
             >
-              Hoziroq boshlash
+              {dict.ctaStart}
             </a>
             <a
               href="tel:+998883634020"
@@ -97,8 +86,7 @@ export function Footer() {
               className="h-7 w-auto brightness-0 invert"
             />
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-gray-400">
-              O&apos;zbekiston bizneslari uchun onlayn yozilish va mijozlar
-              bazasini boshqarish platformasi.
+              {dict.about}
             </p>
 
             <div className="mt-7 flex gap-2.5">
@@ -118,7 +106,7 @@ export function Footer() {
           </div>
 
           {/* Link columns */}
-          {COLS.map((col) => (
+          {cols.map((col) => (
             <div key={col.heading}>
               <h4 className="text-sm font-semibold uppercase tracking-wider text-white">
                 {col.heading}
@@ -141,17 +129,17 @@ export function Footer() {
       <div className="border-t border-white/10">
         <div className="mx-auto flex max-w-[1360px] flex-col items-start justify-between gap-4 px-5 py-6 text-xs text-gray-500 sm:flex-row sm:items-center">
           <p>
-            © {new Date().getFullYear()} Bookup. Barcha huquqlar himoyalangan.
+            © {new Date().getFullYear()} Bookup. {dict.rights}
           </p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <a href="#" className="transition hover:text-white">
-              Maxfiylik siyosati
+              {dict.privacy}
             </a>
             <a href="#" className="transition hover:text-white">
-              Foydalanish shartlari
+              {dict.terms}
             </a>
             <a href="#" className="transition hover:text-white">
-              Oferta
+              {dict.offer}
             </a>
           </div>
         </div>
