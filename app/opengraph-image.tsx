@@ -49,12 +49,13 @@ export default function OgImage() {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ fontSize: 66, fontWeight: 800, color: '#111111', lineHeight: 1.05, letterSpacing: '-2px' }}>
+          <div style={{ display: 'flex', fontSize: 66, fontWeight: 800, color: '#111111', lineHeight: 1.05, letterSpacing: '-2px' }}>
             Biznesingiz uchun
-            <br />
-            <span style={{ color: '#e11d6c' }}>onlayn band qilish</span>
           </div>
-          <div style={{ fontSize: 30, color: '#555555', maxWidth: 900 }}>
+          <div style={{ display: 'flex', fontSize: 66, fontWeight: 800, color: '#e11d6c', lineHeight: 1.05, letterSpacing: '-2px' }}>
+            onlayn band qilish
+          </div>
+          <div style={{ display: 'flex', fontSize: 30, color: '#555555', maxWidth: 900 }}>
             Mijozlar 24/7 bron qiladi · jadval, mijozlar va to&apos;lovlar bitta panelda
           </div>
         </div>

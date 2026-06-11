@@ -20,6 +20,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/ru`, lastModified, changeFrequency: 'weekly', priority: 0.9, alternates: { languages: homeLanguages } },
     { url: `${base}/en`, lastModified, changeFrequency: 'weekly', priority: 0.9, alternates: { languages: homeLanguages } },
     { url: `${base}/narxlar`, lastModified, changeFrequency: 'monthly', priority: 0.8 },
-    { url: `${base}/business/sartaroshxonalar`, lastModified, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${base}/business/barbershops`, lastModified, changeFrequency: 'monthly', priority: 0.7 },
   ];
 }

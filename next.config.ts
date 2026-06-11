@@ -50,6 +50,12 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: SECURITY_HEADERS }];
   },
+  async redirects() {
+    return [
+      // The barbershop category page moved to an English slug.
+      { source: "/business/sartaroshxonalar", destination: "/business/barbershops", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,4 +1,13 @@
 import type { Metadata } from "next";
+import {
+  CalendarClock,
+  Scissors,
+  Globe,
+  Users,
+  MessageSquareText,
+  Gift,
+  Star,
+} from "lucide-react";
 import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -7,7 +16,41 @@ import { PricingSection } from "@/components/Pricing";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, breadcrumbSchema, organizationSchema } from "@/lib/seo";
 
-const PAGE_URL = `${SITE_URL}/business/sartaroshxonalar`;
+const PAGE_URL = `${SITE_URL}/business/barbershops`;
+
+/** Real Telegram logo — blue circle, white paper plane. */
+function TelegramLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <circle cx="12" cy="12" r="12" fill="#229ED9" />
+      <path
+        fill="#fff"
+        d="M17.34 7.13 15.5 15.99c-.13.62-.5.77-1.02.48l-2.82-2.08-1.36 1.31c-.15.15-.28.28-.57.28l.2-2.87 5.23-4.72c.23-.2-.05-.31-.35-.11l-6.46 4.07-2.78-.87c-.6-.19-.62-.6.13-.9l10.86-4.18c.5-.18.94.12.78.73Z"
+      />
+    </svg>
+  );
+}
+
+/** Real Instagram logo — rounded square + camera, brand gradient. */
+function InstagramLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} aria-hidden>
+      <defs>
+        <radialGradient id="ig-bs" cx="0.3" cy="1" r="1.2">
+          <stop offset="0" stopColor="#FEDA75" />
+          <stop offset="0.45" stopColor="#FA7E1E" />
+          <stop offset="0.6" stopColor="#D62976" />
+          <stop offset="0.9" stopColor="#962FBF" />
+          <stop offset="1" stopColor="#4F5BD5" />
+        </radialGradient>
+      </defs>
+      <rect width="24" height="24" rx="7" fill="url(#ig-bs)" />
+      <rect x="5" y="5" width="14" height="14" rx="4.5" fill="none" stroke="#fff" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="3.4" fill="none" stroke="#fff" strokeWidth="1.7" />
+      <circle cx="16.3" cy="7.7" r="1.05" fill="#fff" />
+    </svg>
+  );
+}
 
 export const metadata: Metadata = {
   title: "Sartaroshxonalar uchun onlayn navbat va boshqaruv",
@@ -173,42 +216,67 @@ function PainPoints() {
   );
 }
 
-const FEATURES = [
+/** `icon` is rendered inside a tinted tile (`tile`); brand icons (Telegram,
+ * Instagram) carry their own colors, the rest take an accent tint. */
+const FEATURES: Array<{
+  title: string;
+  text: string;
+  icon: React.ReactNode;
+  tile: string;
+}> = [
   {
     title: "Aqlli jadval",
     text: "Kun, hafta va oy bo'yicha jonli jadval. Bron qo'yilganda vaqt avtomatik band bo'ladi — to'qnashuv bo'lmaydi.",
+    icon: <CalendarClock className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-blue-500/10 text-blue-600",
   },
   {
     title: "Ustalar va xizmatlar",
     text: "Har bir master uchun alohida xizmatlar, narxlar va ish vaqti. Mijoz o'zi yoqtirgan ustani tanlaydi.",
+    icon: <Scissors className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-[var(--accent)]/10 text-[var(--accent)]",
   },
   {
     title: "Tayyor sayt va onlayn bron",
     text: "Bepul saytingiz tayyor: sizning-biznes.bookup.uz. Linkni Instagram bio'ga qo'ying — mijozlar to'g'ridan-to'g'ri bron qiladi.",
+    icon: <Globe className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-violet-500/10 text-violet-600",
   },
   {
     title: "Telegram bot",
     text: "Mijozlar Telegram'dan chiqmasdan vaqt va masterni tanlab bron qiladi. Bot tasdiq va eslatma yuboradi.",
+    icon: <TelegramLogo className="h-7 w-7" />,
+    tile: "bg-[#229ED9]/10",
   },
   {
     title: "Instagram integratsiyasi",
     text: "DM xabarlarga AI yordamida avto-javob, izohlarni boshqarish va profil bio'da «Bron qilish» tugmasi.",
+    icon: <InstagramLogo className="h-7 w-7" />,
+    tile: "bg-pink-500/10",
   },
   {
     title: "Mijozlar bazasi",
     text: "Har bir mijozning tashriflar tarixi, sevimli xizmatlari va shaxsiy izohlar avtomatik saqlanadi.",
+    icon: <Users className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-emerald-500/10 text-emerald-600",
   },
   {
     title: "SMS tasdiq va eslatma",
     text: "Bron tasdig'i va tashrifdan 2 soat oldin avtomatik eslatma — har bir mijozga yetib boradi.",
+    icon: <MessageSquareText className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-amber-500/10 text-amber-600",
   },
   {
     title: "Chegirma va sodiqlik dasturi",
     text: "Chegirma kodlari, takroriy tashriflar uchun bonus ballar va tug'ilgan kun aksiyalari.",
+    icon: <Gift className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-fuchsia-500/10 text-fuchsia-600",
   },
   {
     title: "Mijoz baholari",
     text: "Tashrifdan keyin mijoz baho va izoh qoldiradi. Eng kuchli ustalaringizni ajratib ko'rsating, sifatni nazorat qiling.",
+    icon: <Star className="h-6 w-6" strokeWidth={1.9} />,
+    tile: "bg-yellow-500/10 text-yellow-600",
   },
 ];
 
@@ -226,13 +294,13 @@ function Features() {
       </div>
 
       <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 md:mt-14">
-        {FEATURES.map((f, i) => (
+        {FEATURES.map((f) => (
           <article
             key={f.title}
             className="rounded-3xl bg-gray-50 p-6 transition hover:bg-gray-100 md:p-7"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--accent)]/10 text-sm font-bold text-[var(--accent)]">
-              {String(i + 1).padStart(2, "0")}
+            <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${f.tile}`}>
+              {f.icon}
             </div>
             <h3 className="mt-5 text-lg 2xl:text-xl font-bold tracking-tight text-gray-900">
               {f.title}

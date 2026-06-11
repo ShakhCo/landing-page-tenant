@@ -13,7 +13,7 @@ import homeUz, { type HomeDict } from "@/lib/dictionaries/home.uz";
 /** Link targets per column — labels come from the dictionary, zipped by index. */
 const COLUMN_HREFS = {
   business: [
-    "/business/sartaroshxonalar",
+    "/business/barbershops",
     "/business/salonlar",
     "/business/stomatologiya",
     "/business/bilyard",
