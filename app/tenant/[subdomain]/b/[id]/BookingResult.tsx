@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, X, Send, BadgeCheck } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
-import { cancelBookingAction } from './actions';
+import { cancelBookingAction, requestCancelOtpAction } from './actions';
+import { OtpInput } from '../../booking/OtpInput';
 
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
@@ -94,11 +95,14 @@ export function BookingResult({
   data,
   tenant,
   subdomain,
+  hasSession = false,
 }: {
   created: boolean;
   data: PublicBookingView;
   tenant: PublicTenant | null;
   subdomain: string;
+  /** Remembered customer (bookup_session cookie) — cancel can try one-tap first. */
+  hasSession?: boolean;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -107,6 +111,13 @@ export function BookingResult({
   // Picking the "reschedule" reason detours to a dedicated offer page first.
   const [view, setView] = useState<'details' | 'cancel' | 'offer'>('details');
   const [reason, setReason] = useState<string | null>(null);
+  // Cancel must be confirmed: a remembered session that owns the booking
+  // cancels one-tap; everyone else verifies an OTP sent to the booking phone.
+  const [canOneTap, setCanOneTap] = useState(hasSession);
+  const [otpStep, setOtpStep] = useState(false);
+  const [maskedPhone, setMaskedPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [resendIn, setResendIn] = useState(0);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
   const address = branch?.address ? localized(branch.address) : null;
@@ -174,15 +185,59 @@ export function BookingResult({
     window.scrollTo(0, 0);
   };
 
+  // Send the cancel OTP and switch the cancel view to the code entry.
+  const beginCancelOtp = async () => {
+    const r = await requestCancelOtpAction(subdomain, booking.id);
+    if (!r.ok) {
+      setNotice(r.error);
+      return;
+    }
+    setMaskedPhone(r.maskedPhone);
+    setOtpCode('');
+    setOtpStep(true);
+    setResendIn(60);
+    setView('cancel');
+    window.scrollTo(0, 0);
+  };
+
+  // Tick down the resend cooldown once per second.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const id = setTimeout(() => setResendIn(resendIn - 1), 1000);
+    return () => clearTimeout(id);
+  }, [resendIn]);
+
   const confirmCancel = () => {
     if (pending) return;
+    if (otpStep && otpCode.length < 5) return;
     setNotice(null);
     startTransition(async () => {
-      const r = await cancelBookingAction(subdomain, booking.id, reason ?? undefined);
+      // No session and no code yet → identity first: send the OTP.
+      if (!canOneTap && !otpStep) {
+        await beginCancelOtp();
+        return;
+      }
+      const r = await cancelBookingAction(subdomain, booking.id, {
+        reason: reason ?? undefined,
+        code: otpStep ? otpCode : undefined,
+      });
       if (r.ok) {
+        setOtpStep(false);
         setView('details');
         router.refresh();
-      } else setNotice(r.error);
+        return;
+      }
+      // Session expired or doesn't own this booking → fall back to OTP.
+      if (r.needsOtp) {
+        setCanOneTap(false);
+        await beginCancelOtp();
+        return;
+      }
+      if (r.otpExhausted) {
+        setOtpCode('');
+        setResendIn(0);
+      }
+      setNotice(r.error);
     });
   };
 
@@ -233,12 +288,43 @@ export function BookingResult({
     return (
       <div className="mx-auto max-w-xl px-5 pb-16 pt-4 sm:px-6">
         <TopChrome
-          onBack={() => { if (!pending) { setView('details'); setNotice(null); } }}
+          onBack={() => {
+            if (pending) return;
+            if (otpStep) {
+              setOtpStep(false);
+              setNotice(null);
+              return;
+            }
+            setView('details');
+            setNotice(null);
+          }}
           onClose={() => router.push('/')}
         />
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">Bronni bekor qilish</h1>
+        <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">
+          {otpStep ? 'SMS kodni kiriting' : 'Bronni bekor qilish'}
+        </h1>
         <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
 
+        {otpStep && (
+          <div className="mt-7">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-semibold text-foreground">{maskedPhone}</span> raqamiga 5 xonali kod yuborildi.
+            </p>
+            <div className="mt-4">
+              <OtpInput value={otpCode} onChange={(v) => { setOtpCode(v); if (notice) setNotice(null); }} length={5} autoFocus />
+              <button
+                type="button"
+                onClick={() => { if (!pending && resendIn <= 0) void beginCancelOtp(); }}
+                disabled={pending || resendIn > 0}
+                className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
+              >
+                {resendIn > 0 ? `Kodni qayta yuborish · 0:${String(resendIn).padStart(2, '0')}` : 'Kodni qayta yuborish'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!otpStep && (
         <div className="mt-7">
           <p className="text-lg font-extrabold text-foreground">
             Sababi nima? <span className="text-sm font-medium text-muted-foreground">(ixtiyoriy)</span>
@@ -272,6 +358,7 @@ export function BookingResult({
             })}
           </div>
         </div>
+        )}
 
         {notice && (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
@@ -282,7 +369,7 @@ export function BookingResult({
         <button
           type="button"
           onClick={confirmCancel}
-          disabled={pending}
+          disabled={pending || (otpStep && otpCode.length < 5)}
           className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
         >
           {pending ? 'Bekor qilinmoqda…' : 'Bronni bekor qilish'}

@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { getBooking, getTenant } from '@/lib/tenant';
 import { BookingResult } from './BookingResult';
 
@@ -19,9 +20,12 @@ export default async function BookingResultPage({
   const [data, tenant] = await Promise.all([getBooking(subdomain, id), getTenant(subdomain)]);
   if (!data) redirect('/');
 
+  // Remembered customer? → cancel can try one-tap before falling back to OTP.
+  const hasSession = (await cookies()).has('bookup_session');
+
   return (
     <main className="min-h-screen bg-card">
-      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} />
+      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} hasSession={hasSession} />
     </main>
   );
 }
