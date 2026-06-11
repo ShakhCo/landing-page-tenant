@@ -361,25 +361,23 @@ export function BookingResult({
         </div>
       )}
 
-      <div className="mx-auto max-w-xl px-5 sm:px-6">
+      <div className="mx-auto max-w-xl px-4 sm:px-6">
+      {/* ===== One card: status, time, details, total, actions, reference ===== */}
+      <div className="mt-10 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6">
         {/* Status badge + big time */}
-        <div className="mt-10">
-          <motion.span
-            initial={created ? { scale: 0.6, opacity: 0 } : false}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
-          >
-            {badgeCheck && <Check size={15} strokeWidth={3} />}
-            {statusLabel}
-          </motion.span>
-          <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h2>
-        </div>
+        <motion.span
+          initial={created ? { scale: 0.6, opacity: 0 } : false}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', damping: 14, stiffness: 220 }}
+          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
+        >
+          {badgeCheck && <Check size={15} strokeWidth={3} />}
+          {statusLabel}
+        </motion.span>
+        <h2 className="mt-3 text-3xl font-extrabold leading-tight text-foreground">{whenShort}</h2>
 
-      {/* Overview — same labeled-field card style as the booking flow's confirm step */}
-      <Section>
-        <div className="rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
-          <div className="space-y-5">
+        {/* Overview — same labeled-field rows as the booking flow's summary card */}
+        <div className="mt-6 space-y-5 border-t border-border pt-5">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Xizmatlar</p>
               {booking.items.map((it, i) => {
@@ -413,18 +411,16 @@ export function BookingResult({
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Vaqt</p>
               <p className="mt-0.5 text-base font-semibold text-foreground">{when}</p>
             </div>
-          </div>
-
-          <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-base font-bold text-foreground">
-            <span>Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}</span>
-            <span>{money(liveTotal ?? total, business.currency)}</span>
-          </div>
         </div>
-      </Section>
+
+        <div className="mt-5 flex items-center justify-between border-t border-border pt-4 text-base font-bold text-foreground">
+          <span>Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}</span>
+          <span>{money(liveTotal ?? total, business.currency)}</span>
+        </div>
 
       {/* Manage: reschedule / cancel. Shown always; a click on a booking that's
           already started/completed/cancelled surfaces an alert explaining why. */}
-      <div className="mt-9 flex flex-col gap-2.5">
+      <div className="mt-6 flex flex-col gap-2.5 border-t border-border pt-5">
         <button
           type="button"
           onClick={reschedule}
@@ -456,10 +452,11 @@ export function BookingResult({
         </a>
       </div>
 
-      {/* Booking reference — small footnote */}
-      <p className="mt-8 text-sm text-muted-foreground">
-        Bron raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
-      </p>
+        {/* Booking reference — small footnote */}
+        <p className="mt-6 text-center text-sm text-muted-foreground">
+          Bron raqami <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
+        </p>
+      </div>
       </div>
     </div>
   );
@@ -489,13 +486,4 @@ function TopChrome({ onBack, onClose }: { onBack: () => void; onClose: () => voi
   );
 }
 
-/** A page section with a consistent heading, top separator, and spacing. */
-function Section({ title, children }: { title?: string; children: React.ReactNode }) {
-  return (
-    <section className="mt-9">
-      {title && <h2 className="text-lg font-bold text-foreground">{title}</h2>}
-      <div className={title ? 'mt-4' : ''}>{children}</div>
-    </section>
-  );
-}
 
