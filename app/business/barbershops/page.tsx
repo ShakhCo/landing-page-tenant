@@ -12,7 +12,7 @@ import Image from "next/image";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { GradientCard } from "@/components/ui/gradient-card";
-import { PricingSection } from "@/components/Pricing";
+import { PricingPlans } from "@/components/PricingPlans";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_URL, breadcrumbSchema, organizationSchema } from "@/lib/seo";
 
@@ -94,7 +94,7 @@ export default function SartaroshxonalarPage() {
         ]}
       />
       <Header />
-      <main className="pb-8 md:pb-24">
+      <main>
         <Hero />
         <div className="mx-auto max-w-[1360px] px-5">
           <PainPoints />
@@ -102,8 +102,7 @@ export default function SartaroshxonalarPage() {
         </div>
         <HowItWorks />
         <div className="mx-auto max-w-[1360px] px-5">
-          <PricingSection />
-          <ClosingCta />
+          <PricingPlans />
         </div>
       </main>
       <Footer />
@@ -395,45 +394,6 @@ function HowItWorks() {
             <span className="font-semibold text-[var(--accent)]">14 kun</span> bepul
             foydalanish ham beriladi!
           </p>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function ClosingCta() {
-  return (
-    <section className="mt-20 md:mt-28">
-      <div className="relative overflow-hidden rounded-[2.25rem] bg-gray-950 p-8 text-white md:p-14 lg:p-16">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-[var(--accent)]/30 blur-3xl"
-        />
-        <div className="relative flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between md:gap-12">
-          <div className="max-w-xl">
-            <h2 className="text-2xl font-extrabold leading-[1.1] tracking-tight md:text-3xl lg:text-4xl">
-              Sartaroshxonangizni bugun{" "}
-              <span className="text-gray-500">BOOKUP&apos;ga ulang.</span>
-            </h2>
-            <p className="mt-5 text-base text-gray-300">
-              14 kun bepul. Bank kartasi talab qilinmaydi. Menejerimiz
-              hammasini siz uchun o&apos;rnatadi.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <a
-              href="#"
-              className="inline-flex items-center justify-center rounded-full bg-[var(--accent)] px-7 py-3.5 text-sm font-semibold text-white shadow-sm transition hover:brightness-110"
-            >
-              Bepul boshlash
-            </a>
-            <a
-              href="tel:+998883634020"
-              className="inline-flex items-center justify-center rounded-full border border-white/15 bg-white/5 px-7 py-3.5 text-sm font-semibold text-white transition hover:bg-white/10"
-            >
-              +998 88 363 40 20
-            </a>
-          </div>
         </div>
       </div>
     </section>

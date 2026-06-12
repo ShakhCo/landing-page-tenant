@@ -138,6 +138,94 @@ export const ADDONS: Addon[] = [
   },
 ];
 
+/* -------------------------------------------------------------------------- */
+/*  Fixed plans (barbershop page — 3-tier layout)                              */
+/* -------------------------------------------------------------------------- */
+
+export interface PlanFeature {
+  text: string;
+  /** Emphasised feature — rendered bolder with an accent check. */
+  highlight?: boolean;
+}
+
+export interface Plan {
+  id: string;
+  name: string;
+  tagline: string;
+  /** Base monthly price in UZS (before the billing-period discount). */
+  price: number;
+  /** Visually lifts the card and shows the badge. */
+  highlighted?: boolean;
+  badge?: string;
+  /** Small label shown above the feature list (e.g. "…dagi hammasi, plyus"). */
+  featuresIntro?: string;
+  features: PlanFeature[];
+}
+
+export const PLANS: Plan[] = [
+  {
+    id: "starter",
+    name: "Boshlang'ich",
+    tagline: "Yakka master va kichik salonlar uchun",
+    price: 49_000,
+    features: [
+      { text: "1 ta master" },
+      { text: "SMS eslatma (50 martagacha) — kelmay qoladigan mijozlar kamayadi" },
+      { text: "Onlayn jadval va bron" },
+      { text: "Telegram bot" },
+      { text: "sizning-biznes.bookup.uz sayti" },
+      { text: "Mijozlar bazasi" },
+    ],
+  },
+  {
+    id: "pro",
+    name: "Pro",
+    tagline: "O'sayotgan sartaroshxonalar uchun",
+    price: 129_000,
+    highlighted: true,
+    badge: "Tavsiya",
+    featuresIntro: "Boshlang'ichdagi hammasi, plyus:",
+    features: [
+      { text: "5 tagacha master" },
+      { text: "SMS eslatma (250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
+      {
+        text:
+          "Instagram avtomatlashtirish — followerlardan to'g'ridan-to'g'ri bron, izohlarga avto-javob va DM'lar avtomatik boshqariladi",
+        highlight: true,
+      },
+      {
+        text:
+          "WhatsApp avtomatlashtirish — DM'lar avtomatik boshqariladi, avto-javoblar va bron",
+        highlight: true,
+      },
+      { text: "Mijoz baholari" },
+      { text: "Chegirma va sodiqlik dasturi" },
+    ],
+  },
+  {
+    id: "premium",
+    name: "Premium",
+    tagline: "Tarmoq va yirik bizneslar uchun",
+    price: 299_000,
+    featuresIntro: "Prodagi hammasi, plyus:",
+    features: [
+      { text: "Cheksiz master" },
+      { text: "SMS eslatma (1250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
+      { text: "Kengaytirilgan tahlil va hisobotlar" },
+      { text: "AI yordamchi" },
+      { text: "Maxsus domen va brending" },
+      { text: "API kirish" },
+      { text: "Ko'p filial boshqaruvi" },
+      { text: "Ustuvor qo'llab-quvvatlash" },
+    ],
+  },
+];
+
+/** Apply a billing-period discount to a base monthly price (rounded to 1000 UZS). */
+export function planMonthly(price: number, discount: number): number {
+  return Math.floor((price * (1 - discount)) / 1000) * 1000;
+}
+
 export function calcTotal(opts: {
   staff: number;
   smsPackId: string;
@@ -189,6 +277,34 @@ export const PRICING_FAQ: PricingFAQ[] = [
   {
     q: "Hozir tanlagan narx kelajakda oshadimi?",
     a: "Siz tanlagan tarif va davr uchun narx kafolatlanadi — obunangiz tugagunga qadar o'zgarmaydi. Yangi narxlar faqat keyingi obunaga taalluqli bo'ladi.",
+  },
+];
+
+/** FAQ for the 3-plan barbershop page (Boshlang'ich / Pro / Premium). */
+export const PLAN_FAQ: PricingFAQ[] = [
+  {
+    q: "Bepul sinab ko'rsam bo'ladimi?",
+    a: "Ha, barcha tariflar uchun 14 kunlik bepul sinov mavjud. Bank kartasi talab qilinmaydi — xohlagan tarifingizni to'liq sinab ko'rasiz.",
+  },
+  {
+    q: "Keyinchalik tarifni o'zgartira olamanmi?",
+    a: "Ha, istalgan paytda Pro yoki Premiumga o'tishingiz mumkin. Narx faqat qolgan kunlar uchun proporsional hisoblanadi — ortiqcha to'lov olinmaydi.",
+  },
+  {
+    q: "Instagram va WhatsApp avtomatlashtirish qanday ishlaydi?",
+    a: "Akkauntingizni bir marta ulaysiz — shundan so'ng tizim followerlardan to'g'ridan-to'g'ri bron qabul qiladi, izoh va DM'larga avtomatik javob beradi. Ikkala integratsiya ham Pro va Premium tariflarida mavjud.",
+  },
+  {
+    q: "SMS eslatma limitidan oshib ketsam-chi?",
+    a: "Har bir tarifda oylik SMS eslatma soni belgilangan: Boshlang'ich — 50, Pro — 250, Premium — 1250 martagacha. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
+  },
+  {
+    q: "Qanday to'lov usullari bor va uzoq muddatga chegirma bormi?",
+    a: "Click, Payme, Uzum, Uzcard va Humo kartalari, shuningdek yuridik shaxslar uchun bank o'tkazmasi qabul qilinadi. Uzoqroq davrni tanlasangiz arzonroq: 3 oy — 5%, 6 oy — 10%, 12 oy uchun — 16.67% chegirma.",
+  },
+  {
+    q: "Obunani istalgan paytda bekor qila olamanmi?",
+    a: "Ha. Bekor qilganingizdan keyin ham to'langan davr oxirigacha xizmatdan foydalanasiz, keyingi davr uchun to'lov olinmaydi.",
   },
 ];
 

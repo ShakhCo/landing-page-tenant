@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, X, Send, BadgeCheck } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
@@ -158,9 +158,13 @@ export function BookingResult({
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
 
-  const statusLabel = created ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
-  const badgeStyle = created ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
-  const badgeCheck = created || booking.status === 'confirmed' || booking.status === 'completed';
+  // `created=1` shows the celebratory "just booked" view — but only while the
+  // booking is genuinely active. A cancelled / no-show booking always shows its
+  // real status, even if the success URL (?created=1) is revisited later.
+  const justBooked = created && booking.status !== 'cancelled' && booking.status !== 'no_show';
+  const statusLabel = justBooked ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
+  const badgeStyle = justBooked ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
+  const badgeCheck = justBooked || booking.status === 'confirmed' || booking.status === 'completed';
 
   // Only an upcoming, still-open booking can be rescheduled or cancelled.
   const manageable =
@@ -183,6 +187,17 @@ export function BookingResult({
     setNotice(null);
     setView('cancel');
     window.scrollTo(0, 0);
+  };
+
+  // Cancelled / no-show bookings can't be revived — offer a fresh booking with
+  // the same services preselected (8-char id prefixes, as the booking page expects).
+  const showBookAgain = booking.status === 'cancelled' || booking.status === 'no_show';
+  const bookAgain = () => {
+    if (pending) return;
+    const ids = Array.from(new Set(booking.items.map((i) => i.offeringId).filter(Boolean)))
+      .map((id) => id.slice(0, 8))
+      .join(',');
+    router.push(ids ? `/booking?services=${ids}` : '/booking');
   };
 
   // Send the cancel OTP and switch the cancel view to the code entry.
@@ -241,139 +256,145 @@ export function BookingResult({
     });
   };
 
-  // ---- reschedule offer (picked the "want another time" cancel reason) ----
-  if (view === 'offer') {
+  // ---- cancel flow + reschedule-offer detour (animated between each other) ----
+  if (view === 'cancel' || view === 'offer') {
+    const slide = {
+      initial: { opacity: 0, x: 16 },
+      animate: { opacity: 1, x: 0 },
+      exit: { opacity: 0, x: -16 },
+      transition: { duration: 0.22, ease: [0.22, 1, 0.36, 1] as const },
+    };
     return (
       <div className="mx-auto max-w-xl px-5 pb-16 pt-4 sm:px-6">
-        <TopChrome
-          onBack={() => { if (!pending) { setView('cancel'); setNotice(null); } }}
-          onClose={() => router.push('/')}
-        />
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">Vaqtni o&apos;zgartirasizmi?</h1>
-        <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
+        <AnimatePresence mode="wait" initial={false}>
+          {view === 'offer' ? (
+            <motion.div key="offer" {...slide}>
+              <TopChrome
+                onBack={() => { if (!pending) { setView('cancel'); setNotice(null); } }}
+                onClose={() => router.push('/')}
+              />
+              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">Vaqtni o&apos;zgartirasizmi?</h1>
 
-        <p className="mt-6 text-base text-foreground">
-          Bekor qilish shart emas — bronni o&apos;zingizga qulay boshqa vaqtga ko&apos;chirishingiz mumkin.
-        </p>
+              <p className="mt-6 text-base text-foreground">
+                Bekor qilish shart emas — bronni o&apos;zingizga qulay boshqa vaqtga ko&apos;chirishingiz mumkin.
+              </p>
 
-        {notice && (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            {notice}
-          </div>
-        )}
+              {notice && (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                  {notice}
+                </div>
+              )}
 
-        <button
-          type="button"
-          onClick={reschedule}
-          disabled={pending}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
-        >
-          <CalendarClock size={18} />
-          Ha, vaqtni o&apos;zgartirish
-        </button>
-        <button
-          type="button"
-          onClick={confirmCancel}
-          disabled={pending}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
-        >
-          {pending ? 'Bekor qilinmoqda…' : "Yo'q, bekor qilish"}
-        </button>
-      </div>
-    );
-  }
-
-  // ---- cancellation step ----
-  if (view === 'cancel') {
-    return (
-      <div className="mx-auto max-w-xl px-5 pb-16 pt-4 sm:px-6">
-        <TopChrome
-          onBack={() => {
-            if (pending) return;
-            if (otpStep) {
-              setOtpStep(false);
-              setNotice(null);
-              return;
-            }
-            setView('details');
-            setNotice(null);
-          }}
-          onClose={() => router.push('/')}
-        />
-        <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">
-          {otpStep ? 'SMS kodni kiriting' : 'Bronni bekor qilish'}
-        </h1>
-        <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
-
-        {otpStep && (
-          <div className="mt-7">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">{maskedPhone}</span> raqamiga 5 xonali kod yuborildi.
-            </p>
-            <div className="mt-4">
-              <OtpInput value={otpCode} onChange={(v) => { setOtpCode(v); if (notice) setNotice(null); }} length={5} autoFocus />
               <button
                 type="button"
-                onClick={() => { if (!pending && resendIn <= 0) void beginCancelOtp(); }}
-                disabled={pending || resendIn > 0}
-                className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
+                onClick={reschedule}
+                disabled={pending}
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               >
-                {resendIn > 0 ? `Kodni qayta yuborish · 0:${String(resendIn).padStart(2, '0')}` : 'Kodni qayta yuborish'}
+                <CalendarClock size={18} />
+                Ha, vaqtni o&apos;zgartirish
               </button>
-            </div>
-          </div>
-        )}
+              <button
+                type="button"
+                onClick={confirmCancel}
+                disabled={pending}
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
+              >
+                {pending ? 'Bekor qilinmoqda…' : "Yo'q, bekor qilish"}
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div key="cancel" {...slide}>
+              <TopChrome
+                onBack={() => {
+                  if (pending) return;
+                  if (otpStep) {
+                    setOtpStep(false);
+                    setNotice(null);
+                    return;
+                  }
+                  setView('details');
+                  setNotice(null);
+                }}
+                onClose={() => router.push('/')}
+              />
+              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">
+                {otpStep ? 'SMS kodni kiriting' : 'Bronni bekor qilish'}
+              </h1>
+              <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
 
-        {!otpStep && (
-        <div className="mt-7">
-          <p className="text-lg font-extrabold text-foreground">
-            Sababi nima? <span className="text-sm font-medium text-muted-foreground">(ixtiyoriy)</span>
-          </p>
-          <div className="mt-3 flex flex-col gap-2.5">
-            {CANCEL_REASONS.map((r) => {
-              const on = reason === r.slug;
-              return (
-                <button
-                  key={r.slug}
-                  type="button"
-                  onClick={() => {
-                    if (on) {
-                      setReason(null);
-                      return;
-                    }
-                    setReason(r.slug);
-                    if (r.slug === RESCHEDULE_REASON) {
-                      setView('offer');
-                      window.scrollTo(0, 0);
-                    }
-                  }}
-                  className="flex items-center gap-4 rounded-2xl border border-foreground/12 bg-card p-4 text-left shadow-xs shadow-black/5 transition-colors duration-200 hover:border-foreground/30"
-                >
-                  <span className="font-semibold text-foreground">{localized(r.label)}</span>
-                  <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border'}`}>
-                    {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        )}
+              {otpStep && (
+                <div className="mt-7">
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold text-foreground">{maskedPhone}</span> raqamiga 5 xonali kod yuborildi.
+                  </p>
+                  <div className="mt-4">
+                    <OtpInput value={otpCode} onChange={(v) => { setOtpCode(v); if (notice) setNotice(null); }} length={5} autoFocus />
+                    <button
+                      type="button"
+                      onClick={() => { if (!pending && resendIn <= 0) void beginCancelOtp(); }}
+                      disabled={pending || resendIn > 0}
+                      className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
+                    >
+                      {resendIn > 0 ? `Kodni qayta yuborish · 0:${String(resendIn).padStart(2, '0')}` : 'Kodni qayta yuborish'}
+                    </button>
+                  </div>
+                </div>
+              )}
 
-        {notice && (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
-            {notice}
-          </div>
-        )}
+              {!otpStep && (
+              <div className="mt-7">
+                <p className="text-lg font-extrabold text-foreground">
+                  Sababi nima? <span className="text-sm font-medium text-muted-foreground">(ixtiyoriy)</span>
+                </p>
+                <div className="mt-3 flex flex-col gap-2.5">
+                  {CANCEL_REASONS.map((r) => {
+                    const on = reason === r.slug;
+                    return (
+                      <button
+                        key={r.slug}
+                        type="button"
+                        onClick={() => {
+                          if (on) {
+                            setReason(null);
+                            return;
+                          }
+                          setReason(r.slug);
+                          if (r.slug === RESCHEDULE_REASON) {
+                            setView('offer');
+                            window.scrollTo(0, 0);
+                          }
+                        }}
+                        className="flex items-center gap-4 rounded-2xl border border-foreground/12 bg-card p-4 text-left shadow-xs shadow-black/5 transition-colors duration-200 hover:border-foreground/30"
+                      >
+                        <span className="font-semibold text-foreground">{localized(r.label)}</span>
+                        <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border'}`}>
+                          {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              )}
 
-        <button
-          type="button"
-          onClick={confirmCancel}
-          disabled={pending || (otpStep && otpCode.length < 5)}
-          className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
-        >
-          {pending ? 'Bekor qilinmoqda…' : 'Bronni bekor qilish'}
-        </button>
+              {notice && (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-700">
+                  {notice}
+                </div>
+              )}
+
+              <button
+                type="button"
+                onClick={confirmCancel}
+                disabled={pending || (otpStep && otpCode.length < 5)}
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+              >
+                {pending ? 'Bekor qilinmoqda…' : 'Bronni bekor qilish'}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     );
   }
@@ -385,7 +406,7 @@ export function BookingResult({
       {branch ? (
         <div className="mx-auto max-w-[1350px]">
           <div className="relative">
-            <div className="h-64 w-full overflow-hidden rounded-2xl rounded-t-none border border-t-none sm:h-80">
+            <div className="h-52 w-full overflow-hidden rounded-2xl rounded-t-none border border-t-none sm:h-80">
               <iframe
                 title="Map"
                 src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed&iwloc=near`}
@@ -429,7 +450,7 @@ export function BookingResult({
       <div className="mt-10 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6">
         {/* Status badge + time — one heading size for the whole card */}
         <motion.span
-          initial={created ? { scale: 0.6, opacity: 0 } : false}
+          initial={justBooked ? { scale: 0.6, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 14, stiffness: 220 }}
           className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
@@ -516,8 +537,23 @@ export function BookingResult({
           </div>
         )}
 
+        {/* Book again — cancelled / no-show bookings can't be reopened */}
+        {showBookAgain && (
+          <div className="mt-5 border-t border-border pt-4">
+            <button
+              type="button"
+              onClick={bookAgain}
+              disabled={pending}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+            >
+              <CalendarPlus size={18} />
+              Yana bron qilish
+            </button>
+          </div>
+        )}
+
         {/* Footer: booking reference + Telegram help — quiet, no extra border */}
-        <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable ? 'mt-4' : 'mt-4 border-t border-border pt-4'}`}>
+        <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable || showBookAgain ? 'mt-4' : 'mt-4 border-t border-border pt-4'}`}>
           <span>
             Bron raqami{' '}
             <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>

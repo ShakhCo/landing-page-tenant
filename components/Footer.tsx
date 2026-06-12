@@ -42,12 +42,12 @@ export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) 
   }));
 
   return (
-    <footer className="mt-12 rounded-t-[2rem] bg-gray-950 text-white md:mt-24 md:rounded-t-[3rem] lg:rounded-t-[5rem] 2xl:rounded-t-[10rem]">
+    <footer className="mt-12 rounded-t-[2rem] bg-gray-950 text-white md:mt-24 md:rounded-t-[3rem]">
       {/* Top CTA strip */}
       <div className="mx-auto max-w-[1360px] px-5 pt-20 pb-14 md:pt-24">
         <div className="flex flex-col items-start gap-8 md:flex-row md:items-end md:justify-between md:gap-12">
           <div>
-            <h2 className="text-3xl font-extrabold leading-[1.05] tracking-tight md:text-4xl lg:text-5xl">
+            <h2 className="text-2xl font-extrabold leading-[1.05] tracking-tight md:text-3xl lg:text-4xl">
               {dict.ctaTitleLine1}
               <br />
               <span className="text-gray-500">{dict.ctaTitleLine2}</span>

@@ -7,6 +7,7 @@ import { ChevronLeft, ChevronRight, Check, Clock, Calendar, Phone, Minus, Plus, 
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
+import { ServiceMonogram } from '../ServiceMonogram';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'confirm'];
@@ -18,7 +19,7 @@ const STEP_TITLE: Record<Step, string> = {
   done: '',
 };
 const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
-const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyn', 'Iyl', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
+const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
 const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
 const WEEK = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
 const pad2 = (n: number) => String(n).padStart(2, '0');
@@ -556,7 +557,7 @@ export function BookingFlow({
                   ? 'O‘zgartirish'
                   : sessionActive
                     ? 'Bron qilish'
-                    : 'Davom etish',
+                    : 'Bronni tasdiqlash',
             disabled: !slot || busy,
             onClick: () => { if (slot) openConfirm(); },
           };
@@ -590,7 +591,7 @@ export function BookingFlow({
       {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
       {!rescheduleId && !otpSent && !sessionActive && (
         <>
-          <label className="mb-3 block text-lg font-bold text-foreground">Telefon raqamingiz</label>
+          {!isDesktop && <label className="mb-3 block text-lg font-bold text-foreground">Telefon raqamingiz</label>}
           <div className="flex flex-col gap-4">
             <div className="flex h-14 w-full min-w-0 items-center rounded-full border border-border bg-card px-5 transition-colors duration-200 focus-within:border-foreground">
               <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
@@ -761,75 +762,62 @@ export function BookingFlow({
                       ))}
                     </div>
                   )}
-                  {(() => {
-                    // Mirror the tenant page: photo-led cards in a 2-col grid when the
-                    // salon uses photos; compact text cards when it doesn't.
-                    const withPhotos = services.some((s) => s.photoUrl);
-                    return (
-                      <div className={withPhotos ? 'grid grid-cols-1 gap-4 sm:grid-cols-2' : 'flex flex-col gap-3'}>
-                        {shownServices.map((s, i) => {
-                          const on = selectedIds.includes(s.id);
-                          const sName = localized(s.name as LocalizedText);
-                          const price = priceLabel(s, business.currency);
-                          // A unit (time-rate) selection is exclusive — other services can't be
-                          // added, only switched to — so it gets "Tanlash", addable fixed
-                          // services get "Qo'shish", and a selected one shows "Tanlandi".
-                          const canAdd = !isUnitService(s) && !hourly;
-                          const actionBtn = (
-                            <span
-                              className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border py-2.5 text-center text-sm font-bold transition-colors duration-200 ${
-                                on
-                                  ? 'border-foreground bg-foreground text-background'
-                                  : 'border-border text-foreground group-hover:bg-foreground/5'
-                              }`}
-                            >
-                              {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
-                              {on ? 'Tanlandi' : canAdd ? "Qo'shish" : 'Tanlash'}
-                              {!on && !canAdd && <ChevronRight size={15} />}
+                  {/* Photo-led cards in a 2-col grid; services without a photo
+                      get a tinted monogram tile so the grid stays uniform. */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {shownServices.map((s, i) => {
+                      const on = selectedIds.includes(s.id);
+                      const sName = localized(s.name as LocalizedText);
+                      const price = priceLabel(s, business.currency);
+                      // A unit (time-rate) selection is exclusive — other services can't be
+                      // added, only switched to — so it gets "Tanlash", addable fixed
+                      // services get "Qo'shish", and a selected one shows "Tanlandi".
+                      const canAdd = !isUnitService(s) && !hourly;
+                      const actionBtn = (
+                        <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                          {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
+                          {on ? 'Tanlandi' : canAdd ? "Qo'shish" : 'Tanlash'}
+                          {!on && !canAdd && <ChevronRight size={15} />}
+                        </span>
+                      );
+                      return (
+                        <motion.button
+                          key={s.id}
+                          type="button"
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
+                          onClick={() => toggleService(s.id)}
+                          className="group relative overflow-hidden rounded-2xl border border-foreground/12 bg-card text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5"
+                        >
+                          {on && (
+                            <span className="absolute right-3 top-3 z-10 flex size-7 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
+                              <Check size={16} strokeWidth={3} />
                             </span>
-                          );
-                          return (
-                            <motion.button
-                              key={s.id}
-                              type="button"
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
-                              onClick={() => toggleService(s.id)}
-                              className={`group overflow-hidden rounded-2xl border bg-card text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 ${
-                                on ? 'border-foreground' : 'border-foreground/12'
-                              } ${withPhotos ? '' : 'p-5'}`}
-                            >
-                              {/* Identical layout to the home page service card: photo,
-                                  name, price | duration, then the action button. */}
-                              {withPhotos &&
-                                (s.photoUrl ? (
-                                  // eslint-disable-next-line @next/next/no-img-element
-                                  <img src={mediaUrl(s.photoUrl)} alt={sName} className="aspect-[16/10] w-full object-cover" loading="lazy" />
-                                ) : (
-                                  <div className="flex aspect-[16/10] w-full items-center justify-center bg-muted text-5xl font-bold text-muted-foreground/30">
-                                    {sName.charAt(0).toUpperCase()}
-                                  </div>
-                                ))}
-                              <div className={withPhotos ? 'p-4' : ''}>
-                                <h3 className="truncate font-semibold text-foreground">{sName}</h3>
-                                <div className="mt-2 flex items-center justify-between gap-2">
-                                  {price && <span className="font-bold text-foreground">{price}</span>}
-                                  {s.durationMinutes != null && (
-                                    <span className="flex items-center gap-1 text-sm text-muted-foreground">
-                                      <Clock size={14} />
-                                      {dur(s.durationMinutes)}
-                                    </span>
-                                  )}
-                                </div>
-                                {actionBtn}
-                              </div>
-                            </motion.button>
-                          );
-                        })}
-                      </div>
-                    );
-                  })()}
+                          )}
+                          {s.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={mediaUrl(s.photoUrl)} alt={sName} className="aspect-[16/10] w-full object-cover" loading="lazy" />
+                          ) : (
+                            <ServiceMonogram />
+                          )}
+                          <div className="p-4">
+                            <h3 className="truncate font-semibold text-foreground">{sName}</h3>
+                            <div className="mt-2 flex items-center justify-between gap-2">
+                              {price && <span className="font-bold text-foreground">{price}</span>}
+                              {s.durationMinutes != null && (
+                                <span className="flex items-center gap-1 text-sm text-muted-foreground">
+                                  <Clock size={14} />
+                                  {dur(s.durationMinutes)}
+                                </span>
+                              )}
+                            </div>
+                            {actionBtn}
+                          </div>
+                        </motion.button>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
 
@@ -1082,6 +1070,7 @@ export function BookingFlow({
               staffName={selectedStaff?.name ?? null}
               resourceLabel={resourceLabel}
               when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null}
+              startTime={slot ?? null}
               totalMin={durationKnown ? totalMin : 0}
               priceText={summaryPrice}
             />
@@ -1134,7 +1123,7 @@ export function BookingFlow({
             >
               <div className="mb-5 flex items-start justify-between gap-3">
                 <h3 className="text-xl font-extrabold text-foreground">
-                  {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : STEP_TITLE.confirm}
+                  {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : sessionActive ? STEP_TITLE.confirm : 'Telefon raqamingiz'}
                 </h3>
                 <button
                   type="button"
@@ -1145,6 +1134,7 @@ export function BookingFlow({
                   <X size={18} />
                 </button>
               </div>
+
               {confirmContent}
             </motion.div>
           </motion.div>
@@ -1161,6 +1151,7 @@ function SummaryBody({
   staffName,
   resourceLabel,
   when,
+  startTime,
   totalMin,
   priceText,
 }: {
@@ -1170,10 +1161,23 @@ function SummaryBody({
   /** Field label for the picked resource — unit label ("Yo'laklar") or "Mutaxassis". */
   resourceLabel: string;
   when: string | null;
+  /** Chosen slot start ("HH:MM"); when set, each service shows its start–end window. */
+  startTime: string | null;
   totalMin: number;
   /** Pre-formatted total — a money amount, or an hourly rate ("…/soat") while the duration is still unchosen. */
   priceText: string;
 }) {
+  // Once a slot is picked, walk the services in order to show each one's
+  // start–end window (back-to-back from the chosen start time).
+  let cursor = startTime;
+  const windows = new Map<string, string>();
+  for (const s of selected) {
+    if (!cursor || s.durationMinutes == null) continue;
+    const end = addHm(cursor, s.durationMinutes);
+    windows.set(s.id, `${cursor}–${end}`);
+    cursor = end;
+  }
+
   return (
     <>
       {/* popLayout (not "wait"): the leaving element pops out of the flow at
@@ -1220,11 +1224,20 @@ function SummaryBody({
                   <div className="flex items-start justify-between gap-3 pb-3.5">
                     <div className="min-w-0">
                       <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
-                      {s.durationMinutes != null && <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>}
+                      {s.durationMinutes != null && (
+                        <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>
+                      )}
                     </div>
-                    <span className="whitespace-nowrap text-base font-semibold text-foreground">
-                      {priceLabel(s, currency)}
-                    </span>
+                    <div className="flex shrink-0 flex-col items-end">
+                      <span className="whitespace-nowrap text-base font-semibold text-foreground">
+                        {priceLabel(s, currency)}
+                      </span>
+                      {windows.has(s.id) && (
+                        <span className="mt-0.5 whitespace-nowrap text-sm text-muted-foreground">
+                          {windows.get(s.id)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               ))}

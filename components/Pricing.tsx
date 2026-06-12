@@ -455,7 +455,7 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function PricingFaq() {
+export function PricingFaq() {
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   return (
@@ -489,7 +489,7 @@ function PricingFaq() {
   );
 }
 
-function FaqColumn({
+export function FaqColumn({
   className,
   subtitle,
   items,
@@ -498,7 +498,7 @@ function FaqColumn({
   setOpenKey,
 }: {
   className?: string;
-  subtitle: string;
+  subtitle?: string;
   items: PricingFAQ[];
   groupKey: string;
   openKey: string | null;
@@ -506,9 +506,11 @@ function FaqColumn({
 }) {
   return (
     <div className={className}>
-      <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
-        {subtitle}
-      </p>
+      {subtitle && (
+        <p className="mb-4 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">
+          {subtitle}
+        </p>
+      )}
       <div className="flex flex-col gap-3">
         {items.map((item, i) => {
           const key = `${groupKey}-${i}`;

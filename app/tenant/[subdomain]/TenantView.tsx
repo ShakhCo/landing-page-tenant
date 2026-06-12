@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, ChevronDown, BadgeCheck, Phone, Globe, Send } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant } from '@/lib/tenant';
+import { ServiceMonogram } from './ServiceMonogram';
 
 const DAY_NAMES = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
 const FEATURED_LIMIT = 6;
@@ -105,7 +106,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
     <div className="bg-card min-h-screen">
       <div className="max-w-[1350px] mx-auto">
       <div className="relative">
-        <div className="w-full h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none">
+        <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none">
           <iframe
             title="Map"
             src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed&iwloc=near`}
@@ -296,9 +297,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                         loading="lazy"
                       />
                     ) : (
-                      <div className="flex aspect-[16/10] w-full items-center justify-center bg-muted text-5xl font-bold text-muted-foreground/30">
-                        {name.charAt(0).toUpperCase()}
-                      </div>
+                      <ServiceMonogram />
                     )}
                     <div className="p-4">
                       <h3 className="truncate font-semibold text-foreground">{name}</h3>
