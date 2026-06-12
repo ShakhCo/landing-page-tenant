@@ -174,9 +174,9 @@ export function TenantView({
       </div>
 
       {/* ===== Body ===== */}
-      <div className="mt-10 px-4 pb-24 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-0 lg:pb-12">
-        {/* Right column: team/hours/contacts */}
-        <div className="space-y-6 lg:order-2">
+      <div className="mt-10 flex flex-col px-4 pb-24 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-0 lg:pb-12">
+        {/* Right column: team/hours/contacts — on mobile it sits after services. */}
+        <div className="order-2 mt-10 space-y-6 lg:order-2 lg:mt-0">
           {/* Team */}
           {team.length > 0 && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
@@ -281,7 +281,7 @@ export function TenantView({
         </div>
 
         {/* Left column: services */}
-        <section className="mt-10 lg:order-1 lg:mt-0">
+        <section className="order-1 lg:order-1">
           <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
 
           {cats.length > 1 && (
