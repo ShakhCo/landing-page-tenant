@@ -4,24 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult } from '@/lib/tenant';
+import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult, type TenantLocale } from '@/lib/tenant';
+import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
 import { ServiceMonogram } from '../ServiceMonogram';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'confirm'];
-const STEP_TITLE: Record<Step, string> = {
-  services: 'Xizmatlarni tanlang',
-  staff: 'Mutaxassisni tanlang',
-  time: 'Sana va vaqt',
-  confirm: 'Bronni tasdiqlash',
-  done: '',
-};
-const WD = ['Ya', 'Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh'];
-const MONTHS = ['Yan', 'Fev', 'Mar', 'Apr', 'May', 'Iyun', 'Iyul', 'Avg', 'Sen', 'Okt', 'Noy', 'Dek'];
-const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-const WEEK = ['Du', 'Se', 'Ch', 'Pa', 'Ju', 'Sh', 'Ya'];
 const pad2 = (n: number) => String(n).padStart(2, '0');
 function isoParts(iso: string) {
   const d = new Date(`${iso}T00:00:00Z`);
@@ -32,15 +22,15 @@ function addDaysIso(iso: string, days: number) {
   d.setUTCDate(d.getUTCDate() + days);
   return d.toISOString().slice(0, 10);
 }
-const PERIODS = [
-  { label: 'Ertalab', from: 0, to: 12 },
-  { label: 'Kunduzi', from: 12, to: 18 },
-  { label: 'Kechqurun', from: 18, to: 24 },
+const PERIOD_RANGES = [
+  { from: 0, to: 12 },
+  { from: 12, to: 18 },
+  { from: 18, to: 24 },
 ];
 
-function money(amount: number, currency: string) {
+function money(amount: number, currency: string, dict: BookingDict) {
   const n = amount.toLocaleString('ru-RU');
-  return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
+  return currency === 'UZS' ? `${n} ${dict.som}` : `${n} ${currency}`;
 }
 /** "Salon Momi" → "SM" — same avatar fallback as the tenant page. */
 function initials(name: string) {
@@ -51,11 +41,11 @@ function initials(name: string) {
     .map((w) => w[0].toUpperCase())
     .join('');
 }
-function dur(min: number) {
+function dur(min: number, dict: BookingDict) {
   if (!min) return '';
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return h ? (m ? `${h} soat ${m} daq` : `${h} soat`) : `${m} daq`;
+  return h ? (m ? `${h} ${dict.durHour} ${m} ${dict.durMin}` : `${h} ${dict.durHour}`) : `${m} ${dict.durMin}`;
 }
 function isUnitService(s: { pricingMode: string }) {
   return s.pricingMode === 'time_rate';
@@ -64,10 +54,11 @@ function isUnitService(s: { pricingMode: string }) {
 function priceLabel(
   s: { pricingMode: string; ratePerHour: number | null; price: number | null },
   currency: string,
+  dict: BookingDict,
 ) {
   return s.pricingMode === 'time_rate'
-    ? s.ratePerHour != null ? `${money(s.ratePerHour, currency)}/soat` : ''
-    : s.price != null ? money(s.price, currency) : '';
+    ? s.ratePerHour != null ? `${money(s.ratePerHour, currency, dict)}${dict.perHour}` : ''
+    : s.price != null ? money(s.price, currency, dict) : '';
 }
 function addHm(hm: string, mins: number) {
   const [h, m] = hm.split(':').map(Number);
@@ -102,12 +93,12 @@ function hourlySlots(
 function fmtPhone(d: string) {
   return [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
 }
-function nextDates(tz: string, n = 14) {
+function nextDates(tz: string, dict: BookingDict, n = 14) {
   const todayStr = new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(new Date());
   const base = new Date(`${todayStr}T00:00:00Z`);
   return Array.from({ length: n }, (_, i) => {
     const d = new Date(base.getTime() + i * 86_400_000);
-    return { iso: d.toISOString().slice(0, 10), day: d.getUTCDate(), wd: WD[d.getUTCDay()], mon: MONTHS[d.getUTCMonth()] };
+    return { iso: d.toISOString().slice(0, 10), day: d.getUTCDate(), wd: dict.weekdaysSun[d.getUTCDay()], mon: dict.monthsShort[d.getUTCMonth()] };
   });
 }
 
@@ -127,6 +118,8 @@ function useIsDesktop() {
 export function BookingFlow({
   tenant,
   subdomain,
+  dict,
+  locale,
   initialServiceIds,
   rescheduleId,
   initialDuration,
@@ -135,6 +128,8 @@ export function BookingFlow({
 }: {
   tenant: PublicTenant;
   subdomain: string;
+  dict: BookingDict;
+  locale: TenantLocale;
   /** Preselected services (full ids, already validated against this tenant by the page). */
   initialServiceIds?: string[];
   rescheduleId?: string;
@@ -154,7 +149,7 @@ export function BookingFlow({
   const staff = tenant.staff ?? [];
   const branch = branches[0];
   const tz = branch?.timezone ?? 'Asia/Tashkent';
-  const dates = nextDates(tz);
+  const dates = nextDates(tz, dict);
 
   // Skip the services step and go straight to the resource/time picker when:
   //  - the business has exactly one service, OR
@@ -219,9 +214,9 @@ export function BookingFlow({
 
   // Category filter for the services step (mirrors the landing page pills).
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))));
+  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale))));
   const filteredServices = activeCat
-    ? services.filter((s) => localized(s.category as LocalizedText | null, 'Boshqa') === activeCat)
+    ? services.filter((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale) === activeCat)
     : services;
   // Services preselected via the URL float to the top — fixed at load time
   // (a reload shows your picks first), NOT re-sorted as you toggle live.
@@ -240,9 +235,9 @@ export function BookingFlow({
   const unitSvc = selected.find(isUnitService);
   const resourceLabel = resourcesAreAssets
     ? unitSvc?.unitLabel
-      ? localized(unitSvc.unitLabel)
-      : 'Joy'
-    : 'Mutaxassis';
+      ? localized(unitSvc.unitLabel, '', locale)
+      : dict.resourceUnit
+    : dict.resourceStaff;
 
   const availRes = avail?.resources?.find((r) => r.resourceId === staffId) ?? avail?.resources?.[0];
   const ratePerHour = hourly ? (availRes?.ratePerHour ?? selected[0]?.ratePerHour ?? 0) : 0;
@@ -255,8 +250,8 @@ export function BookingFlow({
   // seen it, summaries show the rate ("…/soat"), not a presumed 1-hour total.
   const durationKnown = !hourly || step === 'time' || step === 'confirm' || step === 'done';
   const summaryPrice = durationKnown
-    ? money(totalPrice, business.currency)
-    : `${money(ratePerHour, business.currency)}/soat`;
+    ? money(totalPrice, business.currency, dict)
+    : `${money(ratePerHour, business.currency, dict)}${dict.perHour}`;
 
   // 10-minute grid aligned to the hour (…:00, :10, …) for both fixed and hourly services.
   const allSlots = hourly
@@ -273,7 +268,7 @@ export function BookingFlow({
   const tomorrowIso = addDaysIso(todayIso, 1);
   const maxIso = addDaysIso(todayIso, 90);
   const selP = date ? isoParts(date) : null;
-  const selDate = selP ? { day: selP.day, mon: MONTHS[selP.monIdx] } : null;
+  const selDate = selP ? { day: selP.day, mon: dict.monthsShort[selP.monIdx] } : null;
   // "Bugun, 16:00 dan 19:30 gacha" — relative day + chosen time range, for the confirm modal.
 
   useEffect(() => {
@@ -337,7 +332,7 @@ export function BookingFlow({
     if (ids.length === 0) return;
     const elig = staff.filter((st) => ids.every((id) => st.offeringIds.includes(id)));
     if (elig.length === 0) {
-      setError('Bu xizmatlarni bitta mutaxassis bajara olmaydi — alohida band qiling.');
+      setError(dict.errMultiStaff);
       return;
     }
     if (elig.length === 1) {
@@ -495,69 +490,77 @@ export function BookingFlow({
         >
           <Check size={48} strokeWidth={3} />
         </motion.div>
-        <h1 className="mt-7 text-2xl font-extrabold text-foreground">Band qilindi!</h1>
-        <p className="mt-1.5 text-center text-muted-foreground">Tafsilotlarni SMS orqali tasdiqlaymiz.</p>
+        <h1 className="mt-7 text-2xl font-extrabold text-foreground">{dict.doneTitle}</h1>
+        <p className="mt-1.5 text-center text-muted-foreground">{dict.doneSubtitle}</p>
         <div className="mt-7 w-full rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
           <div className="space-y-3">
             <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
-            <FieldRow label="Vaqt" value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
+            <FieldRow label={dict.fieldTime} value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
           </div>
           <div className="mt-3 border-t border-border pt-3">
             {selected.map((s) => (
               <div key={s.id} className="flex justify-between py-0.5 text-sm">
-                <span className="text-muted-foreground">{localized(s.name as LocalizedText)}</span>
-                <span className="font-medium text-foreground">{priceLabel(s, business.currency)}</span>
+                <span className="text-muted-foreground">{localized(s.name as LocalizedText, '', locale)}</span>
+                <span className="font-medium text-foreground">{priceLabel(s, business.currency, dict)}</span>
               </div>
             ))}
             <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-bold text-foreground">
-              <span>Jami</span>
-              <span>{money(totalPrice, business.currency)}</span>
+              <span>{dict.total}</span>
+              <span>{money(totalPrice, business.currency, dict)}</span>
             </div>
           </div>
         </div>
         <PrimaryBtn onClick={() => router.push('/')} className="mt-6">
-          Tayyor
+          {dict.ready}
         </PrimaryBtn>
       </div>
     );
   }
 
   const stepShort = (s: Step) =>
-    s === 'services' ? 'Xizmatlar'
+    s === 'services' ? dict.shortServices
     : s === 'staff' ? resourceLabel
-    : s === 'time' ? 'Vaqt'
-    : 'Tasdiqlash';
+    : s === 'time' ? dict.shortTime
+    : dict.shortConfirm;
   // Where the back button leads — mirrors back()'s routing exactly.
   const backLabel =
     step === 'confirm' ? stepShort('time')
     : step === 'staff' ? stepShort('services')
     : step === 'time' ? (eligibleStaff.length > 1 ? stepShort('staff') : stepShort('services'))
     : business.name;
+  const chooseLabel = (label: string) => `${dict.choosePrefix}${label}${dict.chooseSuffix}`;
+  const stepBigTitle: Record<Step, string> = {
+    services: dict.stepServices,
+    staff: chooseLabel(resourceLabel),
+    time: dict.stepTime,
+    confirm: dict.stepConfirm,
+    done: '',
+  };
   const bigTitle =
     step === 'confirm'
-      ? otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : STEP_TITLE.confirm
-    : step === 'staff' && resourcesAreAssets ? `${resourceLabel}ni tanlang`
-    : step === 'time' && rescheduleId ? 'Yangi sana va vaqt'
-    : STEP_TITLE[step];
+      ? otpSent ? dict.titleSmsCode : rescheduleId ? dict.titleConfirmChanges : dict.stepConfirm
+    : step === 'staff' && resourcesAreAssets ? chooseLabel(resourceLabel)
+    : step === 'time' && rescheduleId ? dict.titleNewDateTime
+    : stepBigTitle[step];
 
   // Context-aware primary action (drives both the desktop summary and mobile bar)
   const action =
     step === 'services'
-      ? { label: selected.length > 0 ? 'Davom etish' : 'Xizmatlarni tanlash', disabled: selected.length === 0, onClick: goFromServices }
+      ? { label: selected.length > 0 ? dict.actContinue : dict.actChooseServices, disabled: selected.length === 0, onClick: goFromServices }
       : step === 'staff'
-        ? { label: staffId ? 'Davom etish' : `${resourceLabel}ni tanlang`, disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
+        ? { label: staffId ? dict.actContinue : chooseLabel(resourceLabel), disabled: !staffId, onClick: () => { setError(null); setStep('time'); } }
         : {
             label: busy
               ? rescheduleId
-                ? sessionActive ? 'O‘zgartirilmoqda…' : 'Yuborilmoqda…'
-                : 'Bron qilinmoqda…'
+                ? sessionActive ? dict.actUpdating : dict.actSending
+                : dict.actBooking
               : !slot
-                ? 'Vaqtni tanlang'
+                ? dict.actPickTime
                 : rescheduleId
-                  ? 'O‘zgartirish'
+                  ? dict.actChange
                   : sessionActive
-                    ? 'Bron qilish'
-                    : 'Bronni tasdiqlash',
+                    ? dict.actBook
+                    : dict.actConfirmBooking,
             disabled: !slot || busy,
             onClick: () => { if (slot) openConfirm(); },
           };
@@ -567,11 +570,11 @@ export function BookingFlow({
   //  - reschedule (no session) → confirm the time first ("Davom etish" sends OTP);
   //  - new (no session) → confirm after the phone + OTP.
   const confirmBtn = sessionActive
-    ? { label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bron qilish', disabled: busy, onClick: confirm }
+    ? { label: rescheduleId ? dict.actChangeTime : dict.actBook, disabled: busy, onClick: confirm }
     : rescheduleId && !otpSent
-      ? { label: 'Davom etish', disabled: busy, onClick: sendCode }
+      ? { label: dict.actContinue, disabled: busy, onClick: sendCode }
       : {
-          label: rescheduleId ? "Vaqtni o'zgartirish" : 'Bron qilish',
+          label: rescheduleId ? dict.actChangeTime : dict.actBook,
           disabled: !otpSent || code.length < 5 || busy || (isNewCustomer && !name.trim()),
           onClick: confirm,
         };
@@ -581,7 +584,7 @@ export function BookingFlow({
     <>
       {otpSent && (
         <p className="-mt-2 mb-6 text-sm text-muted-foreground">
-          <span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span> raqamiga 5 xonali kod yuborildi.
+          {dict.codeSentPre}<span className="font-semibold text-foreground">{rescheduleId ? maskedPhone : `+998 ${fmtPhone(phone)}`}</span>{dict.codeSentPost}
         </p>
       )}
 
@@ -591,7 +594,7 @@ export function BookingFlow({
       {/* New booking → phone entry (hidden for a remembered session or once the code is sent). */}
       {!rescheduleId && !otpSent && !sessionActive && (
         <>
-          {!isDesktop && <label className="mb-3 block text-lg font-bold text-foreground">Telefon raqamingiz</label>}
+          {!isDesktop && <label className="mb-3 block text-lg font-bold text-foreground">{dict.phoneLabel}</label>}
           <div className="flex flex-col gap-4">
             <div className="flex h-14 w-full min-w-0 items-center rounded-full border border-border bg-card px-5 transition-colors duration-200 focus-within:border-foreground">
               <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
@@ -601,7 +604,7 @@ export function BookingFlow({
                 value={fmtPhone(phone)}
                 onChange={(e) => { setPhone(e.target.value.replace(/\D/g, '').slice(0, 9)); setOtpSent(false); setCode(''); }}
                 inputMode="numeric"
-                placeholder="90 123 45 67"
+                placeholder={dict.phonePlaceholder}
                 className="ml-2 h-full w-full min-w-0 bg-transparent tabular-nums tracking-wide text-foreground outline-none"
               />
             </div>
@@ -611,7 +614,7 @@ export function BookingFlow({
               disabled={phone.length !== 9 || busy}
               className="h-14 w-full shrink-0 whitespace-nowrap rounded-full bg-foreground px-5 text-sm font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
             >
-              {busy ? 'Yuborilmoqda…' : 'Kod yuborish'}
+              {busy ? dict.actSending : dict.sendCode}
             </button>
           </div>
         </>
@@ -622,12 +625,12 @@ export function BookingFlow({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="overflow-hidden">
             {isNewCustomer && (
               <div>
-                <label className="mb-3 block text-lg font-bold text-foreground">Ismingiz</label>
+                <label className="mb-3 block text-lg font-bold text-foreground">{dict.nameLabel}</label>
                 <input
                   autoFocus
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ism"
+                  placeholder={dict.namePlaceholder}
                   className="h-14 w-full rounded-full border border-border bg-card px-5 text-foreground outline-none transition-colors duration-200 focus:border-foreground"
                 />
               </div>
@@ -641,7 +644,7 @@ export function BookingFlow({
                 disabled={busy || resendIn > 0}
                 className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
               >
-                {resendIn > 0 ? `Kodni qayta yuborish · 0:${pad2(resendIn)}` : 'Kodni qayta yuborish'}
+                {resendIn > 0 ? `${dict.resendCode} · 0:${pad2(resendIn)}` : dict.resendCode}
               </button>
             </div>
           </motion.div>
@@ -668,7 +671,7 @@ export function BookingFlow({
           real action (after OTP, or the session/reschedule flows). */}
       {(otpSent || sessionActive || rescheduleId) && (
         <PrimaryBtn className="mt-6" disabled={confirmBtn.disabled} onClick={confirmBtn.onClick}>
-          <span className="inline-flex items-center gap-2">{busy ? (rescheduleId ? 'O‘zgartirilmoqda…' : 'Bron qilinmoqda…') : confirmBtn.label}<ArrowRight size={18} /></span>
+          <span className="inline-flex items-center gap-2">{busy ? (rescheduleId ? dict.actUpdating : dict.actBooking) : confirmBtn.label}<ArrowRight size={18} /></span>
         </PrimaryBtn>
       )}
 
@@ -681,7 +684,7 @@ export function BookingFlow({
           onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
           className="mt-3 h-12 w-full rounded-full text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-40"
         >
-          Telefon raqamni o&apos;zgartirish
+          {dict.changePhone}
         </button>
       )}
     </>
@@ -694,13 +697,13 @@ export function BookingFlow({
         <button
           type="button"
           onClick={back}
-          aria-label="Orqaga"
+          aria-label={dict.ariaBack}
           className="flex h-11 max-w-[60vw] items-center gap-1 rounded-full border border-border bg-card pl-2.5 pr-4 text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
         >
           <ChevronLeft size={20} className="shrink-0" />
           <span className="truncate text-sm font-semibold">{backLabel}</span>
         </button>
-        <button type="button" onClick={() => router.push('/')} aria-label="Yopish" className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5">
+        <button type="button" onClick={() => router.push('/')} aria-label={dict.ariaClose} className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5">
           <X size={20} />
         </button>
       </div>
@@ -756,7 +759,7 @@ export function BookingFlow({
                 <div>
                   {cats.length > 1 && (
                     <div className="scrollbar-hide -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
-                      <CatPill active={activeCat === null} onClick={() => setActiveCat(null)}>Barchasi</CatPill>
+                      <CatPill active={activeCat === null} onClick={() => setActiveCat(null)}>{dict.all}</CatPill>
                       {cats.map((c) => (
                         <CatPill key={c} active={activeCat === c} onClick={() => setActiveCat(c)}>{c}</CatPill>
                       ))}
@@ -767,8 +770,8 @@ export function BookingFlow({
                   <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     {shownServices.map((s, i) => {
                       const on = selectedIds.includes(s.id);
-                      const sName = localized(s.name as LocalizedText);
-                      const price = priceLabel(s, business.currency);
+                      const sName = localized(s.name as LocalizedText, '', locale);
+                      const price = priceLabel(s, business.currency, dict);
                       // A unit (time-rate) selection is exclusive — other services can't be
                       // added, only switched to — so it gets "Tanlash", addable fixed
                       // services get "Qo'shish", and a selected one shows "Tanlandi".
@@ -776,7 +779,7 @@ export function BookingFlow({
                       const actionBtn = (
                         <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
                           {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
-                          {on ? 'Tanlandi' : canAdd ? "Qo'shish" : 'Tanlash'}
+                          {on ? dict.selectedLabel : canAdd ? dict.add : dict.choose}
                           {!on && !canAdd && <ChevronRight size={15} />}
                         </span>
                       );
@@ -791,7 +794,7 @@ export function BookingFlow({
                           className="group relative overflow-hidden rounded-2xl border border-foreground/12 bg-card text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5"
                         >
                           {on && (
-                            <span className="absolute right-3 top-3 z-10 flex size-7 items-center justify-center rounded-full bg-foreground text-background shadow-sm">
+                            <span className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-foreground text-background shadow-md ring-2 ring-white">
                               <Check size={16} strokeWidth={3} />
                             </span>
                           )}
@@ -808,7 +811,7 @@ export function BookingFlow({
                               {s.durationMinutes != null && (
                                 <span className="flex items-center gap-1 text-sm text-muted-foreground">
                                   <Clock size={14} />
-                                  {dur(s.durationMinutes)}
+                                  {dur(s.durationMinutes, dict)}
                                 </span>
                               )}
                             </div>
@@ -856,7 +859,7 @@ export function BookingFlow({
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-semibold text-foreground">{st.name}</span>
                           {st.type !== 'asset' && (st.bookingsCount ?? 0) > 0 && (
-                            <span className="mt-0.5 block text-sm text-muted-foreground">{st.bookingsCount} ta bron</span>
+                            <span className="mt-0.5 block text-sm text-muted-foreground">{st.bookingsCount} {dict.bookings}</span>
                           )}
                         </span>
                         <span
@@ -865,7 +868,7 @@ export function BookingFlow({
                           }`}
                         >
                           {on && <Check size={15} strokeWidth={3} />}
-                          {on ? 'Tanlandi' : 'Tanlash'}
+                          {on ? dict.selectedLabel : dict.choose}
                           {!on && <ChevronRight size={15} />}
                         </span>
                       </motion.button>
@@ -880,13 +883,13 @@ export function BookingFlow({
                   {/* quick chips + calendar field — the picker drops below the whole
                       row (anchoring it to the narrow icon button overflows the screen) */}
                   <div className="relative flex flex-wrap items-center gap-2">
-                    <Chip on={date === todayIso} onClick={() => setDate(todayIso)}>Bugun</Chip>
-                    <Chip on={date === tomorrowIso} onClick={() => setDate(tomorrowIso)}>Ertaga</Chip>
+                    <Chip on={date === todayIso} onClick={() => setDate(todayIso)}>{dict.today}</Chip>
+                    <Chip on={date === tomorrowIso} onClick={() => setDate(tomorrowIso)}>{dict.tomorrow}</Chip>
                     <div>
                       <button
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
-                        aria-label="Sana tanlash"
+                        aria-label={dict.ariaPickDate}
                         className={`flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors duration-200 ${
                           date !== todayIso && date !== tomorrowIso
                             ? 'border-foreground bg-foreground text-background'
@@ -895,7 +898,7 @@ export function BookingFlow({
                       >
                         <Calendar size={18} className={date !== todayIso && date !== tomorrowIso ? '' : 'text-muted-foreground'} />
                         {date !== todayIso && date !== tomorrowIso && selP && (
-                          <span>{selP.day}-{MONTHS[selP.monIdx]}</span>
+                          <span>{selP.day}-{dict.monthsShort[selP.monIdx]}</span>
                         )}
                       </button>
                       <AnimatePresence>
@@ -913,6 +916,7 @@ export function BookingFlow({
                                 value={date}
                                 todayIso={todayIso}
                                 maxIso={maxIso}
+                                dict={dict}
                                 onSelect={(iso) => { setDate(iso); setShowCal(false); }}
                               />
                             </motion.div>
@@ -929,23 +933,23 @@ export function BookingFlow({
                     const setDur = (d: number) => { setDurationMin(Math.min(maxDur, Math.max(minDur, d))); setSlot(null); };
                     return (
                       <div className="mt-5">
-                        <p className="mb-3 text-lg font-bold text-foreground">Davomiyligi</p>
+                        <p className="mb-3 text-lg font-bold text-foreground">{dict.duration}</p>
                         <div className="inline-flex h-13 items-center gap-1 rounded-full border border-border bg-card px-1.5">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
                             disabled={durationMin <= minDur}
-                            aria-label="Kamaytirish"
+                            aria-label={dict.ariaDecrease}
                             className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Minus size={18} />
                           </button>
-                          <span className="min-w-[112px] text-center text-sm font-bold text-foreground tabular-nums">{dur(durationMin)}</span>
+                          <span className="min-w-[112px] text-center text-sm font-bold text-foreground tabular-nums">{dur(durationMin, dict)}</span>
                           <button
                             type="button"
                             onClick={() => setDur(durationMin + 30)}
                             disabled={durationMin >= maxDur}
-                            aria-label="Ko&apos;paytirish"
+                            aria-label={dict.ariaIncrease}
                             className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Plus size={18} />
@@ -966,18 +970,19 @@ export function BookingFlow({
                     ) : futureSlots.length === 0 ? (
                       <div className="rounded-2xl border border-foreground/12 bg-card py-14 text-center shadow-xs shadow-black/5">
                         <Clock size={28} className="mx-auto text-muted-foreground/40" />
-                        <p className="mt-3 text-sm text-muted-foreground">Bu kunga bo&apos;sh vaqt yo&apos;q.</p>
+                        <p className="mt-3 text-sm text-muted-foreground">{dict.noSlots}</p>
                       </div>
                     ) : (
-                      PERIODS.map((p) => {
+                      PERIOD_RANGES.map((p, pi) => {
+                        const periodLabel = dict.periods[pi];
                         const items = futureSlots.filter((s) => {
                           const h = Number(s.start.slice(0, 2));
                           return h >= p.from && h < p.to;
                         });
                         if (items.length === 0) return null;
                         return (
-                          <div key={p.label} className="mb-6">
-                            <p className="mb-3 text-lg font-bold text-foreground">{p.label}</p>
+                          <div key={periodLabel} className="mb-6">
+                            <p className="mb-3 text-lg font-bold text-foreground">{periodLabel}</p>
                             <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
                               {items.map((s) => {
                                 const on = slot === s.start;
@@ -1057,7 +1062,7 @@ export function BookingFlow({
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-tight text-foreground">{business.name}</p>
                 {branch?.address && (
-                  <p className="mt-1 truncate text-sm text-muted-foreground">{localized(branch.address)}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">{localized(branch.address, '', locale)}</p>
                 )}
               </div>
             </div>
@@ -1067,6 +1072,8 @@ export function BookingFlow({
             <SummaryBody
               selected={selected}
               currency={business.currency}
+              dict={dict}
+              locale={locale}
               staffName={selectedStaff?.name ?? null}
               resourceLabel={resourceLabel}
               when={slot && selDate ? `${selDate.day} ${selDate.mon} · ${slot}${hourly ? `–${addHm(slot, durationMin)}` : ''}` : null}
@@ -1091,7 +1098,7 @@ export function BookingFlow({
           {selected.length > 0 && (
             <div className="mb-2.5 flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
-                {selected.length} xizmat{durationKnown && totalMin ? ` · ${dur(totalMin)}` : ''}
+                {selected.length} {dict.serviceCount}{durationKnown && totalMin ? ` · ${dur(totalMin, dict)}` : ''}
               </span>
               <span className="text-base font-extrabold text-foreground">{summaryPrice}</span>
             </div>
@@ -1123,12 +1130,12 @@ export function BookingFlow({
             >
               <div className="mb-5 flex items-start justify-between gap-3">
                 <h3 className="text-xl font-extrabold text-foreground">
-                  {otpSent ? 'SMS kodni kiriting' : rescheduleId ? "O'zgarishlarni tasdiqlaysizmi?" : sessionActive ? STEP_TITLE.confirm : 'Telefon raqamingiz'}
+                  {otpSent ? dict.titleSmsCode : rescheduleId ? dict.titleConfirmChanges : sessionActive ? dict.stepConfirm : dict.phoneLabel}
                 </h3>
                 <button
                   type="button"
                   onClick={() => { if (!busy) closeConfirm(); }}
-                  aria-label="Yopish"
+                  aria-label={dict.ariaClose}
                   className="grid size-9 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5"
                 >
                   <X size={18} />
@@ -1148,6 +1155,8 @@ export function BookingFlow({
 function SummaryBody({
   selected,
   currency,
+  dict,
+  locale,
   staffName,
   resourceLabel,
   when,
@@ -1157,6 +1166,8 @@ function SummaryBody({
 }: {
   selected: PublicTenant['services'];
   currency: string;
+  dict: BookingDict;
+  locale: TenantLocale;
   staffName: string | null;
   /** Field label for the picked resource — unit label ("Yo'laklar") or "Mutaxassis". */
   resourceLabel: string;
@@ -1193,7 +1204,7 @@ function SummaryBody({
             transition={{ duration: 0.12 }}
             className="py-1 text-base text-muted-foreground"
           >
-            Hali xizmat tanlanmagan.
+            {dict.noServiceYet}
           </motion.p>
         ) : (
           <motion.div
@@ -1208,29 +1219,28 @@ function SummaryBody({
             className="[&>div:last-child>div]:pb-0"
           >
             <p className="pb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-              Xizmatlar
+              {dict.servicesHeading}
             </p>
-            <AnimatePresence initial={false}>
+            <AnimatePresence initial={false} mode="popLayout">
               {selected.map((s) => (
                 <motion.div
                   key={s.id}
                   layout
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
-                  className="overflow-hidden"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }}
                 >
                   <div className="flex items-start justify-between gap-3 pb-3.5">
                     <div className="min-w-0">
-                      <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText)}</p>
+                      <p className="text-base font-semibold text-foreground">{localized(s.name as LocalizedText, '', locale)}</p>
                       {s.durationMinutes != null && (
-                        <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes)}</p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">{dur(s.durationMinutes, dict)}</p>
                       )}
                     </div>
                     <div className="flex shrink-0 flex-col items-end">
                       <span className="whitespace-nowrap text-base font-semibold text-foreground">
-                        {priceLabel(s, currency)}
+                        {priceLabel(s, currency, dict)}
                       </span>
                       {windows.has(s.id) && (
                         <span className="mt-0.5 whitespace-nowrap text-sm text-muted-foreground">
@@ -1246,26 +1256,25 @@ function SummaryBody({
         )}
       </AnimatePresence>
 
-      <AnimatePresence initial={false}>
+      <AnimatePresence initial={false} mode="popLayout">
         {(staffName || when) && (
           <motion.div
             layout
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.24, ease: [0.4, 0, 0.2, 1] }}
-            className="overflow-hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1], layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }}
           >
             <div className="mt-4 space-y-3 border-t border-border pt-4">
               {staffName && <FieldRow label={resourceLabel} value={staffName} />}
-              {when && <FieldRow label="Vaqt" value={when} />}
+              {when && <FieldRow label={dict.fieldTime} value={when} />}
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       <motion.div layout className="mt-4 border-t border-border pt-4">
-        <p className="text-sm text-muted-foreground">Jami{totalMin ? ` · ${dur(totalMin)}` : ''}</p>
+        <p className="text-sm text-muted-foreground">{dict.total}{totalMin ? ` · ${dur(totalMin, dict)}` : ''}</p>
         <AnimatePresence mode="wait">
           <motion.p
             key={priceText}
@@ -1315,11 +1324,13 @@ function DayPicker({
   value,
   todayIso,
   maxIso,
+  dict,
   onSelect,
 }: {
   value: string;
   todayIso: string;
   maxIso: string;
+  dict: BookingDict;
   onSelect: (iso: string) => void;
 }) {
   const v = isoParts(value);
@@ -1342,16 +1353,16 @@ function DayPicker({
   return (
     <div>
       <div className="mb-3 flex items-center justify-between">
-        <button type="button" disabled={prevDisabled} onClick={() => go(-1)} aria-label="Oldingi oy" className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
+        <button type="button" disabled={prevDisabled} onClick={() => go(-1)} aria-label={dict.prevMonth} className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
           <ChevronLeft size={18} />
         </button>
-        <span className="text-sm font-bold text-foreground">{MONTHS_FULL[vm]} {vy}</span>
-        <button type="button" disabled={nextDisabled} onClick={() => go(1)} aria-label="Keyingi oy" className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
+        <span className="text-sm font-bold text-foreground">{dict.monthsFull[vm]} {vy}</span>
+        <button type="button" disabled={nextDisabled} onClick={() => go(1)} aria-label={dict.nextMonth} className="grid size-9 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5 disabled:opacity-25">
           <ChevronRight size={18} />
         </button>
       </div>
       <div className="grid grid-cols-7 gap-y-1">
-        {WEEK.map((w) => (
+        {dict.weekdaysMon.map((w) => (
           <span key={w} className="py-1 text-center text-[11px] font-semibold text-muted-foreground">{w}</span>
         ))}
         {cells.map((d, i) => {

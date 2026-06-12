@@ -243,7 +243,7 @@ function LanguageSwitcher({ locale }: { locale: Locale }) {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-40 mt-2 min-w-44 rounded-2xl bg-white p-2 shadow-lg ring-1 ring-black/5"
+          className="absolute right-0 top-full z-40 mt-1 min-w-44 rounded-2xl bg-white p-2 shadow-lg ring-1 ring-black/5"
         >
           {LOCALES.map((l) => (
             <LocaleRow key={l} locale={l} current={locale} />

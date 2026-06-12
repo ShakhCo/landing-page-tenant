@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { getTenant, localized } from '@/lib/tenant';
+import { getTenantDict } from '@/lib/dictionaries/tenant';
 import { TenantView } from './TenantView';
 
 export async function generateMetadata({
@@ -27,7 +28,10 @@ export async function generateMetadata({
     title: { absolute: `${title} | BOOKUP` },
     description,
     applicationName: b.name,
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: { uz: url, ru: `${url}/ru`, en: `${url}/en` },
+    },
     openGraph: {
       type: 'website',
       siteName: b.name,
@@ -69,7 +73,7 @@ export default async function TenantPage({
 
   return (
     <main className="min-h-screen bg-background">
-      <TenantView tenant={tenant} />
+      <TenantView tenant={tenant} dict={getTenantDict('uz')} locale="uz" />
     </main>
   );
 }

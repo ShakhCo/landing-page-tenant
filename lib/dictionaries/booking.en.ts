@@ -1,0 +1,86 @@
+import type { BookingDict } from './booking.uz';
+
+export const dict: BookingDict = {
+  stepServices: 'Choose services',
+  stepTime: 'Date and time',
+  stepConfirm: 'Confirm booking',
+  shortServices: 'Services',
+  shortTime: 'Time',
+  shortConfirm: 'Confirm',
+  choosePrefix: 'Choose ',
+  chooseSuffix: '',
+
+  monthsShort: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  monthsFull: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  weekdaysSun: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'],
+  weekdaysMon: ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'],
+  periods: ['Morning', 'Afternoon', 'Evening'],
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+  duration: 'Duration',
+  noSlots: 'No free time on this day.',
+
+  som: "so'm",
+  perHour: '/hr',
+  durHour: 'h',
+  durMin: 'min',
+
+  resourceUnit: 'Spot',
+  resourceStaff: 'Specialist',
+  bookings: 'bookings',
+
+  all: 'All',
+  otherCategory: 'Other',
+  selectedLabel: 'Selected',
+  add: 'Add',
+  choose: 'Choose',
+
+  errMultiStaff: 'One specialist cannot do these services — please book them separately.',
+
+  doneTitle: 'Booked!',
+  doneSubtitle: "We'll confirm the details by SMS.",
+  ready: 'Done',
+  fieldTime: 'Time',
+  total: 'Total',
+
+  titleSmsCode: 'Enter the SMS code',
+  titleConfirmChanges: 'Confirm the changes?',
+  titleNewDateTime: 'New date and time',
+
+  actContinue: 'Continue',
+  actChooseServices: 'Choose services',
+  actUpdating: 'Updating…',
+  actSending: 'Sending…',
+  actBooking: 'Booking…',
+  actPickTime: 'Pick a time',
+  actChange: 'Change',
+  actBook: 'Book',
+  actConfirmBooking: 'Confirm booking',
+  actChangeTime: 'Change time',
+
+  codeSentPre: 'A 5-digit code was sent to ',
+  codeSentPost: '.',
+  phoneLabel: 'Your phone number',
+  phonePlaceholder: '90 123 45 67',
+  sendCode: 'Send code',
+  nameLabel: 'Your name',
+  namePlaceholder: 'Name',
+  resendCode: 'Resend code',
+  changePhone: 'Change phone number',
+
+  servicesHeading: 'Services',
+  noServiceYet: 'No service selected yet.',
+  serviceCount: 'service(s)',
+
+  ariaBack: 'Back',
+  ariaClose: 'Close',
+  ariaPickDate: 'Pick a date',
+  ariaDecrease: 'Decrease',
+  ariaIncrease: 'Increase',
+  prevMonth: 'Previous month',
+  nextMonth: 'Next month',
+
+  invalidLinkTitle: 'Invalid link',
+  invalidLinkText: 'This reschedule link is expired or invalid. You can make a new booking.',
+  newBooking: 'New booking',
+};

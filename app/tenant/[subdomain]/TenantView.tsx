@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, MapPin, ChevronDown, BadgeCheck, Phone, Globe, Send } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicTenant } from '@/lib/tenant';
+import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
+import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
+import { LocaleSwitcher } from './LocaleSwitcher';
 
-const DAY_NAMES = ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'];
 const FEATURED_LIMIT = 6;
 const TEAM_LIMIT = 5;
 
@@ -29,15 +30,15 @@ function initials(name: string) {
     .map((w) => w[0].toUpperCase())
     .join('');
 }
-function money(amount: number, currency: string) {
+function money(amount: number, currency: string, som: string) {
   const n = amount.toLocaleString('ru-RU');
-  return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
+  return currency === 'UZS' ? `${n} ${som}` : `${n} ${currency}`;
 }
-function dur(min: number | null) {
+function dur(min: number | null, d: { hour: string; minute: string }) {
   if (!min) return '';
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return h ? (m ? `${h} soat ${m} daqiqa` : `${h} soat`) : `${m} daqiqa`;
+  return h ? (m ? `${h} ${d.hour} ${m} ${d.minute}` : `${h} ${d.hour}`) : `${m} ${d.minute}`;
 }
 function hm(t: string | null) {
   if (!t) return null;
@@ -53,7 +54,15 @@ function nowInTz(tz: string) {
   return { weekday: map[get('weekday')] ?? 1, minutes: Number(get('hour')) * 60 + Number(get('minute')) };
 }
 
-export function TenantView({ tenant }: { tenant: PublicTenant }) {
+export function TenantView({
+  tenant,
+  dict,
+  locale,
+}: {
+  tenant: PublicTenant;
+  dict: TenantDict;
+  locale: TenantLocale;
+}) {
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -68,6 +77,11 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const [showAll, setShowAll] = useState(false);
   const [showAllTeam, setShowAllTeam] = useState(false);
   const [showHours, setShowHours] = useState(false);
+
+  // Remember the chosen language so the booking flow (cookie-based) follows it.
+  useEffect(() => {
+    document.cookie = `bookup_locale=${locale}; path=/; max-age=31536000; samesite=lax`;
+  }, [locale]);
 
   // Lock background scroll while the hours sheet is open.
   useEffect(() => {
@@ -86,9 +100,9 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
   const open = !!now && !!today && !today.isDayOff && oMin != null && cMin != null && now.minutes >= oMin && now.minutes < cMin;
   const closing = today?.closeTime?.slice(0, 5) ?? null;
 
-  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, 'Boshqa'))));
+  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale))));
   const filtered = activeCat
-    ? services.filter((s) => localized(s.category as LocalizedText | null, 'Boshqa') === activeCat)
+    ? services.filter((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale) === activeCat)
     : services;
   const visible = showAll ? filtered : filtered.slice(0, FEATURED_LIMIT);
   const mapsQuery = branch ? `${branch.latitude},${branch.longitude}` : '';
@@ -106,6 +120,9 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
     <div className="bg-card min-h-screen">
       <div className="max-w-[1350px] mx-auto">
       <div className="relative">
+        <div className="absolute right-3 top-3 z-20">
+          <LocaleSwitcher current={locale} />
+        </div>
         <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none">
           <iframe
             title="Map"
@@ -132,17 +149,17 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
         </h1>
         <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
           {/* Category — hidden in favor of the live open status. */}
-          {false && business.category && <span>{localized(business.category!.name, '')}</span>}
+          {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
           {branch &&
             (open ? (
-              <span className="font-semibold text-emerald-600">Ochiq{closing ? ` · ${closing} gacha` : ''}</span>
+              <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
             ) : (
-              <span className="font-semibold">Yopiq</span>
+              <span className="font-semibold">{dict.closed}</span>
             ))}
           {branch?.address && (
             <span className="flex items-center gap-1">
               <MapPin className="size-4" />
-              {localized(branch.address, '')}
+              {localized(branch.address, '', locale)}
             </span>
           )}
         </div>
@@ -163,7 +180,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           {/* Team */}
           {team.length > 0 && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
-              <h2 className="text-lg font-bold text-foreground">Mutaxassislar</h2>
+              <h2 className="text-lg font-bold text-foreground">{dict.specialists}</h2>
               <div className="mt-2 divide-y divide-border">
                 {(showAllTeam ? team : team.slice(0, TEAM_LIMIT)).map((st) => (
                   <div key={st.id} className="flex items-center gap-3.5 py-3.5">
@@ -177,15 +194,15 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                     )}
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-semibold text-foreground">{st.name}</p>
-                      <p className="mt-0.5 text-sm text-muted-foreground">{st.bookingsCount ?? 0} ta bron</p>
+                      <p className="mt-0.5 text-sm text-muted-foreground">{st.bookingsCount ?? 0} {dict.bookings}</p>
                     </div>
                     {canBook && (
                       <Link
                         href="/booking"
-                        aria-label={`${st.name} — bron qilish`}
+                        aria-label={`${st.name} — ${dict.book}`}
                         className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                       >
-                        Bron
+                        {dict.bookShort}
                       </Link>
                     )}
                   </div>
@@ -197,7 +214,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                   onClick={() => setShowAllTeam((v) => !v)}
                   className="mt-1 flex w-full items-center justify-center gap-1 rounded-full border border-border py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                 >
-                  {showAllTeam ? 'Kamroq ko‘rish' : `Barchasini ko‘rish (${team.length})`}
+                  {showAllTeam ? dict.showLess : `${dict.showMore} (${team.length})`}
                   <ChevronDown size={15} className={`transition-transform duration-200 ${showAllTeam ? 'rotate-180' : ''}`} />
                 </button>
               )}
@@ -208,13 +225,13 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           {branch && branch.workingHours.length > 0 && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-foreground">Ish vaqti</h2>
+                <h2 className="text-lg font-bold text-foreground">{dict.workingHours}</h2>
                 {open ? (
                   <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600">
-                    Ochiq{closing ? ` · ${closing} gacha` : ''}
+                    {dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}
                   </span>
                 ) : (
-                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">Yopiq</span>
+                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">{dict.closed}</span>
                 )}
               </div>
               <div className="mt-2 divide-y divide-border">
@@ -228,9 +245,9 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                         isToday ? 'font-semibold text-foreground' : 'text-muted-foreground'
                       }`}
                     >
-                      <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
+                      <span>{dict.days[w.weekday - 1] ?? w.weekday}</span>
                       <span className="tabular-nums">
-                        {off ? 'Dam olish' : `${w.openTime!.slice(0, 5)} – ${w.closeTime!.slice(0, 5)}`}
+                        {off ? dict.dayOff : `${w.openTime!.slice(0, 5)} – ${w.closeTime!.slice(0, 5)}`}
                       </span>
                     </div>
                   );
@@ -265,11 +282,11 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
 
         {/* Left column: services */}
         <section className="mt-10 lg:order-1 lg:mt-0">
-          <h2 className="text-lg font-bold text-foreground">Xizmatlar</h2>
+          <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
 
           {cats.length > 1 && (
             <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
-              <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>Barchasi</Pill>
+              <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
               {cats.map((c) => (
                 <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>
               ))}
@@ -277,15 +294,15 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
           )}
 
           {services.length === 0 ? (
-            <p className="py-12 text-center text-sm text-muted-foreground">Hozircha xizmatlar yo&apos;q.</p>
+            <p className="py-12 text-center text-sm text-muted-foreground">{dict.noServices}</p>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {visible.map((s) => {
-                const name = localized(s.name as LocalizedText);
+                const name = localized(s.name as LocalizedText, '', locale);
                 const price =
                   s.pricingMode === 'time_rate'
-                    ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency)}/soat` : ''
-                    : s.price != null ? money(s.price, business.currency) : '';
+                    ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
+                    : s.price != null ? money(s.price, business.currency, dict.som) : '';
                 const inner = (
                   <>
                     {s.photoUrl ? (
@@ -306,13 +323,13 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
                         {s.durationMinutes != null && (
                           <span className="flex items-center gap-1 text-sm text-muted-foreground">
                             <Clock size={14} />
-                            {dur(s.durationMinutes)}
+                            {dur(s.durationMinutes, dict)}
                           </span>
                         )}
                       </div>
                       {canBook && (
                         <span className="mt-3 block w-full rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
-                          Bron qilish
+                          {dict.book}
                         </span>
                       )}
                     </div>
@@ -336,7 +353,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
               onClick={() => setShowAll(true)}
               className="mt-4 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
             >
-              Barchasini ko&apos;rish
+              {dict.showMore}
             </button>
           )}
         </section>
@@ -346,7 +363,7 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
       {canBook && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
           <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
-            Bron qilish
+            {dict.book}
           </Link>
         </div>
       )}
@@ -366,13 +383,13 @@ export function TenantView({ tenant }: { tenant: PublicTenant }) {
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-center pt-3 lg:hidden"><div className="h-1 w-10 rounded-full bg-border" /></div>
-              <div className="px-6 pb-2 pt-5"><h3 className="text-2xl font-bold text-foreground">Ish vaqti</h3></div>
+              <div className="px-6 pb-2 pt-5"><h3 className="text-2xl font-bold text-foreground">{dict.workingHours}</h3></div>
               <div className="px-6 pb-7">
                 {branch.workingHours.map((w) => (
                   <div key={w.weekday} className={`flex justify-between py-2 text-base ${w.weekday === now?.weekday ? 'font-bold text-foreground' : 'text-muted-foreground'}`}>
-                    <span>{DAY_NAMES[w.weekday - 1] ?? w.weekday}</span>
+                    <span>{dict.days[w.weekday - 1] ?? w.weekday}</span>
                     <span className="tabular-nums">
-                      {w.isDayOff || !w.openTime || !w.closeTime ? 'Dam olish' : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
+                      {w.isDayOff || !w.openTime || !w.closeTime ? dict.dayOff : `${w.openTime.slice(0, 5)} – ${w.closeTime.slice(0, 5)}`}
                     </span>
                   </div>
                 ))}

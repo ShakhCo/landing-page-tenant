@@ -4,19 +4,11 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant } from '@/lib/tenant';
+import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant, type TenantLocale } from '@/lib/tenant';
+import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
 
-const MONTHS_FULL = ['Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun', 'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'];
-const WEEKDAYS_FULL = ['Yakshanba', 'Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba'];
-const STATUS_UZ: Record<string, string> = {
-  pending: 'Kutilmoqda',
-  confirmed: 'Tasdiqlangan',
-  completed: 'Yakunlangan',
-  cancelled: 'Bekor qilingan',
-  no_show: 'Kelmagan',
-};
 /** Optional cancellation reasons — stable slugs for the backend, localized labels for the UI. */
 const CANCEL_REASONS: { slug: string; label: LocalizedText }[] = [
   { slug: 'plans_changed', label: { uz: "Rejalarim o'zgardi", ru: 'Планы изменились', en: 'My plans changed' } },
@@ -36,9 +28,9 @@ const BADGE_STYLE: Record<string, string> = {
   no_show: 'bg-foreground/5 text-muted-foreground',
 };
 
-function money(amount: number, currency: string) {
+function money(amount: number, currency: string, dict: ResultDict) {
   const n = amount.toLocaleString('ru-RU');
-  return currency === 'UZS' ? `${n} so'm` : `${n} ${currency}`;
+  return currency === 'UZS' ? `${n} ${dict.som}` : `${n} ${currency}`;
 }
 /** "Salon Momi" → "SM" — same avatar fallback as the tenant page. */
 function initials(name: string) {
@@ -49,45 +41,45 @@ function initials(name: string) {
     .map((w) => w[0].toUpperCase())
     .join('');
 }
-function fmtDuration(min: number) {
+function fmtDuration(min: number, dict: ResultDict) {
   const h = Math.floor(min / 60);
   const m = min % 60;
-  return [h ? `${h} soat` : '', m ? `${m} daqiqa` : ''].filter(Boolean).join(' ') || '0 daqiqa';
+  return [h ? `${h} ${dict.durHour}` : '', m ? `${m} ${dict.durMin}` : ''].filter(Boolean).join(' ') || dict.durZero;
 }
-function dateParts(iso: string, tz: string) {
+function dateParts(iso: string, tz: string, dict: ResultDict) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone: tz, weekday: 'short', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
   }).formatToParts(new Date(iso));
   const get = (t: string) => parts.find((p) => p.type === t)?.value ?? '';
   const wdMap: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
   const day = Number(get('day'));
-  const mon = MONTHS_FULL[Number(get('month')) - 1];
-  const wd = WEEKDAYS_FULL[wdMap[get('weekday')] ?? 0];
+  const mon = dict.monthsFull[Number(get('month')) - 1];
+  const wd = dict.weekdaysFull[wdMap[get('weekday')] ?? 0];
   return { day, mon, wd, date: `${wd}, ${day}-${mon}`, time: `${get('hour')}:${get('minute')}` };
 }
 /** "14:00–15:00", or "14:00" if there's no end yet. */
-function timeRange(startIso: string, endIso: string | null | undefined, tz: string) {
-  const start = dateParts(startIso, tz).time;
-  return endIso ? `${start}–${dateParts(endIso, tz).time}` : start;
+function timeRange(startIso: string, endIso: string | null | undefined, tz: string, dict: ResultDict) {
+  const start = dateParts(startIso, tz, dict).time;
+  return endIso ? `${start}–${dateParts(endIso, tz, dict).time}` : start;
 }
 /** "Iyun 11, 18:30–19:30" — compact date + time range for receipt rows. */
-function whenCompact(iso: string, tz: string, endIso?: string | null) {
-  const p = dateParts(iso, tz);
-  return `${p.mon} ${p.day}, ${timeRange(iso, endIso, tz)}`;
+function whenCompact(iso: string, tz: string, dict: ResultDict, endIso?: string | null) {
+  const p = dateParts(iso, tz, dict);
+  return `${p.mon} ${p.day}, ${timeRange(iso, endIso, tz, dict)}`;
 }
 /** Local YYYY-MM-DD in a timezone, for comparing calendar days. */
 function localDay(d: Date, tz: string) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
 }
 /** "Bugun, 14:00 dan 15:00 gacha" / "Ertaga, 14:00" / "Chorshanba, 10-Iyun · 14:00 dan 15:00 gacha". */
-function whenLabel(iso: string, tz: string, endIso?: string | null) {
-  const p = dateParts(iso, tz);
-  const time = endIso ? `${p.time} dan ${dateParts(endIso, tz).time} gacha` : p.time;
+function whenLabel(iso: string, tz: string, dict: ResultDict, endIso?: string | null) {
+  const p = dateParts(iso, tz, dict);
+  const time = endIso ? `${p.time}–${dateParts(endIso, tz, dict).time}` : p.time;
   const bookingDay = localDay(new Date(iso), tz);
   const today = localDay(new Date(), tz);
   const tomorrow = localDay(new Date(Date.now() + 86_400_000), tz);
-  if (bookingDay === today) return `Bugun, ${time}`;
-  if (bookingDay === tomorrow) return `Ertaga, ${time}`;
+  if (bookingDay === today) return `${dict.today}, ${time}`;
+  if (bookingDay === tomorrow) return `${dict.tomorrow}, ${time}`;
   return `${p.wd}, ${p.day}-${p.mon} · ${time}`;
 }
 export function BookingResult({
@@ -95,12 +87,16 @@ export function BookingResult({
   data,
   tenant,
   subdomain,
+  dict,
+  locale,
   hasSession = false,
 }: {
   created: boolean;
   data: PublicBookingView;
   tenant: PublicTenant | null;
   subdomain: string;
+  dict: ResultDict;
+  locale: TenantLocale;
   /** Remembered customer (bookup_session cookie) — cancel can try one-tap first. */
   hasSession?: boolean;
 }) {
@@ -120,7 +116,7 @@ export function BookingResult({
   const [resendIn, setResendIn] = useState(0);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
-  const address = branch?.address ? localized(branch.address) : null;
+  const address = branch?.address ? localized(branch.address, '', locale) : null;
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   // Hourly (time-rate) booking that has started and is still running — open OR
@@ -146,14 +142,14 @@ export function BookingResult({
     return () => window.clearInterval(id);
   }, [runningLive]);
   // Title shows just the start ("Bugun, 18:00") — the full range lives in the card's Vaqt row.
-  const whenShort = whenLabel(booking.startAt, business.timezone);
+  const whenShort = whenLabel(booking.startAt, business.timezone, dict);
   // Resource field: the unit's own label ("Yo'laklar") when the booked resources
   // are assets, else "Mutaxassis". Resolved via the tenant payload by name.
   const resourceNames = Array.from(new Set(booking.items.map((i) => i.resourceName).filter(Boolean)));
   const firstSvc = tenant?.services?.find((s) => s.id === booking.items[0]?.offeringId) ?? null;
   const matchedStaff = (tenant?.staff ?? []).filter((st) => resourceNames.includes(st.name));
   const resourcesAreAssets = matchedStaff.length > 0 && matchedStaff.every((st) => st.type === 'asset');
-  const resourceLabel = resourcesAreAssets ? (firstSvc?.unitLabel ? localized(firstSvc.unitLabel) : 'Joy') : 'Mutaxassis';
+  const resourceLabel = resourcesAreAssets ? (firstSvc?.unitLabel ? localized(firstSvc.unitLabel, '', locale) : dict.resourceUnit) : dict.resourceStaff;
   const durationMin = booking.endAt
     ? Math.round((Date.parse(booking.endAt) - Date.parse(booking.startAt)) / 60000)
     : null;
@@ -162,7 +158,14 @@ export function BookingResult({
   // booking is genuinely active. A cancelled / no-show booking always shows its
   // real status, even if the success URL (?created=1) is revisited later.
   const justBooked = created && booking.status !== 'cancelled' && booking.status !== 'no_show';
-  const statusLabel = justBooked ? 'Band qilindi' : STATUS_UZ[booking.status] ?? booking.status;
+  const STATUS_MAP: Record<string, string> = {
+    pending: dict.statusPending,
+    confirmed: dict.statusConfirmed,
+    completed: dict.statusCompleted,
+    cancelled: dict.statusCancelled,
+    no_show: dict.statusNoShow,
+  };
+  const statusLabel = justBooked ? dict.booked : STATUS_MAP[booking.status] ?? booking.status;
   const badgeStyle = justBooked ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
   const badgeCheck = justBooked || booking.status === 'confirmed' || booking.status === 'completed';
 
@@ -270,13 +273,14 @@ export function BookingResult({
           {view === 'offer' ? (
             <motion.div key="offer" {...slide}>
               <TopChrome
+                dict={dict}
                 onBack={() => { if (!pending) { setView('cancel'); setNotice(null); } }}
                 onClose={() => router.push('/')}
               />
-              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">Vaqtni o&apos;zgartirasizmi?</h1>
+              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">{dict.rescheduleQ}</h1>
 
               <p className="mt-6 text-base text-foreground">
-                Bekor qilish shart emas — bronni o&apos;zingizga qulay boshqa vaqtga ko&apos;chirishingiz mumkin.
+                {dict.rescheduleHint}
               </p>
 
               {notice && (
@@ -292,7 +296,7 @@ export function BookingResult({
                 className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               >
                 <CalendarClock size={18} />
-                Ha, vaqtni o&apos;zgartirish
+                {dict.rescheduleYes}
               </button>
               <button
                 type="button"
@@ -300,12 +304,13 @@ export function BookingResult({
                 disabled={pending}
                 className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
               >
-                {pending ? 'Bekor qilinmoqda…' : "Yo'q, bekor qilish"}
+                {pending ? dict.cancelling : dict.cancelNo}
               </button>
             </motion.div>
           ) : (
             <motion.div key="cancel" {...slide}>
               <TopChrome
+                dict={dict}
                 onBack={() => {
                   if (pending) return;
                   if (otpStep) {
@@ -319,14 +324,14 @@ export function BookingResult({
                 onClose={() => router.push('/')}
               />
               <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">
-                {otpStep ? 'SMS kodni kiriting' : 'Bronni bekor qilish'}
+                {otpStep ? dict.smsTitle : dict.cancelTitle}
               </h1>
               <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
 
               {otpStep && (
                 <div className="mt-7">
                   <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground">{maskedPhone}</span> raqamiga 5 xonali kod yuborildi.
+                    {dict.codeSentPre}<span className="font-semibold text-foreground">{maskedPhone}</span>{dict.codeSentPost}
                   </p>
                   <div className="mt-4">
                     <OtpInput value={otpCode} onChange={(v) => { setOtpCode(v); if (notice) setNotice(null); }} length={5} autoFocus />
@@ -336,7 +341,7 @@ export function BookingResult({
                       disabled={pending || resendIn > 0}
                       className="mt-3 text-sm font-semibold text-foreground underline underline-offset-4 disabled:no-underline disabled:text-muted-foreground"
                     >
-                      {resendIn > 0 ? `Kodni qayta yuborish · 0:${String(resendIn).padStart(2, '0')}` : 'Kodni qayta yuborish'}
+                      {resendIn > 0 ? `${dict.resendCode} · 0:${String(resendIn).padStart(2, '0')}` : dict.resendCode}
                     </button>
                   </div>
                 </div>
@@ -345,7 +350,7 @@ export function BookingResult({
               {!otpStep && (
               <div className="mt-7">
                 <p className="text-lg font-extrabold text-foreground">
-                  Sababi nima? <span className="text-sm font-medium text-muted-foreground">(ixtiyoriy)</span>
+                  {dict.reasonQ} <span className="text-sm font-medium text-muted-foreground">{dict.optional}</span>
                 </p>
                 <div className="mt-3 flex flex-col gap-2.5">
                   {CANCEL_REASONS.map((r) => {
@@ -367,7 +372,7 @@ export function BookingResult({
                         }}
                         className="flex items-center gap-4 rounded-2xl border border-foreground/12 bg-card p-4 text-left shadow-xs shadow-black/5 transition-colors duration-200 hover:border-foreground/30"
                       >
-                        <span className="font-semibold text-foreground">{localized(r.label)}</span>
+                        <span className="font-semibold text-foreground">{localized(r.label, '', locale)}</span>
                         <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border'}`}>
                           {on ? <Check size={16} strokeWidth={3} /> : <span className="size-2 rounded-full bg-foreground/30" />}
                         </span>
@@ -390,7 +395,7 @@ export function BookingResult({
                 disabled={pending || (otpStep && otpCode.length < 5)}
                 className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               >
-                {pending ? 'Bekor qilinmoqda…' : 'Bronni bekor qilish'}
+                {pending ? dict.cancelling : dict.cancelConfirm}
               </button>
             </motion.div>
           )}
@@ -468,15 +473,15 @@ export function BookingResult({
               const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
               const itemPrice =
                 svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
-                  ? `${money(svc.ratePerHour, business.currency)}/soat`
-                  : money(it.price, business.currency);
+                  ? `${money(svc.ratePerHour, business.currency, dict)}${dict.perHour}`
+                  : money(it.price, business.currency, dict);
               return (
                 <div key={`${it.offeringId}-${i}`} className="flex items-baseline justify-between gap-4 text-[15px]">
-                  <span className="text-muted-foreground">{localized(it.name as LocalizedText | null, 'Xizmat')}</span>
+                  <span className="text-muted-foreground">{localized(it.name as LocalizedText | null, dict.itemFallback, locale)}</span>
                   <span className="text-right font-semibold text-foreground">
                     {itemPrice}
                     {booking.items.length > 1 && it.startAt && (
-                      <span className="block text-sm font-normal text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone)}</span>
+                      <span className="block text-sm font-normal text-muted-foreground">{timeRange(it.startAt, it.endAt, business.timezone, dict)}</span>
                     )}
                   </span>
                 </div>
@@ -489,14 +494,14 @@ export function BookingResult({
               </div>
             )}
             <div className="flex items-baseline justify-between gap-4 text-[15px]">
-              <span className="text-muted-foreground">Vaqt</span>
+              <span className="text-muted-foreground">{dict.fieldTime}</span>
               <span className="text-right font-semibold text-foreground">
-                {whenCompact(booking.startAt, business.timezone, booking.endAt)}
+                {whenCompact(booking.startAt, business.timezone, dict, booking.endAt)}
               </span>
             </div>
             {booking.customer?.maskedPhone && (
               <div className="flex items-baseline justify-between gap-4 text-[15px]">
-                <span className="text-muted-foreground">Mijoz</span>
+                <span className="text-muted-foreground">{dict.customer}</span>
                 <span className="text-right font-semibold tabular-nums text-foreground">{booking.customer.maskedPhone}</span>
               </div>
             )}
@@ -505,9 +510,9 @@ export function BookingResult({
         {/* Total — the only divider in the card body */}
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4 text-[15px]">
           <span className="text-muted-foreground">
-            Jami{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!)}` : ''}
+            {dict.total}{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!, dict)}` : ''}
           </span>
-          <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency)}</span>
+          <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency, dict)}</span>
         </div>
 
         {/* Manage: borderless list rows — only while the booking is still
@@ -521,7 +526,7 @@ export function BookingResult({
               className="flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-50"
             >
               <CalendarClock size={20} className="shrink-0" />
-              Vaqtni o&apos;zgartirish
+              {dict.manageReschedule}
               <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
             </button>
             <button
@@ -531,7 +536,7 @@ export function BookingResult({
               className="flex w-full items-center gap-3.5 rounded-xl px-2 py-3.5 text-left text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
             >
               <CalendarX2 size={20} className="shrink-0" />
-              {pending ? 'Bekor qilinmoqda…' : 'Bekor qilish, bora olmayman'}
+              {pending ? dict.cancelling : dict.manageCancel}
               <ChevronRight size={18} className="ml-auto shrink-0 text-muted-foreground" />
             </button>
           </div>
@@ -547,7 +552,7 @@ export function BookingResult({
               className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
             >
               <CalendarPlus size={18} />
-              Yana bron qilish
+              {dict.bookAgain}
             </button>
           </div>
         )}
@@ -555,7 +560,7 @@ export function BookingResult({
         {/* Footer: booking reference + Telegram help — quiet, no extra border */}
         <div className={`flex items-center justify-between gap-3 text-sm text-muted-foreground ${manageable || showBookAgain ? 'mt-4' : 'mt-4 border-t border-border pt-4'}`}>
           <span>
-            Bron raqami{' '}
+            {dict.bookingRef}{' '}
             <span className="font-semibold tracking-wide text-foreground">#{booking.id.slice(0, 8).toUpperCase()}</span>
           </span>
           <a
@@ -565,7 +570,7 @@ export function BookingResult({
             className="flex shrink-0 items-center gap-1.5 font-semibold transition-colors duration-200 hover:text-foreground"
           >
             <Send size={14} />
-            Yordam
+            {dict.help}
           </a>
         </div>
       </div>
@@ -575,13 +580,13 @@ export function BookingResult({
 }
 
 /** Back + close buttons, same chrome as the booking flow's wizard pages. */
-function TopChrome({ onBack, onClose }: { onBack: () => void; onClose: () => void }) {
+function TopChrome({ onBack, onClose, dict }: { onBack: () => void; onClose: () => void; dict: ResultDict }) {
   return (
     <div className="flex items-center justify-between py-4">
       <button
         type="button"
         onClick={onBack}
-        aria-label="Orqaga"
+        aria-label={dict.ariaBack}
         className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
       >
         <ChevronLeft size={22} />
@@ -589,7 +594,7 @@ function TopChrome({ onBack, onClose }: { onBack: () => void; onClose: () => voi
       <button
         type="button"
         onClick={onClose}
-        aria-label="Yopish"
+        aria-label={dict.ariaClose}
         className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
       >
         <X size={20} />

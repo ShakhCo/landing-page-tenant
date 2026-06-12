@@ -1,5 +1,8 @@
 export type LocalizedText = { uz?: string; ru?: string; en?: string };
 
+/** Languages the public tenant pages support. */
+export type TenantLocale = 'uz' | 'ru' | 'en';
+
 /** Abort a stalled read so an SSR render can't hang. Client-safe (no next/headers). */
 const READ_TIMEOUT_MS = 12_000;
 
@@ -184,8 +187,17 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
   }
 }
 
-/** Pick a localized string (Uzbek first), with a fallback. */
-export function localized(t: LocalizedText | null | undefined, fallback = ''): string {
+/**
+ * Pick a localized string for `locale`, falling back across the other languages
+ * (then to `fallback`). Defaults to Uzbek-first so existing callers are unchanged.
+ */
+export function localized(
+  t: LocalizedText | null | undefined,
+  fallback = '',
+  locale: TenantLocale = 'uz',
+): string {
   if (!t) return fallback;
+  if (locale === 'ru') return t.ru || t.uz || t.en || fallback;
+  if (locale === 'en') return t.en || t.uz || t.ru || fallback;
   return t.uz || t.ru || t.en || fallback;
 }

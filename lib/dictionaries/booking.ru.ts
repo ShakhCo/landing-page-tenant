@@ -1,0 +1,86 @@
+import type { BookingDict } from './booking.uz';
+
+export const dict: BookingDict = {
+  stepServices: 'Выберите услуги',
+  stepTime: 'Дата и время',
+  stepConfirm: 'Подтверждение записи',
+  shortServices: 'Услуги',
+  shortTime: 'Время',
+  shortConfirm: 'Подтверждение',
+  choosePrefix: 'Выберите: ',
+  chooseSuffix: '',
+
+  monthsShort: ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+  monthsFull: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'],
+  weekdaysSun: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+  weekdaysMon: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+  periods: ['Утро', 'День', 'Вечер'],
+  today: 'Сегодня',
+  tomorrow: 'Завтра',
+  duration: 'Длительность',
+  noSlots: 'На этот день нет свободного времени.',
+
+  som: 'сум',
+  perHour: '/час',
+  durHour: 'ч',
+  durMin: 'мин',
+
+  resourceUnit: 'Место',
+  resourceStaff: 'Специалист',
+  bookings: 'броней',
+
+  all: 'Все',
+  otherCategory: 'Другое',
+  selectedLabel: 'Выбрано',
+  add: 'Добавить',
+  choose: 'Выбрать',
+
+  errMultiStaff: 'Эти услуги не может выполнить один специалист — забронируйте отдельно.',
+
+  doneTitle: 'Забронировано!',
+  doneSubtitle: 'Детали подтвердим по SMS.',
+  ready: 'Готово',
+  fieldTime: 'Время',
+  total: 'Итого',
+
+  titleSmsCode: 'Введите код из SMS',
+  titleConfirmChanges: 'Подтвердить изменения?',
+  titleNewDateTime: 'Новая дата и время',
+
+  actContinue: 'Продолжить',
+  actChooseServices: 'Выберите услуги',
+  actUpdating: 'Изменяем…',
+  actSending: 'Отправляем…',
+  actBooking: 'Бронируем…',
+  actPickTime: 'Выберите время',
+  actChange: 'Изменить',
+  actBook: 'Забронировать',
+  actConfirmBooking: 'Подтвердить запись',
+  actChangeTime: 'Изменить время',
+
+  codeSentPre: 'На номер ',
+  codeSentPost: ' отправлен 5-значный код.',
+  phoneLabel: 'Ваш номер телефона',
+  phonePlaceholder: '90 123 45 67',
+  sendCode: 'Отправить код',
+  nameLabel: 'Ваше имя',
+  namePlaceholder: 'Имя',
+  resendCode: 'Отправить код повторно',
+  changePhone: 'Изменить номер телефона',
+
+  servicesHeading: 'Услуги',
+  noServiceYet: 'Услуга ещё не выбрана.',
+  serviceCount: 'услуг',
+
+  ariaBack: 'Назад',
+  ariaClose: 'Закрыть',
+  ariaPickDate: 'Выбрать дату',
+  ariaDecrease: 'Уменьшить',
+  ariaIncrease: 'Увеличить',
+  prevMonth: 'Предыдущий месяц',
+  nextMonth: 'Следующий месяц',
+
+  invalidLinkTitle: 'Ссылка недействительна',
+  invalidLinkText: 'Эта ссылка для изменения устарела или недействительна. Вы можете создать новую запись.',
+  newBooking: 'Новая запись',
+};

@@ -2,8 +2,13 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { CalendarX2 } from 'lucide-react';
-import { getTenant, getBooking } from '@/lib/tenant';
+import { getTenant, getBooking, type TenantLocale } from '@/lib/tenant';
+import { getBookingDict } from '@/lib/dictionaries/booking';
 import { BookingFlow } from './BookingFlow';
+
+function readLocale(value: string | undefined): TenantLocale {
+  return value === 'ru' || value === 'en' ? value : 'uz';
+}
 
 export const metadata = {
   title: 'Bron qilish',
@@ -19,6 +24,9 @@ export default async function BookingRoute({
 }) {
   const { subdomain } = await params;
   const { service, services, reschedule } = await searchParams;
+  const jar = await cookies();
+  const locale = readLocale(jar.get('bookup_locale')?.value);
+  const dict = getBookingDict(locale);
   const tenant = await getTenant(subdomain);
 
   // No tenant or no bookable staff/services → back to the tenant home.
@@ -59,15 +67,15 @@ export default async function BookingRoute({
           <div className="grid size-20 place-items-center rounded-full bg-foreground/5 text-foreground ring-1 ring-border">
             <CalendarX2 size={40} strokeWidth={2} />
           </div>
-          <h1 className="mt-7 text-2xl font-extrabold text-foreground">Havola yaroqsiz</h1>
+          <h1 className="mt-7 text-2xl font-extrabold text-foreground">{dict.invalidLinkTitle}</h1>
           <p className="mt-1.5 text-muted-foreground">
-            Bu o&apos;zgartirish havolasi eskirgan yoki yaroqsiz. Yangi bron qilishingiz mumkin.
+            {dict.invalidLinkText}
           </p>
           <Link
             href={initialServiceIds.length ? `/booking?services=${initialServiceIds.map((id) => id.slice(0, 8)).join(',')}` : '/'}
             className="mt-7 flex h-14 w-full max-w-xs items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99]"
           >
-            Yangi bron qilish
+            {dict.newBooking}
           </Link>
         </main>
       );
@@ -93,6 +101,8 @@ export default async function BookingRoute({
       <BookingFlow
         tenant={tenant}
         subdomain={subdomain}
+        dict={dict}
+        locale={locale}
         initialServiceIds={initialServiceIds}
         rescheduleId={reschedule}
         initialDuration={initialDuration}

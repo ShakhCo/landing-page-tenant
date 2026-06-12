@@ -1,7 +1,12 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { getBooking, getTenant } from '@/lib/tenant';
+import { getBooking, getTenant, type TenantLocale } from '@/lib/tenant';
+import { getResultDict } from '@/lib/dictionaries/result';
 import { BookingResult } from './BookingResult';
+
+function readLocale(value: string | undefined): TenantLocale {
+  return value === 'ru' || value === 'en' ? value : 'uz';
+}
 
 export const metadata = {
   title: 'Bron tafsilotlari',
@@ -21,11 +26,14 @@ export default async function BookingResultPage({
   if (!data) redirect('/');
 
   // Remembered customer? → cancel can try one-tap before falling back to OTP.
-  const hasSession = (await cookies()).has('bookup_session');
+  const jar = await cookies();
+  const hasSession = jar.has('bookup_session');
+  const locale = readLocale(jar.get('bookup_locale')?.value);
+  const dict = getResultDict(locale);
 
   return (
     <main className="min-h-screen bg-card">
-      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} hasSession={hasSession} />
+      <BookingResult created={created === '1'} data={data} tenant={tenant} subdomain={subdomain} dict={dict} locale={locale} hasSession={hasSession} />
     </main>
   );
 }
