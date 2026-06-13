@@ -123,7 +123,7 @@ export function TenantView({
         <div className="absolute right-3 top-3 z-20">
           <LocaleSwitcher current={locale} />
         </div>
-        <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none bg-muted">
+        <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none bg-gradient-to-br from-muted/15 to-muted/5">
           <iframe
             title="Map"
             src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed&iwloc=near`}
