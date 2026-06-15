@@ -436,6 +436,10 @@ export function TenantView({
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {(tenant.reviews ?? []).map((r) => {
+                const svc = (r.services ?? [])
+                  .map((s) => localized(s as LocalizedText, '', locale))
+                  .filter(Boolean)
+                  .join(', ');
                 // Show the server only for staff (people), never for units/assets.
                 const servedStaff = r.servedBy && resourceType.get(r.servedBy) !== 'asset' ? r.servedBy : null;
                 return (
@@ -446,6 +450,7 @@ export function TenantView({
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-foreground">{r.customerName}</p>
+                        {svc && <p className="truncate text-[13px] text-muted-foreground">{svc}</p>}
                       </div>
                       {r.servedAt && (
                         <span className="shrink-0 text-[13px] text-muted-foreground">
