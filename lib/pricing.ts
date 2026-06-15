@@ -156,8 +156,6 @@ export interface Plan {
   price: number;
   /** Visually lifts the card and shows the badge. */
   highlighted?: boolean;
-  /** Renders the card on a dark background — signals the top/premium tier. */
-  dark?: boolean;
   badge?: string;
   /** Small label shown above the feature list (e.g. "…dagi hammasi, plyus"). */
   featuresIntro?: string;
@@ -222,7 +220,6 @@ export const PLANS: Plan[] = [
     name: "Premium",
     tagline: "Tarmoq va yirik bizneslar uchun",
     price: 299_000,
-    dark: true,
     featuresIntro: "Prodagi hammasi, plyus:",
     features: [
       { text: "Cheksiz master" },

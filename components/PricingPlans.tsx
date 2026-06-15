@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check } from "lucide-react";
 import {
   BILLING_PERIODS,
   PLAN_FAQ,
@@ -69,7 +68,7 @@ export function PricingPlans() {
       </div>
 
       {/* Plan cards */}
-      <div className="mt-12 grid gap-6 lg:grid-cols-3 lg:items-start lg:gap-6">
+      <div className="mt-12 grid gap-6 lg:grid-cols-3 lg:items-stretch lg:gap-6">
         {PLANS.map((plan) => (
           <PlanCard key={plan.id} plan={plan} period={selectedPeriod} />
         ))}
@@ -105,47 +104,26 @@ function PlansFaq() {
 function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
   const monthly = planMonthly(plan.price, period.discount);
   const hasDiscount = period.discount > 0 && monthly < plan.price;
-  const dark = !!plan.dark;
-
-  // Per-tier text colours so the dark (premium) card stays legible.
-  const t = {
-    name: dark ? "text-white" : "text-gray-900",
-    tagline: dark ? "text-gray-400" : "text-gray-500",
-    price: dark ? "text-white" : "text-gray-900",
-    muted: dark ? "text-gray-400" : "text-gray-500",
-    strike: dark ? "text-gray-500" : "text-gray-400",
-    intro: dark ? "text-gray-400" : "text-gray-500",
-    features: dark ? "text-gray-300" : "text-gray-700",
-    check: dark ? "text-gray-500" : "text-gray-400",
-    featureOn: dark ? "font-semibold text-white" : "font-semibold text-gray-900",
-  };
+  const intro = plan.featuresIntro ?? "Tarkibida";
 
   return (
-    <div
-      className={`relative flex h-full flex-col rounded-3xl p-7 md:p-8 ${
-        plan.highlighted
-          ? "bg-gray-200 shadow-xl shadow-[var(--accent)]/15 ring-2 ring-[var(--accent)] lg:-mt-4 lg:pb-12"
-          : dark
-            ? "bg-gray-900 shadow-xl shadow-gray-900/20"
-            : "bg-gray-100"
-      }`}
-    >
-      {plan.badge && (
-        <span className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-sm">
-          {plan.badge}
-        </span>
-      )}
-
-      {/* Name + tagline */}
-      <motion.div layout="position" transition={LAYOUT}>
-        <h3 className={`text-2xl font-bold tracking-tight ${t.name}`}>
+    <div className="relative flex h-full flex-col rounded-[1.75rem] bg-gray-50 p-8 md:p-10">
+      {/* Name + trial pill */}
+      <motion.div
+        layout="position"
+        transition={LAYOUT}
+        className="flex items-center gap-3"
+      >
+        <h3 className="text-2xl font-bold tracking-tight text-gray-900">
           {plan.name}
         </h3>
-        <p className={`mt-1 text-sm ${t.tagline}`}>{plan.tagline}</p>
+        <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+          14 kun bepul
+        </span>
       </motion.div>
 
       {/* Price — rows appear/disappear; siblings slide via layout animation */}
-      <div className="mt-6">
+      <div className="mt-7">
         {/* Strikethrough original */}
         <AnimatePresence mode="popLayout">
           {hasDiscount && (
@@ -156,91 +134,58 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-              className={`text-base font-semibold line-through decoration-2 ${t.strike}`}
+              className="text-base font-semibold text-gray-400 line-through decoration-2"
             >
-              {formatUZS(plan.price)} UZS
+              UZS {formatUZS(plan.price)}
             </motion.p>
           )}
         </AnimatePresence>
 
         {/* Big monthly price — cross-fades when the value changes */}
-        <motion.div layout transition={LAYOUT} className="flex items-baseline gap-2">
-          <span className="relative inline-block">
-            <AnimatePresence mode="popLayout">
-              <motion.span
-                key={monthly}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3, ease: EASE }}
-                className={`block text-4xl font-extrabold tracking-tight ${t.price}`}
-              >
-                {formatUZS(monthly)}
-              </motion.span>
-            </AnimatePresence>
-          </span>
-          <span className={`text-sm font-medium ${t.muted}`}>UZS / oy</span>
+        <motion.div layout transition={LAYOUT} className="relative">
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={monthly}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3, ease: EASE }}
+              className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl"
+            >
+              UZS {formatUZS(monthly)}
+            </motion.div>
+          </AnimatePresence>
         </motion.div>
 
-        {/* Period total */}
-        <AnimatePresence mode="popLayout">
-          {period.months > 1 && (
-            <motion.p
-              key={period.id}
-              layout
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-              className={`mt-2 text-sm ${t.muted}`}
-            >
-              {period.label} uchun {formatUZS(monthly * period.months)} UZS
-            </motion.p>
-          )}
-        </AnimatePresence>
+        {/* Subtitle / period total */}
+        <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
+          {period.months > 1
+            ? `${period.label} uchun UZS ${formatUZS(monthly * period.months)}`
+            : "oyiga"}
+        </motion.p>
       </div>
 
-      {/* CTA */}
-      <motion.a
-        layout
-        transition={LAYOUT}
-        href="#"
-        className={`mt-6 flex w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold ${
-          plan.highlighted
-            ? "bg-[var(--accent)] text-white hover:brightness-110"
-            : dark
-              ? "bg-white text-gray-900 hover:brightness-95"
-              : "border border-gray-300 bg-white text-gray-900 hover:border-gray-400"
-        }`}
-      >
-        14 kun bepul boshlash
-      </motion.a>
-
       {/* Features */}
-      <motion.div layout="position" transition={LAYOUT} className="mt-7">
-        {plan.featuresIntro && (
-          <p className={`text-xs font-semibold uppercase tracking-wider ${t.intro}`}>
-            {plan.featuresIntro}
-          </p>
-        )}
-        <ul className={`mt-4 space-y-3 text-sm ${t.features}`}>
+      <motion.div layout="position" transition={LAYOUT} className="mt-8">
+        <p className="text-sm font-semibold text-gray-900">{intro}</p>
+        <ul className="mt-4 space-y-3.5 text-[15px] leading-snug text-gray-500">
           {plan.features.map((feature) => (
-            <li key={feature.text} className="flex items-start gap-2.5">
-              <Check
-                className={`mt-0.5 size-4 shrink-0 ${
-                  feature.highlight ? "text-[var(--accent)]" : t.check
-                }`}
-                strokeWidth={2.5}
-              />
-              <span
-                className={feature.highlight ? t.featureOn : ""}
-              >
-                {feature.text}
-              </span>
-            </li>
+            <li key={feature.text}>{feature.text}</li>
           ))}
         </ul>
       </motion.div>
+
+      {/* CTA — pinned to the bottom of the card */}
+      <div className="mt-auto pt-10">
+        <motion.a
+          layout
+          transition={LAYOUT}
+          href="#"
+          className="inline-flex w-fit items-center justify-center rounded-full bg-gray-900 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+        >
+          Boshlash
+        </motion.a>
+      </div>
     </div>
   );
 }
