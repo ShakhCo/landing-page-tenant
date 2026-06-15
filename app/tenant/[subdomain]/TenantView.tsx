@@ -309,41 +309,6 @@ export function TenantView({
             </section>
           )}
 
-          {/* Reviews */}
-          {(tenant.reviews?.length ?? 0) > 0 && (
-            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-foreground">{dict.reviews}</h2>
-                {tenant.reviewCount ? (
-                  <span className="flex items-center gap-1 text-sm">
-                    <Star size={15} className="fill-amber-400 text-amber-400" />
-                    <span className="font-bold text-foreground">{tenant.averageRating}</span>
-                    <span className="text-muted-foreground">· {tenant.reviewCount}</span>
-                  </span>
-                ) : null}
-              </div>
-              <div className="mt-3 divide-y divide-border">
-                {(tenant.reviews ?? []).map((r) => (
-                  <div key={r.id} className="py-3.5">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="font-semibold text-foreground">{r.customerName}</span>
-                      <span className="flex items-center gap-0.5">
-                        {[1, 2, 3, 4, 5].map((n) => (
-                          <Star
-                            key={n}
-                            size={14}
-                            className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-border'}
-                          />
-                        ))}
-                      </span>
-                    </div>
-                    {r.comment && <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Contacts — temporarily hidden, kept for when contact data goes live. */}
           {false && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
@@ -445,6 +410,41 @@ export function TenantView({
             </button>
           )}
         </section>
+
+        {/* ===== Reviews — full-width row below both columns ===== */}
+        {(tenant.reviews?.length ?? 0) > 0 && (
+          <section className="order-3 mt-10 rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5 lg:col-span-2 lg:mt-0">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-bold text-foreground">{dict.reviews}</h2>
+              {tenant.reviewCount ? (
+                <span className="flex items-center gap-1 text-sm">
+                  <Star size={15} className="fill-amber-400 text-amber-400" />
+                  <span className="font-bold text-foreground">{tenant.averageRating}</span>
+                  <span className="text-muted-foreground">· {tenant.reviewCount} {dict.reviewsCount}</span>
+                </span>
+              ) : null}
+            </div>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {(tenant.reviews ?? []).map((r) => (
+                <div key={r.id} className="rounded-xl border border-border p-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="truncate font-semibold text-foreground">{r.customerName}</span>
+                    <span className="flex shrink-0 items-center gap-0.5">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star
+                          key={n}
+                          size={14}
+                          className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-border'}
+                        />
+                      ))}
+                    </span>
+                  </div>
+                  {r.comment && <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
       {/* Mobile sticky Book CTA */}
