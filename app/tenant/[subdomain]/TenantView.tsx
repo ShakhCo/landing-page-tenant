@@ -165,7 +165,7 @@ export function TenantView({
         <div className="min-w-0">
           <h1 className="flex items-center gap-1.5 text-[27px] font-bold tracking-tight">
             {business.name}
-            <BadgeCheck className="size-5 shrink-0 fill-blue-500 text-card" />
+            <BadgeCheck className="size-6 shrink-0 fill-blue-500 text-card" />
           </h1>
           <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
             {/* Category — hidden in favor of the live open status. */}
