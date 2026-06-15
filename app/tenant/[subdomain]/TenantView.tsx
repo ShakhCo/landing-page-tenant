@@ -151,7 +151,7 @@ export function TenantView({
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-        <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 size-24 rounded-full ring-4 ring-card overflow-hidden shadow-lg">
+        <div className="absolute left-4 bottom-0 translate-y-1/2 size-24 rounded-full ring-4 ring-card overflow-hidden shadow-lg lg:left-6">
           {business.avatarUrl ? (
             <img src={mediaUrl(business.avatarUrl)} alt={business.name} className="h-full w-full object-cover" />
           ) : (
@@ -161,12 +161,12 @@ export function TenantView({
           )}
         </div>
       </div>
-      <div className="mt-16 text-center">
-        <h1 className="flex items-center justify-center gap-1.5 text-2xl font-bold">
+      <div className="mt-14 px-4 text-left lg:px-6">
+        <h1 className="flex items-center gap-1.5 text-2xl font-bold">
           {business.name}
           <BadgeCheck className="size-5 fill-blue-500 text-card" />
         </h1>
-        <div className="mt-2 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+        <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
           {/* Category — hidden in favor of the live open status. */}
           {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
           {branch &&
