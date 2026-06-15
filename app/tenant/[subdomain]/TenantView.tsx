@@ -173,23 +173,34 @@ export function TenantView({
           ) : (
             <motion.div
               key="sticky-navbar"
-              initial={{ y: -64, opacity: 0 }}
+              initial={{ y: -96, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: -64, opacity: 0 }}
+              exit={{ y: -96, opacity: 0 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="fixed inset-x-0 top-0 z-50 border-b border-border bg-card/90 backdrop-blur"
             >
-              <div className="mx-auto flex h-16 max-w-[1350px] items-center justify-between gap-3 px-4 lg:px-6">
-                <div className="flex min-w-0 items-center gap-2.5">
+              <div className="mx-auto flex h-20 max-w-[1350px] items-center justify-between gap-3 px-4 lg:px-6">
+                <div className="flex min-w-0 items-center gap-3">
                   {business.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={mediaUrl(business.avatarUrl)} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+                    <img src={mediaUrl(business.avatarUrl)} alt="" className="size-11 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground text-xs font-bold text-background">
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-sm font-bold text-background">
                       {initials(business.name)}
                     </span>
                   )}
-                  <span className="truncate font-bold text-foreground">{business.name}</span>
+                  <div className="flex min-w-0 flex-col">
+                    <span className="truncate text-xl font-bold leading-tight text-foreground">{business.name}</span>
+                    {branch && (
+                      <span className="truncate text-[13px] leading-tight">
+                        {open ? (
+                          <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
+                        ) : (
+                          <span className="font-semibold text-muted-foreground">{dict.closed}</span>
+                        )}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="hidden items-center gap-2 sm:flex">
