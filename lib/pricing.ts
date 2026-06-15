@@ -177,21 +177,11 @@ export const PLANS: Plan[] = [
     tagline: "Yakka master va kichik salonlar uchun",
     price: 49_000,
     features: [
-      { text: "1 ta master — yolg'iz ustalar uchun" },
-      { text: "SMS eslatma (50 martagacha) — kelmay qoladigan mijozlar kamayadi" },
-      {
-        text:
-          "Onlayn jadval va bron — mijozlar bo'sh vaqtlarni ko'rib, istalgan paytda o'zi yoziladi",
-      },
-      { text: "Mijozlar onlayn bron qilishlari uchun Telegram bot" },
-      {
-        text:
-          "sizning-biznes.bookup.uz sayti — biznesingiz uchun tayyor onlayn bron sahifasi",
-      },
-      {
-        text:
-          "Mijozlar ro'yxati — tashriflar tarixi avtomatik saqlanadi",
-      },
+      { text: "30 ta bepul eslatma SMS — kelmay qolishni kamaytiradi" },
+      { text: "5 ta bepul marketing SMS — savdoni oshiradi" },
+      { text: "bookup.uz'da bron sayti" },
+      { text: "Mijozlar ro'yxati va tashriflar tarixi" },
+      { text: "Telegram orqali qo'llab-quvvatlash" },
     ],
   },
   {
@@ -202,26 +192,14 @@ export const PLANS: Plan[] = [
     highlighted: true,
     badge: "Tavsiya",
     perMember: true,
-    featuresIntro: "Yolg'izdagi hammasi, plyus:",
     features: [
-      { text: "5 tagacha master" },
-      { text: "SMS eslatma (250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
-      {
-        text:
-          "Instagram avtomatlashtirish — obunachilardan to'g'ridan-to'g'ri bron, izohlarga avto-javob va shaxsiy xabarlar avtomatik boshqariladi",
-      },
-      {
-        text:
-          "WhatsApp avtomatlashtirish — shaxsiy xabarlar avtomatik boshqariladi, avto-javoblar va bron",
-      },
-      {
-        text:
-          "Mijoz baholari — xizmat ko'rsatilgandan 2 soat o'tib mijozga avtomatik sharh so'rovi yuboriladi",
-      },
-      {
-        text:
-          "Chegirma va sodiqlik dasturi — bonus ballar, chegirma kodlari va takroriy mijozlar uchun avtomatik aksiyalar",
-      },
+      { text: "Har bir a'zoga 30 ta bepul SMS" },
+      { text: "Har bir a'zoga 5 ta marketing SMS" },
+      { text: "bookup.uz'da bron sayti" },
+      { text: "Mijozlar ro'yxati va tashriflar tarixi" },
+      { text: "Telefon yoki Telegram orqali qo'llab-quvvatlash" },
+      { text: "Instagram integratsiyasi — izohlarga avto-javob, DM orqali bron" },
+      { text: "WhatsApp integratsiyasi — DM orqali bron" },
     ],
   },
   {
@@ -231,9 +209,17 @@ export const PLANS: Plan[] = [
     price: 299_000,
     custom: true,
     priceLabel: "Kelishilgan narx",
-    description:
-      "20 dan ortiq xodimga ega yirik tarmoq va bizneslar uchun maxsus yechimlar",
-    features: [],
+    features: [
+      { text: "Har bir a'zoga 100 ta bepul SMS" },
+      { text: "Har bir a'zoga 10 ta marketing SMS" },
+      { text: "bookup.uz yoki maxsus domen" },
+      { text: "Mijozlar ro'yxati va tashriflar tarixi" },
+      { text: "Shaxsiy menejer" },
+      { text: "Instagram integratsiyasi — izohlarga avto-javob, DM orqali bron" },
+      { text: "WhatsApp integratsiyasi — DM orqali bron" },
+      { text: "API kirish" },
+      { text: "Maxsus brending" },
+    ],
   },
 ];
 
@@ -312,7 +298,7 @@ export const PLAN_FAQ: PricingFAQ[] = [
   },
   {
     q: "SMS eslatma limitidan oshib ketsam-chi?",
-    a: "Har bir tarifda oylik SMS eslatma soni belgilangan: Yolg'iz — 50, Jamoa — 250, Enterprise — 1250 martagacha. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
+    a: "Har bir tarifda oylik bepul SMS eslatma soni belgilangan: Yolg'iz — 30 ta, Jamoa — har bir a'zoga 30 ta, Enterprise — har bir a'zoga 100 ta. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
   },
   {
     q: "Qanday to'lov usullari bor va uzoq muddatga chegirma bormi?",

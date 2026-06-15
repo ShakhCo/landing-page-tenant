@@ -125,70 +125,63 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
       </motion.div>
 
       {plan.custom ? (
-        <>
-          {/* Custom headline + description */}
-          <p className="mt-7 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
-            {plan.priceLabel}
-          </p>
-          {plan.description && (
-            <p className="mt-4 text-[15px] leading-relaxed text-gray-500">
-              {plan.description}
-            </p>
-          )}
-        </>
+        /* Custom headline (contact-sales tier) */
+        <p className="mt-7 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
+          {plan.priceLabel}
+        </p>
       ) : (
-        <>
-          {/* Price — rows appear/disappear; siblings slide via layout animation */}
-          <div className="mt-7">
-            {/* Strikethrough original */}
+        /* Price — rows appear/disappear; siblings slide via layout animation */
+        <div className="mt-7">
+          {/* Strikethrough original */}
+          <AnimatePresence mode="popLayout">
+            {hasDiscount && (
+              <motion.p
+                key="strike"
+                layout
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
+                className="text-base font-normal text-gray-400 line-through decoration-1"
+              >
+                UZS {formatUZS(plan.price)}
+              </motion.p>
+            )}
+          </AnimatePresence>
+
+          {/* Big monthly price — cross-fades when the value changes */}
+          <motion.div layout transition={LAYOUT} className="relative">
             <AnimatePresence mode="popLayout">
-              {hasDiscount && (
-                <motion.p
-                  key="strike"
-                  layout
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-                  className="text-base font-normal text-gray-400 line-through decoration-1"
-                >
-                  UZS {formatUZS(plan.price)}
-                </motion.p>
-              )}
+              <motion.div
+                key={monthly}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3, ease: EASE }}
+                className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl"
+              >
+                UZS {formatUZS(monthly)}
+              </motion.div>
             </AnimatePresence>
-
-            {/* Big monthly price — cross-fades when the value changes */}
-            <motion.div layout transition={LAYOUT} className="relative">
-              <AnimatePresence mode="popLayout">
-                <motion.div
-                  key={monthly}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  transition={{ duration: 0.3, ease: EASE }}
-                  className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl"
-                >
-                  UZS {formatUZS(monthly)}
-                </motion.div>
-              </AnimatePresence>
-            </motion.div>
-
-            {/* Subtitle */}
-            <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
-              {plan.perMember ? "har bir a'zo uchun oyiga" : "bir oyga"}
-            </motion.p>
-          </div>
-
-          {/* Features */}
-          <motion.div layout="position" transition={LAYOUT} className="mt-8">
-            <p className="text-sm font-semibold text-gray-900">{intro}</p>
-            <ul className="mt-4 space-y-3.5 text-[15px] leading-snug text-gray-500">
-              {plan.features.map((feature) => (
-                <li key={feature.text}>{feature.text}</li>
-              ))}
-            </ul>
           </motion.div>
-        </>
+
+          {/* Subtitle */}
+          <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
+            {plan.perMember ? "har bir a'zo uchun oyiga" : "bir oyga"}
+          </motion.p>
+        </div>
+      )}
+
+      {/* Features */}
+      {plan.features.length > 0 && (
+        <motion.div layout="position" transition={LAYOUT} className="mt-8">
+          <p className="text-sm font-semibold text-gray-900">{intro}</p>
+          <ul className="mt-4 space-y-2.5 text-sm leading-snug text-gray-500">
+            {plan.features.map((feature) => (
+              <li key={feature.text}>{feature.text}</li>
+            ))}
+          </ul>
+        </motion.div>
       )}
 
       {/* CTA — pinned to the bottom of the card */}
