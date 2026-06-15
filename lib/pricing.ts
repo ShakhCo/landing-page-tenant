@@ -196,7 +196,10 @@ export const PLANS: Plan[] = [
         text:
           "WhatsApp avtomatlashtirish — shaxsiy xabarlar avtomatik boshqariladi, avto-javoblar va bron",
       },
-      { text: "Mijoz baholari" },
+      {
+        text:
+          "Mijoz baholari — xizmat ko'rsatilgandan 2 soat o'tib mijozga avtomatik sharh so'rovi yuboriladi",
+      },
       { text: "Chegirma va sodiqlik dasturi" },
     ],
   },
