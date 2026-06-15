@@ -175,7 +175,7 @@ export const PLANS: Plan[] = [
     id: "starter",
     name: "Yolg'iz",
     tagline: "Yakka master va kichik salonlar uchun",
-    price: 49_000,
+    price: 74_000,
     features: [
       { text: "30 ta bepul eslatma SMS — kelmay qolishni kamaytiradi" },
       { text: "5 ta bepul marketing SMS — savdoni oshiradi" },
@@ -188,7 +188,7 @@ export const PLANS: Plan[] = [
     id: "pro",
     name: "Jamoa",
     tagline: "O'sayotgan sartaroshxonalar uchun",
-    price: 129_000,
+    price: 49_500,
     highlighted: true,
     badge: "Tavsiya",
     perMember: true,
@@ -223,9 +223,9 @@ export const PLANS: Plan[] = [
   },
 ];
 
-/** Apply a billing-period discount to a base monthly price (rounded to 1000 UZS). */
+/** Apply a billing-period discount to a base monthly price (rounded to 100 UZS). */
 export function planMonthly(price: number, discount: number): number {
-  return Math.floor((price * (1 - discount)) / 1000) * 1000;
+  return Math.round((price * (1 - discount)) / 100) * 100;
 }
 
 export function calcTotal(opts: {
