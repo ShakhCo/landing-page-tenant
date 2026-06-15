@@ -552,7 +552,7 @@ export function BookingResult({
               type="button"
               onClick={bookAgain}
               disabled={pending}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-foreground px-5 py-3 text-sm font-bold text-background transition hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
             >
               <CalendarPlus size={18} />
               {dict.bookAgain}
