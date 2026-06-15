@@ -345,8 +345,6 @@ export function TenantView({
 
         {/* Left column: services */}
         <section className="order-1 lg:order-1">
-          <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
-
           {cats.length > 1 && (
             <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
               <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
