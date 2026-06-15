@@ -159,6 +159,12 @@ export interface Plan {
   badge?: string;
   /** Price is charged per team member (vs. a flat monthly fee). */
   perMember?: boolean;
+  /** Contact-sales tier: shows priceLabel + description instead of a price & features. */
+  custom?: boolean;
+  /** Headline shown in place of the numeric price (custom tiers). */
+  priceLabel?: string;
+  /** Paragraph shown in place of the feature list (custom tiers). */
+  description?: string;
   /** Small label shown above the feature list (e.g. "…dagi hammasi, plyus"). */
   featuresIntro?: string;
   features: PlanFeature[];
@@ -223,17 +229,11 @@ export const PLANS: Plan[] = [
     name: "Enterprise",
     tagline: "Tarmoq va yirik bizneslar uchun",
     price: 299_000,
-    featuresIntro: "Jamoadagi hammasi, plyus:",
-    features: [
-      { text: "Cheksiz master" },
-      { text: "SMS eslatma (1250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
-      { text: "Kengaytirilgan tahlil va hisobotlar" },
-      { text: "AI yordamchi" },
-      { text: "Maxsus domen va brending" },
-      { text: "API kirish" },
-      { text: "Ko'p filial boshqaruvi" },
-      { text: "Ustuvor qo'llab-quvvatlash" },
-    ],
+    custom: true,
+    priceLabel: "Kelishilgan narx",
+    description:
+      "20 dan ortiq xodimga ega yirik tarmoq va bizneslar uchun maxsus yechimlar",
+    features: [],
   },
 ];
 
