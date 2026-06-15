@@ -169,19 +169,19 @@ export function TenantView({
         <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
           {/* Category — hidden in favor of the live open status. */}
           {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
-          {branch &&
-            (open ? (
-              <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
-            ) : (
-              <span className="font-semibold">{dict.closed}</span>
-            ))}
-          {/* Address sits beside the status on desktop; mobile uses the location card below. */}
+          {/* Address first on desktop; mobile uses the location card below. */}
           {branch?.address && (
             <span className="hidden items-center gap-1 lg:flex">
               <MapPin className="size-4" />
               {localized(branch.address, '', locale)}
             </span>
           )}
+          {branch &&
+            (open ? (
+              <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
+            ) : (
+              <span className="font-semibold">{dict.closed}</span>
+            ))}
           {tenant.reviewCount ? (
             <span className="flex items-center gap-1">
               <Star size={15} className="fill-amber-400 text-amber-400" />
