@@ -75,14 +75,41 @@ export async function getAvailabilityAction(
   }
 }
 
+/** Verify an OTP and start a remembered customer session (standalone login). */
+export async function loginAction(
+  phone: string,
+  code: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await serverFetch(`${API_BASE}/public/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code }),
+    });
+    if (!res.ok) return { ok: false, error: await errorMessage(res) };
+    const body = (await res.json().catch(() => ({}))) as { sessionToken?: string };
+    if (!body.sessionToken) return { ok: false, error: NETWORK_ERROR_UZ };
+    (await cookies()).set(SESSION_COOKIE, body.sessionToken, await sessionCookieOpts());
+    return { ok: true };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
+}
+
+/** Clear the remembered customer session (log out). Expires the domain cookie. */
+export async function logoutAction(): Promise<void> {
+  (await cookies()).set(SESSION_COOKIE, '', { ...(await sessionCookieOpts()), maxAge: 0 });
+}
+
 export async function requestOtpAction(
   phone: string,
+  purpose?: 'login' | 'booking',
 ): Promise<{ ok: true; isNewCustomer: boolean } | { ok: false; error: string }> {
   try {
     const res = await serverFetch(`${API_BASE}/public/otp/request`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone }),
+      body: JSON.stringify({ phone, purpose }),
     });
     if (!res.ok) return { ok: false, error: await errorMessage(res) };
     const body = (await res.json().catch(() => ({}))) as { isNewCustomer?: boolean };

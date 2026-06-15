@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { getTenant, localized, type TenantLocale } from '@/lib/tenant';
 import { getTenantDict } from '@/lib/dictionaries/tenant';
+import { getSessionPhone } from '@/lib/session';
 import { TenantView } from '../TenantView';
 
 // uz is served at the subdomain root (../page.tsx); only ru/en live here.
@@ -72,6 +73,7 @@ export default async function TenantLocalePage({
   if (!isSupported(locale)) notFound();
   const dict = getTenantDict(locale);
   const tenant = await getTenant(subdomain);
+  const customerPhone = await getSessionPhone();
 
   if (!tenant) {
     return (
@@ -92,7 +94,7 @@ export default async function TenantLocalePage({
 
   return (
     <main className="min-h-screen bg-background">
-      <TenantView tenant={tenant} dict={dict} locale={locale} />
+      <TenantView tenant={tenant} dict={dict} locale={locale} customerPhone={customerPhone} />
     </main>
   );
 }

@@ -8,6 +8,7 @@ import { localized, mediaUrl, type LocalizedText, type PublicTenant, type Tenant
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
 import { LocaleSwitcher } from './LocaleSwitcher';
+import { AccountMenu } from './AccountMenu';
 
 const FEATURED_LIMIT = 6;
 const TEAM_LIMIT = 5;
@@ -58,10 +59,13 @@ export function TenantView({
   tenant,
   dict,
   locale,
+  customerPhone,
 }: {
   tenant: PublicTenant;
   dict: TenantDict;
   locale: TenantLocale;
+  /** Logged-in customer's phone (from the booking session) — shown top-right. */
+  customerPhone?: string | null;
 }) {
   const { business } = tenant;
   const branches = tenant.branches ?? [];
@@ -120,8 +124,15 @@ export function TenantView({
     <div className="bg-card min-h-screen">
       <div className="max-w-[1350px] mx-auto">
       <div className="relative">
-        <div className="absolute right-3 top-3 z-20">
-          <LocaleSwitcher current={locale} />
+        {/* Account + language stay pinned to the viewport while scrolling, but
+            aligned to the right edge of the centered content (not the screen). */}
+        <div className="pointer-events-none fixed inset-x-0 top-3 z-50">
+          <div className="mx-auto flex max-w-[1350px] justify-end px-3">
+            <div className="pointer-events-auto flex items-center gap-2">
+              <AccountMenu customerPhone={customerPhone} dict={dict} />
+              <LocaleSwitcher current={locale} />
+            </div>
+          </div>
         </div>
         <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none bg-gradient-to-br from-muted/15 to-muted/5">
           <iframe
@@ -198,11 +209,11 @@ export function TenantView({
                     </div>
                     {canBook && (
                       <Link
-                        href="/booking"
+                        href={`/booking?staff=${st.id.slice(0, 8)}`}
                         aria-label={`${st.name} — ${dict.book}`}
                         className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                       >
-                        {dict.bookShort}
+                        {dict.book}
                       </Link>
                     )}
                   </div>

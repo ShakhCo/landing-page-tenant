@@ -48,7 +48,7 @@ export function LocaleSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card/90 px-3 py-2 text-sm font-semibold text-foreground shadow-sm backdrop-blur transition hover:bg-foreground/5"
+        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition-shadow hover:shadow-md"
       >
         <span aria-hidden>{cur.flag}</span>
         <span>{cur.code}</span>

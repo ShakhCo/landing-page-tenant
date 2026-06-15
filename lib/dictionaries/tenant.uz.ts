@@ -30,6 +30,19 @@ export const dict = {
   notFoundText: 'Bunday sahifa mavjud emas.',
   metaTitleSuffix: 'Onlayn bron qilish',
   metaDescLong: "Xizmatlar va narxlarni ko'ring, bo'sh vaqtni tanlang va onlayn bron qiling.",
+  login: 'Kirish',
+  logout: 'Chiqish',
+  loginPhoneCta: 'Kod olish',
+  loginConfirm: 'Kirish',
+  loginResend: 'Kodni qayta yuborish',
+  loginTitle: 'Hisobga kirish',
+  loginSubtitle: "Bronlaringizni bir joyda ko'ring va keyingi safar telefon raqamingizni qayta kiritmasdan tezroq bron qiling.",
+  codeTitle: 'Tasdiqlash kodi',
+  codeSentPre: '',
+  codeSentPost: ' raqamiga yuborilgan kodni kiriting.',
+  loginCodeHint: 'Telefoningizga yuborilgan kodni kiriting.',
+  phoneLabel: 'Telefon raqami',
+  back: 'Orqaga',
 };
 
 export type TenantDict = typeof dict;

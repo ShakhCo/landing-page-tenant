@@ -20,10 +20,10 @@ export default async function BookingRoute({
   searchParams,
 }: {
   params: Promise<{ subdomain: string }>;
-  searchParams: Promise<{ service?: string; services?: string; reschedule?: string }>;
+  searchParams: Promise<{ service?: string; services?: string; reschedule?: string; staff?: string }>;
 }) {
   const { subdomain } = await params;
-  const { service, services, reschedule } = await searchParams;
+  const { service, services, reschedule, staff: staffParam } = await searchParams;
   const jar = await cookies();
   const locale = readLocale(jar.get('bookup_locale')?.value);
   const dict = getBookingDict(locale);
@@ -52,6 +52,17 @@ export default async function BookingRoute({
         .filter((id): id is string => id !== null),
     ),
   );
+
+  // Staff-scoped entry: `?staff=<8-char id prefix>` from a specialist's "Bron"
+  // on the tenant page. Resolve it to a single staff member who actually offers
+  // services; an unknown/ambiguous token (or a reschedule link) is ignored.
+  let scopedStaffId: string | undefined;
+  if (staffParam && !reschedule) {
+    const tok = staffParam.trim();
+    const matches = tok.length >= 4 ? tenant.staff.filter((st) => st.id.startsWith(tok)) : [];
+    const picked = matches.length === 1 ? matches[0] : null;
+    if (picked && picked.offeringIds.length > 0) scopedStaffId = picked.id;
+  }
 
   // Reschedule: load the original booking up front. A reschedule link whose id
   // is missing/expired/foreign must NOT silently proceed — availability is a
@@ -107,6 +118,7 @@ export default async function BookingRoute({
         rescheduleId={reschedule}
         initialDuration={initialDuration}
         initialStaffId={initialStaffId}
+        scopedStaffId={scopedStaffId}
         hasSession={hasSession}
       />
     </main>

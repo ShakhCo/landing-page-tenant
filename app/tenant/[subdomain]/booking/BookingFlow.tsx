@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult, type TenantLocale } from '@/lib/tenant';
 import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
@@ -124,6 +124,7 @@ export function BookingFlow({
   rescheduleId,
   initialDuration,
   initialStaffId,
+  scopedStaffId,
   hasSession = false,
 }: {
   tenant: PublicTenant;
@@ -136,6 +137,9 @@ export function BookingFlow({
   initialDuration?: number;
   /** Reschedule: the original booking's resource — preselected so only the time is re-picked. */
   initialStaffId?: string;
+  /** Staff-scoped entry (a specialist's "Bron"): lock the flow to this resource —
+   *  offer only their services and skip the staff-pick step. */
+  scopedStaffId?: string;
   hasSession?: boolean;
 }) {
   const router = useRouter();
@@ -151,13 +155,22 @@ export function BookingFlow({
   const tz = branch?.timezone ?? 'Asia/Tashkent';
   const dates = nextDates(tz, dict);
 
+  // Staff-scoped entry: the customer tapped a specific specialist's "Bron" on
+  // the tenant page. Lock the flow to that resource — offer only the services
+  // they perform and drop the staff-pick step from the journey.
+  const scopedStaff = scopedStaffId ? staff.find((st) => st.id === scopedStaffId) ?? null : null;
+  const offerServices = scopedStaff
+    ? services.filter((s) => scopedStaff.offeringIds.includes(s.id))
+    : services;
+  const flowSteps = scopedStaff ? FLOW.filter((s) => s !== 'staff') : FLOW;
+
   // Skip the services step and go straight to the resource/time picker when:
   //  - the business has exactly one service, OR
   //  - the entry service (?service=…) is a unit (time-rate) — units are exclusive,
   //    so the user should pick a unit next, not browse other services, OR
   //  - the entry service is fixed-price but every OTHER service is a unit —
   //    units can't be co-selected with it, so the list offers no real choice.
-  const onlyService = services.length === 1 ? services[0] : null;
+  const onlyService = offerServices.length === 1 ? offerServices[0] : null;
   // Sanitize the preselection: a unit (time-rate) service is exclusive, so if
   // one sneaks into a multi-select URL it wins alone.
   const initIds = (() => {
@@ -170,14 +183,16 @@ export function BookingFlow({
   })();
   const initService = initIds.length === 1 ? services.find((s) => s.id === initIds[0]) ?? null : null;
   const initSkip =
-    initService && (isUnitService(initService) || services.every((s) => s.id === initService.id || isUnitService(s)))
+    initService && (isUnitService(initService) || offerServices.every((s) => s.id === initService.id || isUnitService(s)))
       ? initService
       : null;
   const skipService = onlyService ?? initSkip;
   const skipEligible = skipService ? staff.filter((st) => st.offeringIds.includes(skipService.id)) : [];
-  // Reschedule: the original booking's resource, if it still serves this service.
+  // The pre-locked resource: the scoped specialist (staff "Bron"), or — on a
+  // reschedule — the original booking's resource if it still serves the service.
   const initStaff =
-    initialStaffId && skipService ? skipEligible.find((st) => st.id === initialStaffId) ?? null : null;
+    scopedStaff ??
+    (initialStaffId && skipService ? skipEligible.find((st) => st.id === initialStaffId) ?? null : null);
 
   const [step, setStep] = useState<Step>(() => {
     if (!skipService) return 'services';
@@ -203,6 +218,7 @@ export function BookingFlow({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showCal, setShowCal] = useState(false);
+  const [showStaff, setShowStaff] = useState(false); // time-step specialist switcher
   const [durationMin, setDurationMin] = useState(initialDuration && initialDuration > 0 ? initialDuration : 60);
   // Reschedule: masked phone of the original booking ("••• •• 40 20") for the OTP step.
   const [maskedPhone, setMaskedPhone] = useState('');
@@ -214,10 +230,10 @@ export function BookingFlow({
 
   // Category filter for the services step (mirrors the landing page pills).
   const [activeCat, setActiveCat] = useState<string | null>(null);
-  const cats = Array.from(new Set(services.map((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale))));
+  const cats = Array.from(new Set(offerServices.map((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale))));
   const filteredServices = activeCat
-    ? services.filter((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale) === activeCat)
-    : services;
+    ? offerServices.filter((s) => localized(s.category as LocalizedText | null, dict.otherCategory, locale) === activeCat)
+    : offerServices;
   // Services preselected via the URL float to the top — fixed at load time
   // (a reload shows your picks first), NOT re-sorted as you toggle live.
   const shownServices =
@@ -230,6 +246,9 @@ export function BookingFlow({
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
   const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
+  // Specialists (not assets) who can do the selected service(s) — the options
+  // for the time-step specialist switcher.
+  const eligibleSpecialists = eligibleStaff.filter((st) => st.type !== 'asset');
   // Field/step label for the resource: a unit service's own localized label
   // ("Yo'laklar", "Stollar") when set, else generic "Joy"; staff → "Mutaxassis".
   const unitSvc = selected.find(isUnitService);
@@ -324,12 +343,18 @@ export function BookingFlow({
     setError(null);
     if (step === 'confirm') setStep('time');
     else if (step === 'staff') setStep('services');
-    else if (step === 'time') setStep(eligibleStaff.length > 1 ? 'staff' : 'services');
+    else if (step === 'time') setStep(!scopedStaff && eligibleStaff.length > 1 ? 'staff' : 'services');
     else router.push('/');
   };
   const advance = (ids: string[] = selectedIds) => {
     setError(null);
     if (ids.length === 0) return;
+    // Staff-scoped: the resource is already fixed — skip the staff step.
+    if (scopedStaff) {
+      setStaffId(scopedStaff.id);
+      setStep('time');
+      return;
+    }
     const elig = staff.filter((st) => ids.every((id) => st.offeringIds.includes(id)));
     if (elig.length === 0) {
       setError(dict.errMultiStaff);
@@ -407,10 +432,13 @@ export function BookingFlow({
   useEffect(() => {
     const qs = new URLSearchParams();
     if (selectedIds.length > 0) qs.set('services', selectedIds.map((id) => id.slice(0, 8)).join(','));
+    // Keep the staff scope on the URL so a reload stays locked to this specialist
+    // — and reflects a switch made via the time-step dropdown.
+    if (scopedStaff && staffId) qs.set('staff', staffId.slice(0, 8));
     if (rescheduleId) qs.set('reschedule', rescheduleId);
     const q = qs.toString();
     window.history.replaceState(window.history.state, '', q ? `/booking?${q}` : '/booking');
-  }, [selectedIds, rescheduleId]);
+  }, [selectedIds, rescheduleId, scopedStaff, staffId]);
 
   // Lock background scroll while the desktop confirm modal is open.
   useEffect(() => {
@@ -526,7 +554,7 @@ export function BookingFlow({
   const backLabel =
     step === 'confirm' ? stepShort('time')
     : step === 'staff' ? stepShort('services')
-    : step === 'time' ? (eligibleStaff.length > 1 ? stepShort('staff') : stepShort('services'))
+    : step === 'time' ? (!scopedStaff && eligibleStaff.length > 1 ? stepShort('staff') : stepShort('services'))
     : business.name;
   const chooseLabel = (label: string) => `${dict.choosePrefix}${label}${dict.chooseSuffix}`;
   const stepBigTitle: Record<Step, string> = {
@@ -713,10 +741,10 @@ export function BookingFlow({
         <div className="min-w-0 lg:order-1">
           {/* breadcrumb stepper — click a reached step to jump back to it */}
           <nav className="scrollbar-hide flex items-center gap-x-1.5 overflow-x-auto whitespace-nowrap text-sm">
-            {FLOW.map((s, i) => {
+            {flowSteps.map((s, i) => {
               // Reachable once every step before it is satisfied (so completing the
               // current step unlocks the next breadcrumb item).
-              const reached = s === step || FLOW.slice(0, i).every((ps) =>
+              const reached = s === step || flowSteps.slice(0, i).every((ps) =>
                 ps === 'services' ? selected.length > 0
                 : ps === 'staff' ? staffId != null
                 : ps === 'time' ? slot != null
@@ -924,6 +952,59 @@ export function BookingFlow({
                         )}
                       </AnimatePresence>
                     </div>
+
+                    {/* The specialist you're booking with — pinned to the right of
+                        the date row, styled like the top back pill. A chevron +
+                        dropdown lets the customer switch specialist when more than
+                        one can do the chosen service (picking one refetches slots). */}
+                    {selectedStaff && selectedStaff.type !== 'asset' && (
+                      eligibleSpecialists.length > 1 ? (
+                        <div className="relative hidden sm:ml-auto sm:block">
+                          <button
+                            type="button"
+                            onClick={() => setShowStaff((v) => !v)}
+                            aria-label={selectedStaff.name}
+                            className="flex h-12 max-w-[55vw] items-center gap-2 rounded-full border border-border bg-card py-1 pl-1.5 pr-3 text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+                          >
+                            <StaffAvatar st={selectedStaff} />
+                            <span className="truncate text-sm font-semibold">{selectedStaff.name}</span>
+                            <ChevronDown size={16} className={`shrink-0 text-muted-foreground transition-transform duration-200 ${showStaff ? 'rotate-180' : ''}`} />
+                          </button>
+                          <AnimatePresence>
+                            {showStaff && (
+                              <>
+                                <div className="fixed inset-0 z-20" onClick={() => setShowStaff(false)} />
+                                <motion.div
+                                  initial={{ opacity: 0, y: -6 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  exit={{ opacity: 0, y: -6 }}
+                                  transition={{ duration: 0.15 }}
+                                  className="absolute left-0 top-full z-30 mt-2 w-[260px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-card p-1.5 shadow-xl shadow-black/10 sm:left-auto sm:right-0"
+                                >
+                                  {eligibleSpecialists.map((st) => (
+                                    <button
+                                      key={st.id}
+                                      type="button"
+                                      onClick={() => { setStaffId(st.id); setShowStaff(false); }}
+                                      className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-foreground/5"
+                                    >
+                                      <StaffAvatar st={st} className="size-9" />
+                                      <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{st.name}</span>
+                                      {st.id === staffId && <Check size={16} strokeWidth={3} className="shrink-0 text-foreground" />}
+                                    </button>
+                                  ))}
+                                </motion.div>
+                              </>
+                            )}
+                          </AnimatePresence>
+                        </div>
+                      ) : (
+                        <div className="hidden h-12 max-w-[55vw] items-center gap-2 rounded-full border border-border bg-card py-1 pl-1.5 pr-4 text-foreground shadow-xs shadow-black/5 sm:ml-auto sm:flex">
+                          <StaffAvatar st={selectedStaff} />
+                          <span className="truncate text-sm font-semibold">{selectedStaff.name}</span>
+                        </div>
+                      )
+                    )}
                   </div>
 
                   {/* duration stepper (hourly / time-rate services) */}
@@ -1289,6 +1370,18 @@ function SummaryBody({
         </AnimatePresence>
       </motion.div>
     </>
+  );
+}
+
+/** Round staff avatar: photo if set, else an initials gradient circle. */
+function StaffAvatar({ st, className = 'size-8' }: { st: { name: string; photoUrl: string | null }; className?: string }) {
+  return st.photoUrl ? (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={mediaUrl(st.photoUrl)} alt={st.name} className={`${className} shrink-0 rounded-full object-cover`} />
+  ) : (
+    <span className={`grid ${className} shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-xs font-semibold text-white`}>
+      {initials(st.name)}
+    </span>
   );
 }
 

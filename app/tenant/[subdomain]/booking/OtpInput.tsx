@@ -37,9 +37,17 @@ export function OtpInput({
     onChange(next.join(''));
   };
 
-  // External reset (e.g. resend clears the code) → clear the boxes.
+  // External reset (e.g. a wrong code clears the input) → clear the boxes and,
+  // if there was something to clear, return focus to the first box. Tracking the
+  // previous value avoids stealing focus on the initial empty mount.
+  const prevValueRef = useRef(value);
   useEffect(() => {
-    if (value === '') commit(Array.from({ length }, () => ''));
+    const prev = prevValueRef.current;
+    prevValueRef.current = value;
+    if (value === '') {
+      commit(Array.from({ length }, () => ''));
+      if (prev !== '') refs.current[0]?.focus();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value, length]);
 

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTenant, localized } from '@/lib/tenant';
 import { getTenantDict } from '@/lib/dictionaries/tenant';
+import { getSessionPhone } from '@/lib/session';
 import { TenantView } from './TenantView';
 
 export async function generateMetadata({
@@ -53,6 +54,7 @@ export default async function TenantPage({
 }) {
   const { subdomain } = await params;
   const tenant = await getTenant(subdomain);
+  const customerPhone = await getSessionPhone();
 
   if (!tenant) {
     return (
@@ -73,7 +75,7 @@ export default async function TenantPage({
 
   return (
     <main className="min-h-screen bg-background">
-      <TenantView tenant={tenant} dict={getTenantDict('uz')} locale="uz" />
+      <TenantView tenant={tenant} dict={getTenantDict('uz')} locale="uz" customerPhone={customerPhone} />
     </main>
   );
 }
