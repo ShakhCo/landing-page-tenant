@@ -211,7 +211,7 @@ export const PLANS: Plan[] = [
     id: "premium",
     name: "Enterprise",
     tagline: "Tarmoq va yirik bizneslar uchun",
-    price: 98_000,
+    price: 94_500,
     perMember: true,
     minMembers: 10,
     dark: true,
