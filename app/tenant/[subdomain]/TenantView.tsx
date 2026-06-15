@@ -286,7 +286,7 @@ export function TenantView({
                   href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground text-sm font-bold text-background transition-opacity hover:opacity-90 active:scale-[0.99]"
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                 >
                   <Navigation className="size-4" />
                   {dict.letsGo}
