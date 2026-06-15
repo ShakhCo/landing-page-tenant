@@ -172,7 +172,7 @@ export function TenantView({
             {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
             {/* Address first on desktop; mobile uses the location card below. */}
             {branch?.address && (
-              <span className="hidden items-center gap-1 lg:flex">
+              <span className="hidden items-center gap-1 text-[15px] lg:flex">
                 <MapPin className="size-4" />
                 {localized(branch.address, '', locale)}
               </span>
