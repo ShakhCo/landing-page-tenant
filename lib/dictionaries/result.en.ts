@@ -51,4 +51,10 @@ export const dict: ResultDict = {
 
   ariaBack: 'Back',
   ariaClose: 'Close',
+
+  reviewTitle: 'Leave a review',
+  reviewRatingLabel: 'Your rating',
+  reviewCommentLabel: 'Comment (optional)',
+  reviewSubmit: 'Submit',
+  reviewThanks: 'Thanks for your review!',
 };

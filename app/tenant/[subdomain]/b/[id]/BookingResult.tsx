@@ -8,6 +8,7 @@ import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type P
 import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
+import { ReviewBlock } from './ReviewBlock';
 
 /** Optional cancellation reasons — stable slugs for the backend, localized labels for the UI. */
 const CANCEL_REASONS: { slug: string; label: LocalizedText }[] = [
@@ -509,6 +510,15 @@ export function BookingResult({
               </div>
             )}
         </div>
+
+        {booking.status === 'completed' && (
+          <ReviewBlock
+            subdomain={subdomain}
+            bookingId={booking.id}
+            dict={dict}
+            initial={booking.review ?? null}
+          />
+        )}
 
         {/* Total — the only divider in the card body */}
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4 text-[15px]">

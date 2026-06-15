@@ -55,6 +55,12 @@ export const dict = {
 
   ariaBack: 'Orqaga',
   ariaClose: 'Yopish',
+
+  reviewTitle: 'Bahoyingizni qoldiring',
+  reviewRatingLabel: 'Bahoyingiz',
+  reviewCommentLabel: 'Izoh (ixtiyoriy)',
+  reviewSubmit: 'Yuborish',
+  reviewThanks: 'Bahoyingiz uchun rahmat!',
 };
 
 export type ResultDict = typeof dict;
