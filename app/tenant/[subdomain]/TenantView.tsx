@@ -324,7 +324,7 @@ export function TenantView({
           <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
 
           {cats.length > 1 && (
-            <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,transparent,#000_0.75rem,#000_calc(100%_-_0.75rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,#000_0.75rem,#000_calc(100%_-_0.75rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
+            <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
               <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
               {cats.map((c) => (
                 <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>
