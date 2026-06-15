@@ -45,6 +45,8 @@ export const dict = {
   back: 'Orqaga',
   location: 'Joylashuv',
   letsGo: 'Borish',
+  reviews: 'Sharhlar',
+  reviewsCount: 'ta sharh',
 };
 
 export type TenantDict = typeof dict;

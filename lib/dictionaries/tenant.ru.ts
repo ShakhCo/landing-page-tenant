@@ -41,4 +41,6 @@ export const dict: TenantDict = {
   back: 'Назад',
   location: 'Расположение',
   letsGo: 'Поехали',
+  reviews: 'Отзывы',
+  reviewsCount: 'отзывов',
 };

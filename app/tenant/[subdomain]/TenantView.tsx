@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send, MapPin, Navigation } from 'lucide-react';
+import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send, MapPin, Navigation, Star } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
@@ -174,6 +174,13 @@ export function TenantView({
               {localized(branch.address, '', locale)}
             </span>
           )}
+          {tenant.reviewCount ? (
+            <span className="flex items-center gap-1">
+              <Star size={15} className="fill-amber-400 text-amber-400" />
+              <span className="font-semibold text-foreground">{tenant.averageRating}</span>
+              <span>· {tenant.reviewCount} {dict.reviewsCount}</span>
+            </span>
+          ) : null}
         </div>
         {/* {canBook && (
           <Link
@@ -298,6 +305,41 @@ export function TenantView({
                   <Navigation className="size-4" />
                   {dict.letsGo}
                 </a>
+              </div>
+            </section>
+          )}
+
+          {/* Reviews */}
+          {(tenant.reviews?.length ?? 0) > 0 && (
+            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
+              <div className="flex items-center justify-between gap-3">
+                <h2 className="text-lg font-bold text-foreground">{dict.reviews}</h2>
+                {tenant.reviewCount ? (
+                  <span className="flex items-center gap-1 text-sm">
+                    <Star size={15} className="fill-amber-400 text-amber-400" />
+                    <span className="font-bold text-foreground">{tenant.averageRating}</span>
+                    <span className="text-muted-foreground">· {tenant.reviewCount}</span>
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-3 divide-y divide-border">
+                {(tenant.reviews ?? []).map((r) => (
+                  <div key={r.id} className="py-3.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-semibold text-foreground">{r.customerName}</span>
+                      <span className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star
+                            key={n}
+                            size={14}
+                            className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-border'}
+                          />
+                        ))}
+                      </span>
+                    </div>
+                    {r.comment && <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>}
+                  </div>
+                ))}
               </div>
             </section>
           )}
