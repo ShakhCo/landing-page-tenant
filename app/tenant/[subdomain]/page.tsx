@@ -23,7 +23,10 @@ export async function generateMetadata({
   const title = `${b.name} — Onlayn bron qilish`;
   // Tenant pages are uz-only — single-language meta (default uz, no mixing).
   const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling.`;
-  // OG/Twitter image is generated per-business by ./opengraph-image.tsx.
+  // OG/Twitter image lives at ./opengraph-image.tsx. We point at it explicitly on
+  // the subdomain — Next would otherwise resolve it against the root metadataBase,
+  // and /tenant/* there 307-redirects, breaking the link preview.
+  const ogImage = { url: `${url}/opengraph-image`, width: 1200, height: 630, alt: title };
 
   return {
     title: { absolute: `${title} | BOOKUP` },
@@ -40,8 +43,9 @@ export async function generateMetadata({
       description,
       url,
       locale: 'uz_UZ',
+      images: [ogImage],
     },
-    twitter: { card: 'summary_large_image', title, description },
+    twitter: { card: 'summary_large_image', title, description, images: [ogImage.url] },
     robots: { index: true, follow: true },
   };
 }
