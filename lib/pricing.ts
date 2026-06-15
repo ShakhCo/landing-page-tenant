@@ -159,6 +159,8 @@ export interface Plan {
   badge?: string;
   /** Price is charged per team member (vs. a flat monthly fee). */
   perMember?: boolean;
+  /** Minimum billable team members (shown as a note under the price). */
+  minMembers?: number;
   /** Contact-sales tier: shows priceLabel + description instead of a price & features. */
   custom?: boolean;
   /** Headline shown in place of the numeric price (custom tiers). */
@@ -208,6 +210,7 @@ export const PLANS: Plan[] = [
     tagline: "Tarmoq va yirik bizneslar uchun",
     price: 98_000,
     perMember: true,
+    minMembers: 10,
     features: [
       { text: "Har bir a'zoga 100 ta bepul SMS" },
       { text: "Har bir a'zoga 10 ta marketing SMS" },
