@@ -124,7 +124,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
     <div
       className={`relative flex h-full flex-col rounded-3xl p-7 md:p-8 ${
         plan.highlighted
-          ? "bg-[var(--accent)]/[0.07] shadow-xl shadow-[var(--accent)]/15 ring-2 ring-[var(--accent)] lg:-mt-4 lg:pb-12"
+          ? "bg-gray-200 shadow-xl shadow-[var(--accent)]/15 ring-2 ring-[var(--accent)] lg:-mt-4 lg:pb-12"
           : dark
             ? "bg-gray-900 shadow-xl shadow-gray-900/20"
             : "bg-gray-100"
