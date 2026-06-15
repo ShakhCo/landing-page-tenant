@@ -195,7 +195,7 @@ export function TenantView({
         {canBook && (
           <Link
             href="/booking"
-            className="hidden h-11 shrink-0 items-center justify-center rounded-2xl bg-foreground px-6 text-sm font-bold text-background shadow-md transition-all hover:opacity-90 active:scale-[0.98] lg:inline-flex"
+            className="hidden h-12 shrink-0 items-center justify-center rounded-full bg-foreground px-9 text-base font-bold text-background shadow-md transition-all hover:opacity-90 active:scale-[0.98] lg:inline-flex"
           >
             {dict.book}
           </Link>
