@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, MapPin, ChevronDown, BadgeCheck, Phone, Globe, Send } from 'lucide-react';
+import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
@@ -167,12 +167,6 @@ export function TenantView({
             ) : (
               <span className="font-semibold">{dict.closed}</span>
             ))}
-          {branch?.address && (
-            <span className="flex items-center gap-1">
-              <MapPin className="size-4" />
-              {localized(branch.address, '', locale)}
-            </span>
-          )}
         </div>
         {/* {canBook && (
           <Link
@@ -296,7 +290,7 @@ export function TenantView({
           <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
 
           {cats.length > 1 && (
-            <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:px-0">
+            <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,#000_1rem,#000_calc(100%_-_1rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,#000_1rem,#000_calc(100%_-_1rem),transparent)] lg:mx-0 lg:px-0 lg:[mask-image:none] lg:[-webkit-mask-image:none]">
               <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
               {cats.map((c) => (
                 <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>
@@ -339,7 +333,7 @@ export function TenantView({
                         )}
                       </div>
                       {canBook && (
-                        <span className="mt-3 block w-full rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                        <span className="mt-3 block w-full rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
                           {dict.book}
                         </span>
                       )}
@@ -373,7 +367,7 @@ export function TenantView({
       {/* Mobile sticky Book CTA */}
       {canBook && (
         <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur lg:hidden">
-          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
+          <Link href="/booking" className="flex h-14 items-center justify-center rounded-2xl bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
             {dict.book}
           </Link>
         </div>
