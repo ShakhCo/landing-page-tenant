@@ -163,7 +163,7 @@ export function TenantView({
       </div>
       <div className="mt-14 flex items-center justify-between gap-4 px-4 lg:px-6">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-1.5 text-2xl font-bold">
+          <h1 className="flex items-center gap-1.5 text-[27px] font-bold tracking-tight">
             {business.name}
             <BadgeCheck className="size-5 shrink-0 fill-blue-500 text-card" />
           </h1>
