@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send, MapPin, Navigation, Star } from 'lucide-react';
@@ -89,6 +89,16 @@ export function TenantView({
   const [showAll, setShowAll] = useState(false);
   const [showAllTeam, setShowAllTeam] = useState(false);
   const [showHours, setShowHours] = useState(false);
+  // Sticky navbar appears once the business name scrolls out of view.
+  const [scrolled, setScrolled] = useState(false);
+  const nameRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    const el = nameRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => setScrolled(!e.isIntersecting), { threshold: 0 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   // Remember the chosen language so the booking flow (cookie-based) follows it.
   useEffect(() => {
@@ -143,14 +153,62 @@ export function TenantView({
       <div className="relative">
         {/* Account + language stay pinned to the viewport while scrolling, but
             aligned to the right edge of the centered content (not the screen). */}
-        <div className="pointer-events-none fixed inset-x-0 top-3 z-50">
-          <div className="mx-auto flex max-w-[1350px] justify-end px-3">
-            <div className="pointer-events-auto flex items-center gap-2">
-              <AccountMenu customerPhone={customerPhone} dict={dict} />
-              <LocaleSwitcher current={locale} />
-            </div>
-          </div>
-        </div>
+        <AnimatePresence initial={false}>
+          {!scrolled ? (
+            <motion.div
+              key="float-controls"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="pointer-events-none fixed inset-x-0 top-3 z-50"
+            >
+              <div className="mx-auto flex max-w-[1350px] justify-end px-3">
+                <div className="pointer-events-auto flex items-center gap-2">
+                  <AccountMenu customerPhone={customerPhone} dict={dict} />
+                  <LocaleSwitcher current={locale} />
+                </div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="sticky-navbar"
+              initial={{ y: -64, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: -64, opacity: 0 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="fixed inset-x-0 top-0 z-50 border-b border-border bg-card/90 backdrop-blur"
+            >
+              <div className="mx-auto flex h-14 max-w-[1350px] items-center justify-between gap-3 px-4 lg:px-6">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {business.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={mediaUrl(business.avatarUrl)} alt="" className="size-8 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <span className="grid size-8 shrink-0 place-items-center rounded-full bg-foreground text-xs font-bold text-background">
+                      {initials(business.name)}
+                    </span>
+                  )}
+                  <span className="truncate font-bold text-foreground">{business.name}</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="hidden items-center gap-2 sm:flex">
+                    <AccountMenu customerPhone={customerPhone} dict={dict} />
+                    <LocaleSwitcher current={locale} />
+                  </div>
+                  {canBook && (
+                    <Link
+                      href="/booking"
+                      className="inline-flex h-9 items-center justify-center rounded-full bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98]"
+                    >
+                      {dict.book}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none bg-gradient-to-br from-muted/15 to-muted/5">
           <iframe
             title="Map"
@@ -172,7 +230,7 @@ export function TenantView({
       </div>
       <div className="mt-14 flex items-center justify-between gap-4 px-4 lg:px-6">
         <div className="min-w-0">
-          <h1 className="flex items-center gap-1.5 text-[27px] font-bold tracking-tight">
+          <h1 ref={nameRef} className="flex items-center gap-1.5 text-[27px] font-bold tracking-tight">
             {business.name}
             <BadgeCheck className="size-6 shrink-0 fill-blue-500 text-card" />
           </h1>
