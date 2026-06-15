@@ -119,6 +119,15 @@ export function TenantView({
   const visible = showAll ? filtered : filtered.slice(0, FEATURED_LIMIT);
   const mapsQuery = branch ? `${branch.latitude},${branch.longitude}` : '';
 
+  // Reviews: highest rating first, then most recent (by the shown service date).
+  const sortedReviews = [...(tenant.reviews ?? [])].sort((a, b) => {
+    const byStars = (b.rating ?? 0) - (a.rating ?? 0);
+    if (byStars !== 0) return byStars;
+    const da = a.servedAt ?? a.submittedAt ?? '';
+    const db = b.servedAt ?? b.submittedAt ?? '';
+    return da > db ? -1 : da < db ? 1 : 0;
+  });
+
   const asUrl = (v: string | null | undefined, base: string) =>
     v ? (v.startsWith('http') ? v : `${base}${v.replace(/^@/, '')}`) : null;
   const contacts = [
@@ -433,7 +442,7 @@ export function TenantView({
               ) : null}
             </div>
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {(tenant.reviews ?? []).map((r) => {
+              {sortedReviews.map((r) => {
                 const svc = (r.services ?? [])
                   .map((s) => localized(s as LocalizedText, '', locale))
                   .filter(Boolean)
