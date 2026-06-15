@@ -449,9 +449,6 @@ export function TenantView({
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-foreground">{r.customerName}</p>
                         {svc && <p className="truncate text-[13px] text-muted-foreground">{svc}</p>}
-                        {r.servedBy && (
-                          <p className="truncate text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
-                        )}
                       </div>
                       {r.servedAt && (
                         <span className="shrink-0 text-[13px] text-muted-foreground">
@@ -468,6 +465,9 @@ export function TenantView({
                         />
                       ))}
                     </div>
+                    {r.servedBy && (
+                      <p className="mt-2 truncate text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
+                    )}
                     {r.comment && (
                       <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
                     )}
