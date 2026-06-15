@@ -35,7 +35,7 @@ export function PricingPlans() {
         </p>
         <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl lg:text-5xl">
           <span className="text-[var(--accent)]">14 kun bepul.</span>{" "}
-          <span className="text-gray-500">Biznesingizga mos tarifni tanlang.</span>
+          <span className="text-gray-900">Biznesingizga mos tarifni tanlang.</span>
         </h2>
       </div>
 

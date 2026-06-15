@@ -360,7 +360,7 @@ function HowItWorks() {
         </p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">
           <span className="text-[var(--accent)]">5 daqiqada.</span>{" "}
-          <span className="text-gray-500">3 ta oddiy qadam.</span>
+          <span className="text-gray-900">3 ta oddiy qadam.</span>
         </h2>
       </div>
 
