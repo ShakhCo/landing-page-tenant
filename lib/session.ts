@@ -11,23 +11,36 @@ function formatPhone(phone: string): string {
   return `+998 ${l.slice(0, 2)} ${l.slice(2, 5)} ${l.slice(5, 7)} ${l.slice(7, 9)}`;
 }
 
+export interface SessionInfo {
+  /** Customer user id (JWT `sub`). */
+  userId: string;
+  /** Their phone, formatted for display ("+998 90 858 02 04"). */
+  phone: string | null;
+}
+
 /**
- * The logged-in customer's phone (from the booking-session JWT), formatted for
- * display — or null when there's no session. The token is only DECODED, never
- * verified: it's used purely to show "who's signed in", never for authorization
- * (every privileged call still re-verifies the token server-side).
+ * Decode the booking-session JWT (NEVER verified — display only; every
+ * privileged call re-verifies server-side). Returns the customer's user id and
+ * formatted phone, or null when there's no session.
  */
-export async function getSessionPhone(): Promise<string | null> {
+export async function getSession(): Promise<SessionInfo | null> {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
   try {
     const payload = token.split('.')[1];
     if (!payload) return null;
     const claims = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8')) as {
+      sub?: string;
       phone?: string;
     };
-    return claims.phone ? formatPhone(claims.phone) : null;
+    if (!claims.sub) return null;
+    return { userId: claims.sub, phone: claims.phone ? formatPhone(claims.phone) : null };
   } catch {
     return null;
   }
+}
+
+/** The logged-in customer's phone, formatted for display — or null. */
+export async function getSessionPhone(): Promise<string | null> {
+  return (await getSession())?.phone ?? null;
 }

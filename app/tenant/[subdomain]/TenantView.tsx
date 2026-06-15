@@ -205,7 +205,7 @@ export function TenantView({
                       <Link
                         href={`/booking?staff=${st.id.slice(0, 8)}`}
                         aria-label={`${st.name} — ${dict.book}`}
-                        className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                        className="shrink-0 rounded-xl border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                       >
                         {dict.book}
                       </Link>

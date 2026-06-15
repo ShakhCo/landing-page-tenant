@@ -90,6 +90,7 @@ export function BookingResult({
   dict,
   locale,
   hasSession = false,
+  ownerPhone = null,
 }: {
   created: boolean;
   data: PublicBookingView;
@@ -99,6 +100,8 @@ export function BookingResult({
   locale: TenantLocale;
   /** Remembered customer (bookup_session cookie) — cancel can try one-tap first. */
   hasSession?: boolean;
+  /** Full phone shown only when the signed-in viewer is this booking's customer. */
+  ownerPhone?: string | null;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -499,10 +502,10 @@ export function BookingResult({
                 {whenCompact(booking.startAt, business.timezone, dict, booking.endAt)}
               </span>
             </div>
-            {booking.customer?.maskedPhone && (
+            {(ownerPhone ?? booking.customer?.maskedPhone) && (
               <div className="flex items-baseline justify-between gap-4 text-[15px]">
                 <span className="text-muted-foreground">{dict.customer}</span>
-                <span className="text-right font-semibold tabular-nums text-foreground">{booking.customer.maskedPhone}</span>
+                <span className="text-right font-semibold tabular-nums text-foreground">{ownerPhone ?? booking.customer?.maskedPhone}</span>
               </div>
             )}
         </div>

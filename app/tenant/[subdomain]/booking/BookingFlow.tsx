@@ -805,7 +805,7 @@ export function BookingFlow({
                       // services get "Qo'shish", and a selected one shows "Tanlandi".
                       const canAdd = !isUnitService(s) && !hourly;
                       const actionBtn = (
-                        <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-full border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                        <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
                           {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
                           {on ? dict.selectedLabel : canAdd ? dict.add : dict.choose}
                           {!on && !canAdd && <ChevronRight size={15} />}
