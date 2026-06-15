@@ -179,7 +179,7 @@ export function TenantView({
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="fixed inset-x-0 top-0 z-50 border-b border-border bg-card/90 backdrop-blur"
             >
-              <div className="mx-auto flex h-14 max-w-[1350px] items-center justify-between gap-3 px-4 lg:px-6">
+              <div className="mx-auto flex h-16 max-w-[1350px] items-center justify-between gap-3 px-4 lg:px-6">
                 <div className="flex min-w-0 items-center gap-2.5">
                   {business.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
