@@ -157,28 +157,10 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
           </AnimatePresence>
         </motion.div>
 
-        {/* Subtitle + period total */}
-        <div className="mt-4">
-          <motion.p layout transition={LAYOUT} className="text-base text-gray-500">
-            {plan.perMember ? "har bir a'zo uchun oyiga" : "oyiga"}
-          </motion.p>
-          <AnimatePresence mode="popLayout">
-            {period.months > 1 && (
-              <motion.p
-                key={period.id}
-                layout
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-                className="mt-1 text-sm text-gray-400"
-              >
-                {period.label} uchun{plan.perMember ? " har bir a'zo:" : ":"} UZS{" "}
-                {formatUZS(monthly * period.months)}
-              </motion.p>
-            )}
-          </AnimatePresence>
-        </div>
+        {/* Subtitle */}
+        <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
+          {plan.perMember ? "har bir a'zo uchun oyiga" : "oyiga"}
+        </motion.p>
       </div>
 
       {/* Features */}
