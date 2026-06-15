@@ -158,13 +158,13 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
       </button>
 
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={reset} />
+        <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 sm:items-center">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={reset} />
           <div
             role="dialog"
             aria-modal="true"
             aria-label={dict.loginTitle}
-            className="relative z-10 w-full max-w-lg rounded-3xl border border-border bg-card p-8 shadow-2xl sm:p-10"
+            className="relative z-10 w-full max-w-lg rounded-3xl border border-border bg-card p-6 shadow-2xl sm:p-8"
           >
             <button
               type="button"
@@ -175,7 +175,7 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
               <X size={18} />
             </button>
 
-            <h2 className="pr-10 text-3xl font-extrabold text-foreground">
+            <h2 className="pr-10 text-2xl font-extrabold text-foreground sm:text-3xl">
               {sent ? dict.codeTitle : dict.loginTitle}
             </h2>
             {sent ? (
@@ -219,7 +219,7 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
                     value={fmtLocal(digits)}
                     onChange={(e) => { setError(null); setDigits(toLocal(e.target.value)); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') void sendCode(); }}
-                    className="peer h-16 w-full rounded-2xl border border-border bg-transparent pl-[4.75rem] pr-4 text-base font-semibold tracking-wide tabular-nums text-foreground outline-none transition-colors focus:border-foreground"
+                    className="peer h-14 w-full rounded-2xl border border-border bg-transparent pl-[4.75rem] pr-4 text-base font-semibold tracking-wide tabular-nums text-foreground outline-none transition-colors focus:border-foreground"
                   />
                   <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-base font-semibold text-foreground">+998</span>
                   {/* Format hint shows only while focused & empty. */}
@@ -238,7 +238,7 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
                   type="button"
                   onClick={sendCode}
                   disabled={digits.length !== UZ_LEN || busy}
-                  className="mt-5 h-14 w-full rounded-2xl bg-foreground text-base font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="mt-5 h-12 w-full rounded-2xl bg-foreground text-base font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40 sm:h-14"
                 >
                   {dict.loginPhoneCta}
                 </button>
@@ -253,7 +253,7 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
                   type="button"
                   onClick={() => submit()}
                   disabled={code.length < 5 || busy}
-                  className="mt-5 h-14 w-full rounded-2xl bg-foreground text-base font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="mt-5 h-12 w-full rounded-2xl bg-foreground text-base font-bold text-background transition-opacity hover:opacity-90 disabled:opacity-40 sm:h-14"
                 >
                   {dict.loginConfirm}
                 </button>
