@@ -105,20 +105,40 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
   const monthly = planMonthly(plan.price, period.discount);
   const hasDiscount = period.discount > 0 && monthly < plan.price;
   const intro = plan.featuresIntro ?? "Tarkibida";
+  const dark = !!plan.dark;
+
+  // Premium dark variant keeps the same layout with inverted colours.
+  const t = {
+    card: dark ? "bg-gray-900" : "bg-gray-50",
+    name: dark ? "text-white" : "text-gray-900",
+    pill: dark
+      ? "bg-white/10 text-[var(--accent)]"
+      : "bg-[var(--accent)]/10 text-[var(--accent)]",
+    price: dark ? "text-white" : "text-gray-900",
+    sub: dark ? "text-gray-400" : "text-gray-500",
+    strike: dark ? "text-gray-500" : "text-gray-400",
+    heading: dark ? "text-white" : "text-gray-900",
+    features: dark ? "text-gray-400" : "text-gray-500",
+    cta: dark
+      ? "bg-white text-gray-900 hover:bg-gray-100"
+      : "bg-gray-900 text-white hover:bg-gray-800",
+  };
 
   return (
-    <div className="relative flex h-full flex-col rounded-[1.75rem] bg-gray-50 p-8 md:p-10">
+    <div
+      className={`relative flex h-full flex-col rounded-[1.75rem] p-8 md:p-10 ${t.card}`}
+    >
       {/* Name (+ trial pill for priced plans) */}
       <motion.div
         layout="position"
         transition={LAYOUT}
         className="flex items-center gap-3"
       >
-        <h3 className="text-2xl font-bold tracking-tight text-gray-900">
+        <h3 className={`text-2xl font-bold tracking-tight ${t.name}`}>
           {plan.name}
         </h3>
         {!plan.custom && (
-          <span className="rounded-full bg-[var(--accent)]/10 px-3 py-1 text-xs font-semibold text-[var(--accent)]">
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${t.pill}`}>
             14 kun bepul
           </span>
         )}
@@ -126,7 +146,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
 
       {plan.custom ? (
         /* Custom headline (contact-sales tier) */
-        <p className="mt-7 text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl">
+        <p className={`mt-7 text-3xl font-extrabold tracking-tight md:text-4xl ${t.price}`}>
           {plan.priceLabel}
         </p>
       ) : (
@@ -142,7 +162,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-                className="text-base font-normal text-gray-400 line-through decoration-1"
+                className={`text-base font-normal line-through decoration-1 ${t.strike}`}
               >
                 UZS {formatUZS(plan.price)}
               </motion.p>
@@ -158,7 +178,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3, ease: EASE }}
-                className="text-3xl font-extrabold tracking-tight text-gray-900 md:text-4xl"
+                className={`text-3xl font-extrabold tracking-tight md:text-4xl ${t.price}`}
               >
                 UZS {formatUZS(monthly)}
               </motion.div>
@@ -166,7 +186,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
           </motion.div>
 
           {/* Subtitle */}
-          <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
+          <motion.p layout transition={LAYOUT} className={`mt-4 text-base ${t.sub}`}>
             {plan.perMember ? "har bir a'zo uchun oyiga" : "bir oyga"}
             {plan.minMembers ? ` · kamida ${plan.minMembers} ta a'zo` : ""}
           </motion.p>
@@ -176,8 +196,8 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
       {/* Features */}
       {plan.features.length > 0 && (
         <motion.div layout="position" transition={LAYOUT} className="mt-8">
-          <p className="text-sm font-semibold text-gray-900">{intro}</p>
-          <ul className="mt-4 space-y-2.5 text-sm leading-snug text-gray-500">
+          <p className={`text-sm font-semibold ${t.heading}`}>{intro}</p>
+          <ul className={`mt-4 space-y-2.5 text-sm leading-snug ${t.features}`}>
             {plan.features.map((feature) => (
               <li key={feature.text}>{feature.text}</li>
             ))}
@@ -191,7 +211,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
           layout
           transition={LAYOUT}
           href="#"
-          className="inline-flex w-fit items-center justify-center rounded-full bg-gray-900 px-7 py-3.5 text-sm font-semibold text-white transition-colors hover:bg-gray-800"
+          className={`inline-flex w-fit items-center justify-center rounded-full px-7 py-3.5 text-sm font-semibold transition-colors ${t.cta}`}
         >
           {plan.custom ? "Bog'lanish" : "Boshlash"}
         </motion.a>

@@ -161,6 +161,8 @@ export interface Plan {
   perMember?: boolean;
   /** Minimum billable team members (shown as a note under the price). */
   minMembers?: number;
+  /** Renders the card on a dark, premium background. */
+  dark?: boolean;
   /** Contact-sales tier: shows priceLabel + description instead of a price & features. */
   custom?: boolean;
   /** Headline shown in place of the numeric price (custom tiers). */
@@ -212,6 +214,7 @@ export const PLANS: Plan[] = [
     price: 98_000,
     perMember: true,
     minMembers: 10,
+    dark: true,
     features: [
       { text: "Har bir a'zoga 100 ta bepul SMS" },
       { text: "Har bir a'zoga 10 ta marketing SMS" },
