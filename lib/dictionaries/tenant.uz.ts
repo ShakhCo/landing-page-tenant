@@ -43,6 +43,8 @@ export const dict = {
   loginCodeHint: 'Telefoningizga yuborilgan kodni kiriting.',
   phoneLabel: 'Telefon raqami',
   back: 'Orqaga',
+  location: 'Joylashuv',
+  letsGo: 'Borish',
 };
 
 export type TenantDict = typeof dict;

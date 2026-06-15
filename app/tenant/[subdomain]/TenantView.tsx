@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send } from 'lucide-react';
+import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send, MapPin, Navigation } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
@@ -261,6 +261,40 @@ export function TenantView({
             </section>
           )}
 
+          {/* Location — map + address with a directions CTA (mobile only; desktop
+              already shows the map in the hero header). */}
+          {branch && (
+            <section className="overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 lg:hidden">
+              <div className="h-44 w-full bg-gradient-to-br from-muted/15 to-muted/5">
+                <iframe
+                  title="Map"
+                  src={`https://maps.google.com/maps?q=${mapsQuery}&z=15&output=embed&iwloc=near`}
+                  className="h-full w-full border-0 pointer-events-none"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+              </div>
+              <div className="p-6">
+                <h2 className="text-lg font-bold text-foreground">{dict.location}</h2>
+                {branch.address && (
+                  <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="mt-0.5 size-4 shrink-0" />
+                    {localized(branch.address, '', locale)}
+                  </p>
+                )}
+                <a
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-foreground text-sm font-bold text-background transition-opacity hover:opacity-90 active:scale-[0.99]"
+                >
+                  <Navigation className="size-4" />
+                  {dict.letsGo}
+                </a>
+              </div>
+            </section>
+          )}
+
           {/* Contacts — temporarily hidden, kept for when contact data goes live. */}
           {false && (
             <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
@@ -290,7 +324,7 @@ export function TenantView({
           <h2 className="text-lg font-bold text-foreground">{dict.services}</h2>
 
           {cats.length > 1 && (
-            <div className="scrollbar-hide -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1 [mask-image:linear-gradient(to_right,transparent,#000_1rem,#000_calc(100%_-_1rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,#000_1rem,#000_calc(100%_-_1rem),transparent)] lg:mx-0 lg:px-0 lg:[mask-image:none] lg:[-webkit-mask-image:none]">
+            <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,transparent,#000_0.75rem,#000_calc(100%_-_0.75rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,transparent,#000_0.75rem,#000_calc(100%_-_0.75rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
               <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
               {cats.map((c) => (
                 <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>

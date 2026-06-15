@@ -39,4 +39,6 @@ export const dict: TenantDict = {
   loginCodeHint: 'Enter the code sent to your phone.',
   phoneLabel: 'Phone number',
   back: 'Back',
+  location: 'Location',
+  letsGo: "Let's go",
 };
