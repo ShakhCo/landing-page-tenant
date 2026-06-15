@@ -440,8 +440,8 @@ export function TenantView({
                   .map((s) => localized(s as LocalizedText, '', locale))
                   .filter(Boolean)
                   .join(', ');
-                const servedLabel =
-                  r.servedBy && resourceType.get(r.servedBy) === 'asset' ? dict.unitRole : dict.staffRole;
+                // Show the server only for staff (people), never for units/assets.
+                const servedStaff = r.servedBy && resourceType.get(r.servedBy) !== 'asset' ? r.servedBy : null;
                 return (
                   <div key={r.id} className="flex flex-col rounded-2xl bg-foreground/[0.035] p-5">
                     <div className="flex items-start gap-3">
@@ -470,8 +470,8 @@ export function TenantView({
                     {r.comment && (
                       <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
                     )}
-                    {r.servedBy && (
-                      <p className="mt-auto truncate pt-3 text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
+                    {servedStaff && (
+                      <p className="mt-auto truncate pt-3 text-[13px] text-muted-foreground">{servedStaff}</p>
                     )}
                   </div>
                 );
