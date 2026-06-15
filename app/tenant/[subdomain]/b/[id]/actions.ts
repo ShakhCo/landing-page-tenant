@@ -6,6 +6,31 @@ import { serverFetch, NETWORK_ERROR_UZ } from '@/lib/serverFetch';
 
 const SESSION_COOKIE = 'bookup_session';
 
+/** Map a backend error code to a friendly Uzbek message (never raw text). */
+function mapErrorCode(code: string): string {
+  const map: Record<string, string> = {
+    BOOKING_NOT_FOUND: "Bron topilmadi.",
+    REVIEW_ALREADY_SUBMITTED: "Siz allaqachon baholagan edingiz.",
+    BOOKING_NOT_COMPLETED: "Faqat yakunlangan bronlarni baholash mumkin.",
+    BUSINESS_NOT_FOUND: 'Biznes topilmadi.',
+  };
+  return map[code] || "Xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.";
+}
+
+/** Read the backend error code + a friendly message from a failed response. */
+async function readError(res: Response): Promise<{ code: string; message: string }> {
+  let code = '';
+  try {
+    code = (await res.json())?.code ?? '';
+  } catch {
+    /* ignore */
+  }
+  return { code, message: mapErrorCode(code) };
+}
+async function errorMessage(res: Response): Promise<string> {
+  return (await readError(res)).message;
+}
+
 /**
  * Clear the session cookie with the SAME domain/path it was set with
  * (`.bookup.uz` in prod) — a bare delete(name) doesn't match the scoped cookie,
@@ -106,4 +131,26 @@ export async function cancelBookingAction(
     BUSINESS_NOT_FOUND: 'Biznes topilmadi.',
   };
   return { ok: false, error: map[code] || "Bekor qilishda xatolik. Qayta urinib ko'ring." };
+}
+
+export async function submitReviewAction(
+  subdomain: string,
+  bookingId: string,
+  rating: number,
+  comment: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const res = await serverFetch(
+      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(bookingId)}/review`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, comment: comment.trim() || undefined }),
+      },
+    );
+    if (!res.ok) return { ok: false, error: await errorMessage(res) };
+    return { ok: true };
+  } catch {
+    return { ok: false, error: NETWORK_ERROR_UZ };
+  }
 }

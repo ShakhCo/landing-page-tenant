@@ -55,6 +55,16 @@ export interface PublicTenant {
     /** Confirmed/completed bookings this member has performed; absent on older backends. */
     bookingsCount?: number;
   }>;
+  averageRating?: number | null;
+  reviewCount?: number;
+  reviews?: Array<{
+    id: string;
+    rating: number | null;
+    comment: string | null;
+    submittedAt: string | null;
+    customerName: string;
+    services: LocalizedText[];
+  }>;
 }
 
 export const API_BASE =
@@ -142,6 +152,7 @@ export interface PublicBookingView {
       endAt?: string | null;
       price: number;
     }>;
+    review?: { submitted: boolean; rating: number | null; comment: string | null } | null;
   };
 }
 
