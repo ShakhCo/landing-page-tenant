@@ -194,6 +194,7 @@ export const PLANS: Plan[] = [
     highlighted: true,
     badge: "Tavsiya",
     perMember: true,
+    minMembers: 2,
     features: [
       { text: "Har bir a'zoga 30 ta bepul SMS" },
       { text: "Har bir a'zoga 5 ta marketing SMS" },
