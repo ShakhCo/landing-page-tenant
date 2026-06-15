@@ -177,8 +177,8 @@ export const PLANS: Plan[] = [
     tagline: "Yakka master va kichik salonlar uchun",
     price: 74_000,
     features: [
-      { text: "30 ta bepul eslatma SMS — kelmay qolishni kamaytiradi" },
-      { text: "5 ta bepul marketing SMS — savdoni oshiradi" },
+      { text: "30 ta bepul SMS" },
+      { text: "5 ta marketing SMS" },
       { text: "bookup.uz'da bron sayti" },
       { text: "Mijozlar ro'yxati va tashriflar tarixi" },
       { text: "Telegram orqali qo'llab-quvvatlash" },
