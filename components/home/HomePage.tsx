@@ -172,15 +172,28 @@ const SOLUTION_IMAGES = [
   "/cat-spa.jpg",
 ];
 
+// Per-segment landing pages (apex-relative, like the footer). Only the
+// barbershop page exists today; the rest fall back to no dedicated link.
+const SOLUTION_HREFS: Array<string | null> = [
+  "/business/barbershops",
+  null,
+  null,
+  null,
+  null,
+  null,
+];
+
 function SolutionsSection({ d }: { d: HomeDict["solutions"] }) {
   const items: Array<{
     title: string;
     description: string;
     image: string;
+    href: string | null;
   }> = d.items.map((item, i) => ({
     title: item.title,
     description: item.description,
     image: SOLUTION_IMAGES[i],
+    href: SOLUTION_HREFS[i] ?? null,
   }));
   return (
     <section className="mt-24 text-center">
@@ -191,7 +204,7 @@ function SolutionsSection({ d }: { d: HomeDict["solutions"] }) {
         {d.title}
       </h2>
       <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(({ title, description, image }) => (
+        {items.map(({ title, description, image, href }) => (
           <article
             key={title}
             className="group flex flex-col rounded-3xl bg-gray-50 p-3 transition-shadow duration-300 hover:shadow-sm"
@@ -209,7 +222,7 @@ function SolutionsSection({ d }: { d: HomeDict["solutions"] }) {
               <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
               <p className="mt-2 text-base text-gray-600">{description}</p>
               <a
-                href="#"
+                href={href ?? "#"}
                 className="mt-5 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[var(--accent)] transition-all hover:gap-2"
               >
                 {d.more}
