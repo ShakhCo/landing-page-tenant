@@ -81,8 +81,8 @@ export function Footer({ dict = homeUz.footer }: { dict?: HomeDict['footer'] }) 
             <Image
               src="/bookup-logo.png"
               alt="BOOKUP"
-              width={600}
-              height={112}
+              width={1161}
+              height={291}
               className="h-7 w-auto brightness-0 invert"
             />
             <p className="mt-5 max-w-xs text-sm leading-relaxed text-gray-400">

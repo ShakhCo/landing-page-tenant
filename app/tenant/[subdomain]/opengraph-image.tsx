@@ -18,7 +18,7 @@ function initials(name: string) {
     .join('');
 }
 
-// Real BOOKUP wordmark (600×112), inlined so Satori can render it without a fetch.
+// Real BOOKUP wordmark, inlined so Satori can render it without a fetch.
 const LOGO_DATA_URL = `data:image/png;base64,${readFileSync(
   join(process.cwd(), 'public', 'bookup-logo.png'),
 ).toString('base64')}`;
@@ -102,7 +102,7 @@ export default async function Image({ params }: { params: Promise<{ subdomain: s
         {/* Brand footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={LOGO_DATA_URL} width={268} height={50} alt="BOOKUP" />
+          <img src={LOGO_DATA_URL} width={239} height={60} alt="BOOKUP" />
           <div style={{ display: 'flex', fontSize: 32, fontWeight: 700, color: '#e11d6c' }}>Onlayn bron qilish</div>
         </div>
       </div>

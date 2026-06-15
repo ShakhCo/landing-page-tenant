@@ -99,8 +99,8 @@ export function Header({
           <Image
             src="/bookup-logo.png"
             alt="BOOKUP"
-            width={600}
-            height={112}
+            width={1161}
+            height={291}
             priority
             className="h-5 w-auto"
           />
