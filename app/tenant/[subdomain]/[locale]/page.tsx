@@ -35,7 +35,7 @@ export async function generateMetadata({
   const bits = [cat, city].filter(Boolean).join(' · ');
   const title = `${b.name} — ${dict.metaTitleSuffix}`;
   const description = `${b.name}${bits ? ` · ${bits}` : ''}. ${dict.metaDescLong}`;
-  const images = [{ url: b.avatarUrl ?? 'https://bookup.uz/og.jpg' }];
+  // OG/Twitter image is generated per-business by ../opengraph-image.tsx.
 
   return {
     title: { absolute: `${title} | BOOKUP` },
@@ -52,13 +52,11 @@ export async function generateMetadata({
       description,
       url,
       locale: locale === 'ru' ? 'ru_RU' : 'en_US',
-      images,
     },
     twitter: {
-      card: b.avatarUrl ? 'summary' : 'summary_large_image',
+      card: 'summary_large_image',
       title,
       description,
-      images: [b.avatarUrl ?? 'https://bookup.uz/og.jpg'],
     },
     robots: { index: true, follow: true },
   };

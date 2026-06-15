@@ -23,7 +23,7 @@ export async function generateMetadata({
   const title = `${b.name} — Onlayn bron qilish`;
   // Tenant pages are uz-only — single-language meta (default uz, no mixing).
   const description = `${b.name}${bits ? ` · ${bits}` : ''}. Xizmatlar va narxlarni ko‘ring, bo‘sh vaqtni tanlang va onlayn bron qiling.`;
-  const images = [{ url: b.avatarUrl ?? 'https://bookup.uz/og.jpg' }];
+  // OG/Twitter image is generated per-business by ./opengraph-image.tsx.
 
   return {
     title: { absolute: `${title} | BOOKUP` },
@@ -40,9 +40,8 @@ export async function generateMetadata({
       description,
       url,
       locale: 'uz_UZ',
-      images,
     },
-    twitter: { card: b.avatarUrl ? 'summary' : 'summary_large_image', title, description, images: [b.avatarUrl ?? 'https://bookup.uz/og.jpg'] },
+    twitter: { card: 'summary_large_image', title, description },
     robots: { index: true, follow: true },
   };
 }
