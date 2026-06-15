@@ -1163,9 +1163,10 @@ export function BookingFlow({
               priceText={summaryPrice}
             />
 
-            {/* The confirm step carries its own actions (send code / book) inline. */}
-            {step !== 'confirm' && !confirmOpen && (
-              <PrimaryBtn className="mt-5" disabled={action.disabled} onClick={action.onClick}>
+            {/* Keep the CTA mounted while the confirm modal is open (just disabled)
+                so the summary card doesn't shift. */}
+            {step !== 'confirm' && (
+              <PrimaryBtn className="mt-5" disabled={action.disabled || confirmOpen} onClick={action.onClick}>
                 <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
               </PrimaryBtn>
             )}
