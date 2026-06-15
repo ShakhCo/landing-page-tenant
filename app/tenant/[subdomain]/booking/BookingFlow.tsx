@@ -624,7 +624,7 @@ export function BookingFlow({
         <>
           {!isDesktop && <label className="mb-3 block text-lg font-bold text-foreground">{dict.phoneLabel}</label>}
           <div className="flex flex-col gap-4">
-            <div className="flex h-14 w-full min-w-0 items-center rounded-full border border-border bg-card px-5 transition-colors duration-200 focus-within:border-foreground">
+            <div className="flex h-14 w-full min-w-0 items-center rounded-xl border border-border bg-card px-5 transition-colors duration-200 focus-within:border-foreground">
               <Phone size={16} className="mr-2 shrink-0 text-muted-foreground" />
               <span className="font-bold text-foreground/80">+998</span>
               <input
@@ -640,7 +640,7 @@ export function BookingFlow({
               type="button"
               onClick={sendCode}
               disabled={phone.length !== 9 || busy}
-              className="h-14 w-full shrink-0 whitespace-nowrap rounded-full bg-foreground px-5 text-sm font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
+              className="h-14 w-full shrink-0 whitespace-nowrap rounded-xl bg-foreground px-5 text-sm font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:shadow-none"
             >
               {busy ? dict.actSending : dict.sendCode}
             </button>
@@ -659,7 +659,7 @@ export function BookingFlow({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={dict.namePlaceholder}
-                  className="h-14 w-full rounded-full border border-border bg-card px-5 text-foreground outline-none transition-colors duration-200 focus:border-foreground"
+                  className="h-14 w-full rounded-xl border border-border bg-card px-5 text-foreground outline-none transition-colors duration-200 focus:border-foreground"
                 />
               </div>
             )}
