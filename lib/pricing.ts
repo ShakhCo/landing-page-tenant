@@ -190,11 +190,11 @@ export const PLANS: Plan[] = [
       { text: "SMS eslatma (250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
       {
         text:
-          "Instagram avtomatlashtirish — followerlardan to'g'ridan-to'g'ri bron, izohlarga avto-javob va DM'lar avtomatik boshqariladi",
+          "Instagram avtomatlashtirish — obunachilardan to'g'ridan-to'g'ri bron, izohlarga avto-javob va shaxsiy xabarlar avtomatik boshqariladi",
       },
       {
         text:
-          "WhatsApp avtomatlashtirish — DM'lar avtomatik boshqariladi, avto-javoblar va bron",
+          "WhatsApp avtomatlashtirish — shaxsiy xabarlar avtomatik boshqariladi, avto-javoblar va bron",
       },
       { text: "Mijoz baholari" },
       { text: "Chegirma va sodiqlik dasturi" },
@@ -290,7 +290,7 @@ export const PLAN_FAQ: PricingFAQ[] = [
   },
   {
     q: "Instagram va WhatsApp avtomatlashtirish qanday ishlaydi?",
-    a: "Akkauntingizni bir marta ulaysiz — shundan so'ng tizim followerlardan to'g'ridan-to'g'ri bron qabul qiladi, izoh va DM'larga avtomatik javob beradi. Ikkala integratsiya ham Pro va Premium tariflarida mavjud.",
+    a: "Akkauntingizni bir marta ulaysiz — shundan so'ng tizim obunachilardan to'g'ridan-to'g'ri bron qabul qiladi, izoh va shaxsiy xabarlarga avtomatik javob beradi. Ikkala integratsiya ham Pro va Premium tariflarida mavjud.",
   },
   {
     q: "SMS eslatma limitidan oshib ketsam-chi?",
