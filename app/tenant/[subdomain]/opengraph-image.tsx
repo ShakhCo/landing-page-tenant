@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { getTenant, localized, mediaUrl } from '@/lib/tenant';
 
@@ -16,19 +18,10 @@ function initials(name: string) {
     .join('');
 }
 
-/** BOOK ●● UP wordmark, matching the root OG image. */
-function Wordmark() {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-      <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px', color: '#111111' }}>BOOK</div>
-      <div style={{ display: 'flex', gap: 3 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 999, background: '#111111' }} />
-        <div style={{ width: 32, height: 32, borderRadius: 999, background: '#e11d6c' }} />
-      </div>
-      <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: '-1.5px', color: '#111111' }}>UP</div>
-    </div>
-  );
-}
+// Real BOOKUP wordmark (600×112), inlined so Satori can render it without a fetch.
+const LOGO_DATA_URL = `data:image/png;base64,${readFileSync(
+  join(process.cwd(), 'public', 'bookup-logo.png'),
+).toString('base64')}`;
 
 export default async function Image({ params }: { params: Promise<{ subdomain: string }> }) {
   const { subdomain } = await params;
@@ -108,7 +101,8 @@ export default async function Image({ params }: { params: Promise<{ subdomain: s
 
         {/* Brand footer */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Wordmark />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={LOGO_DATA_URL} width={268} height={50} alt="BOOKUP" />
           <div style={{ display: 'flex', fontSize: 32, fontWeight: 700, color: '#e11d6c' }}>Onlayn bron qilish</div>
         </div>
       </div>
