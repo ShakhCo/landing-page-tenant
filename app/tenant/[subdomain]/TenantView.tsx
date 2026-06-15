@@ -161,43 +161,45 @@ export function TenantView({
           )}
         </div>
       </div>
-      <div className="mt-14 px-4 text-left lg:px-6">
-        <h1 className="flex items-center gap-1.5 text-2xl font-bold">
-          {business.name}
-          <BadgeCheck className="size-5 fill-blue-500 text-card" />
-        </h1>
-        <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
-          {/* Category — hidden in favor of the live open status. */}
-          {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
-          {/* Address first on desktop; mobile uses the location card below. */}
-          {branch?.address && (
-            <span className="hidden items-center gap-1 lg:flex">
-              <MapPin className="size-4" />
-              {localized(branch.address, '', locale)}
-            </span>
-          )}
-          {branch &&
-            (open ? (
-              <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
-            ) : (
-              <span className="font-semibold">{dict.closed}</span>
-            ))}
-          {tenant.reviewCount ? (
-            <span className="flex items-center gap-1">
-              <Star size={15} className="fill-amber-400 text-amber-400" />
-              <span className="font-semibold text-foreground">{tenant.averageRating}</span>
-              <span>· {tenant.reviewCount} {dict.reviewsCount}</span>
-            </span>
-          ) : null}
+      <div className="mt-14 flex items-center justify-between gap-4 px-4 lg:px-6">
+        <div className="min-w-0">
+          <h1 className="flex items-center gap-1.5 text-2xl font-bold">
+            {business.name}
+            <BadgeCheck className="size-5 shrink-0 fill-blue-500 text-card" />
+          </h1>
+          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+            {/* Category — hidden in favor of the live open status. */}
+            {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
+            {/* Address first on desktop; mobile uses the location card below. */}
+            {branch?.address && (
+              <span className="hidden items-center gap-1 lg:flex">
+                <MapPin className="size-4" />
+                {localized(branch.address, '', locale)}
+              </span>
+            )}
+            {branch &&
+              (open ? (
+                <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
+              ) : (
+                <span className="font-semibold">{dict.closed}</span>
+              ))}
+            {tenant.reviewCount ? (
+              <span className="flex items-center gap-1">
+                <Star size={15} className="fill-amber-400 text-amber-400" />
+                <span className="font-semibold text-foreground">{tenant.averageRating}</span>
+                <span>· {tenant.reviewCount} {dict.reviewsCount}</span>
+              </span>
+            ) : null}
+          </div>
         </div>
-        {/* {canBook && (
+        {canBook && (
           <Link
             href="/booking"
-            className="mt-5 hidden h-11 items-center justify-center rounded-full bg-foreground px-8 text-sm font-bold text-background shadow-md transition-transform hover:opacity-90 active:scale-[0.98] lg:inline-flex"
+            className="hidden h-11 shrink-0 items-center justify-center rounded-2xl bg-foreground px-6 text-sm font-bold text-background shadow-md transition-all hover:opacity-90 active:scale-[0.98] lg:inline-flex"
           >
-            Bron qilish
+            {dict.book}
           </Link>
-        )} */}
+        )}
       </div>
 
       {/* ===== Body ===== */}
