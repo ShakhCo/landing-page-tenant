@@ -1515,7 +1515,7 @@ function PrimaryBtn({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className={`flex h-14 w-full items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none ${className}`}
+      className={`flex h-14 w-full items-center justify-center rounded-xl bg-foreground text-base font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-40 disabled:shadow-none ${className}`}
     >
       {children}
     </button>
