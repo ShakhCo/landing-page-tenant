@@ -204,44 +204,51 @@ function SolutionsSection({ d }: { d: HomeDict["solutions"] }) {
         {d.title}
       </h2>
       <div className="mt-10 grid gap-5 text-left sm:grid-cols-2 lg:grid-cols-3">
-        {items.map(({ title, description, image, href }) => (
-          <article
-            key={title}
-            className="group flex flex-col rounded-3xl bg-gray-50 p-3 transition-shadow duration-300 hover:shadow-sm"
-          >
-            <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-white">
-              <Image
-                src={image}
-                alt={title}
-                fill
-                sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
-                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-              />
-            </div>
-            <div className="flex flex-1 flex-col px-3 pt-5 pb-4">
-              <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
-              <p className="mt-2 text-base text-gray-600">{description}</p>
-              <a
-                href={href ?? "#"}
-                className="mt-5 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[var(--accent)] transition-all hover:gap-2"
-              >
-                {d.more}
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M5 12h14M12 5l7 7-7 7" />
-                </svg>
-              </a>
-            </div>
-          </article>
-        ))}
+        {items.map(({ title, description, image, href }) => {
+          const inner = (
+            <>
+              <div className="relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-white">
+                <Image
+                  src={image}
+                  alt={title}
+                  fill
+                  sizes="(min-width: 1024px) 30vw, (min-width: 640px) 45vw, 100vw"
+                  className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                />
+              </div>
+              <div className="flex flex-1 flex-col px-3 pt-5 pb-4">
+                <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
+                <p className="mt-2 text-base text-gray-600">{description}</p>
+                <span className="mt-5 inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[var(--accent)] transition-all group-hover:gap-2">
+                  {d.more}
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </span>
+              </div>
+            </>
+          );
+          const className =
+            "group flex flex-col rounded-3xl bg-gray-50 p-3 transition-shadow duration-300 hover:shadow-sm";
+          return href ? (
+            <a key={title} href={href} className={className}>
+              {inner}
+            </a>
+          ) : (
+            <article key={title} className={className}>
+              {inner}
+            </article>
+          );
+        })}
       </div>
     </section>
   );
