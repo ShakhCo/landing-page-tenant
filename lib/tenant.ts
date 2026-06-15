@@ -192,6 +192,9 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
       branches: Array.isArray(data.branches) ? data.branches : [],
       services: Array.isArray(data.services) ? data.services : [],
       staff: Array.isArray(data.staff) ? data.staff : [],
+      averageRating: data.averageRating ?? null,
+      reviewCount: data.reviewCount ?? 0,
+      reviews: Array.isArray(data.reviews) ? data.reviews : [],
     };
   } catch {
     return null;
