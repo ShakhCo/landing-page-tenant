@@ -168,12 +168,10 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
           {/* Subtitle */}
           <motion.p layout transition={LAYOUT} className="mt-4 text-base text-gray-500">
             {plan.perMember ? "har bir a'zo uchun oyiga" : "bir oyga"}
+            {plan.minMembers ? (
+              <span className="text-gray-400"> · kamida {plan.minMembers} a'zo</span>
+            ) : null}
           </motion.p>
-          {plan.minMembers && (
-            <p className="mt-1 text-sm text-gray-400">
-              kamida {plan.minMembers} a'zo
-            </p>
-          )}
         </div>
       )}
 
