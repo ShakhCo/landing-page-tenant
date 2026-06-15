@@ -177,7 +177,7 @@ export const PLANS: Plan[] = [
       },
       {
         text:
-          "Telegram bot — mijozlar bot orqali bron qiladi, eslatma va tasdiqlarni oladi",
+          "Telegram bot — mijozlar to'g'ridan-to'g'ri Telegram orqali bron qiladi, tasdiq va eslatmalarni avtomatik oladi",
       },
       {
         text:
@@ -185,7 +185,7 @@ export const PLANS: Plan[] = [
       },
       {
         text:
-          "Mijozlar bazasi — har bir mijozning aloqa ma'lumotlari va tashriflar tarixi bir joyda",
+          "Mijozlar bazasi — mijozlar ro'yxati, aloqa ma'lumotlari va tashriflar tarixi avtomatik saqlanadi",
       },
     ],
   },
