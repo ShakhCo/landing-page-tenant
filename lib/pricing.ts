@@ -179,7 +179,7 @@ export const PLANS: Plan[] = [
     id: "starter",
     name: "Yolg'iz",
     tagline: "Yakka master va kichik salonlar uchun",
-    price: 74_000,
+    price: 72_000,
     features: [
       { text: "30 ta bepul SMS" },
       { text: "5 ta marketing SMS" },
