@@ -292,8 +292,16 @@ export const PLAN_FAQ: PricingFAQ[] = [
     a: "Ha, barcha tariflar uchun 14 kunlik bepul sinov mavjud. Bank kartasi talab qilinmaydi — xohlagan tarifingizni to'liq sinab ko'rasiz.",
   },
   {
+    q: "Qaysi tarif menga mos?",
+    a: "Yolg'iz — yakka usta yoki kichik biznes uchun, oyiga belgilangan narx. Jamoa — bir nechta xodimli o'sayotgan jamoalar uchun, Instagram va WhatsApp avtomatlashtirish bilan. Enterprise — yirik tarmoq va bizneslar uchun: maxsus domen, shaxsiy menejer, API kirish va maxsus brending.",
+  },
+  {
+    q: "Jamoa va Enterprise narxi qanday hisoblanadi?",
+    a: "Bu tariflarda to'lov har bir jamoa a'zosi uchun olinadi: Jamoa — kamida 2 ta a'zo, Enterprise — kamida 10 ta a'zo. A'zolar sonini istalgan paytda o'zgartirishingiz mumkin, narx shunga qarab qayta hisoblanadi. Yolg'iz tarifi esa oyiga belgilangan narxda.",
+  },
+  {
     q: "Keyinchalik tarifni o'zgartira olamanmi?",
-    a: "Ha, istalgan paytda Jamoa yoki Enterprise'ga o'tishingiz mumkin. Narx faqat qolgan kunlar uchun proporsional hisoblanadi — ortiqcha to'lov olinmaydi.",
+    a: "Ha, istalgan paytda boshqa tarifga o'tishingiz mumkin. Narx faqat qolgan kunlar uchun proporsional hisoblanadi — ortiqcha to'lov olinmaydi.",
   },
   {
     q: "Instagram va WhatsApp avtomatlashtirish qanday ishlaydi?",
@@ -301,7 +309,7 @@ export const PLAN_FAQ: PricingFAQ[] = [
   },
   {
     q: "SMS eslatma limitidan oshib ketsam-chi?",
-    a: "Har bir tarifda oylik bepul SMS eslatma soni belgilangan: Yolg'iz — 30 ta, Jamoa — har bir a'zoga 30 ta, Enterprise — har bir a'zoga 100 ta. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
+    a: "Har bir tarifda oylik bepul SMS soni belgilangan: Yolg'iz — 30 ta, Jamoa — har bir a'zoga 30 ta, Enterprise — har bir a'zoga 100 ta. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
   },
   {
     q: "Qanday to'lov usullari bor va uzoq muddatga chegirma bormi?",
