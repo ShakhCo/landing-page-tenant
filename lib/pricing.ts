@@ -169,23 +169,20 @@ export const PLANS: Plan[] = [
     tagline: "Yakka master va kichik salonlar uchun",
     price: 49_000,
     features: [
-      { text: "1 ta master — bitta usta yoki o'zingiz uchun to'liq jadval va bron" },
+      { text: "1 ta master — yolg'iz ustalar uchun" },
       { text: "SMS eslatma (50 martagacha) — kelmay qoladigan mijozlar kamayadi" },
       {
         text:
           "Onlayn jadval va bron — mijozlar bo'sh vaqtlarni ko'rib, istalgan paytda o'zi yoziladi",
       },
-      {
-        text:
-          "Telegram bot — mijozlar to'g'ridan-to'g'ri Telegram orqali bron qiladi, tasdiq va eslatmalarni avtomatik oladi",
-      },
+      { text: "Mijozlar onlayn bron qilishlari uchun Telegram bot" },
       {
         text:
           "sizning-biznes.bookup.uz sayti — biznesingiz uchun tayyor onlayn bron sahifasi",
       },
       {
         text:
-          "Mijozlar bazasi — mijozlar ro'yxati, aloqa ma'lumotlari va tashriflar tarixi avtomatik saqlanadi",
+          "Mijozlar ro'yxati — tashriflar tarixi avtomatik saqlanadi",
       },
     ],
   },
