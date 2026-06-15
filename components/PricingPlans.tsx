@@ -219,20 +219,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
                   feature.highlight ? "font-semibold text-gray-900" : ""
                 }
               >
-                {feature.emphasize
-                  ? feature.text
-                      .split(feature.emphasize)
-                      .flatMap((part, i) =>
-                        i === 0
-                          ? [part]
-                          : [
-                              <strong key={i} className="font-bold">
-                                {feature.emphasize}
-                              </strong>,
-                              part,
-                            ],
-                      )
-                  : feature.text}
+                {feature.text}
               </span>
             </li>
           ))}

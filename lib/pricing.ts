@@ -146,8 +146,6 @@ export interface PlanFeature {
   text: string;
   /** Emphasised feature — rendered bolder with an accent check. */
   highlight?: boolean;
-  /** A word inside `text` to render extra-bold (e.g. a brand name). */
-  emphasize?: string;
 }
 
 export interface Plan {
@@ -193,14 +191,10 @@ export const PLANS: Plan[] = [
       {
         text:
           "Instagram avtomatlashtirish — followerlardan to'g'ridan-to'g'ri bron, izohlarga avto-javob va DM'lar avtomatik boshqariladi",
-        highlight: true,
-        emphasize: "Instagram",
       },
       {
         text:
           "WhatsApp avtomatlashtirish — DM'lar avtomatik boshqariladi, avto-javoblar va bron",
-        highlight: true,
-        emphasize: "WhatsApp",
       },
       { text: "Mijoz baholari" },
       { text: "Chegirma va sodiqlik dasturi" },
