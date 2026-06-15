@@ -200,7 +200,10 @@ export const PLANS: Plan[] = [
         text:
           "Mijoz baholari — xizmat ko'rsatilgandan 2 soat o'tib mijozga avtomatik sharh so'rovi yuboriladi",
       },
-      { text: "Chegirma va sodiqlik dasturi" },
+      {
+        text:
+          "Chegirma va sodiqlik dasturi — bonus ballar, chegirma kodlari va takroriy mijozlar uchun avtomatik aksiyalar",
+      },
     ],
   },
   {
