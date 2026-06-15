@@ -243,7 +243,7 @@ export function TenantView({
                     {dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}
                   </span>
                 ) : (
-                  <span className="rounded-full bg-muted px-3 py-1 text-xs font-bold text-muted-foreground">{dict.closed}</span>
+                  <span className="rounded-full bg-foreground/5 px-3 py-1 text-xs font-bold text-muted-foreground">{dict.closed}</span>
                 )}
               </div>
               <div className="mt-2 divide-y divide-border">
