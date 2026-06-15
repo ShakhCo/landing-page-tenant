@@ -290,7 +290,7 @@ function Features() {
         </p>
         <h2 className="mt-3 text-3xl font-semibold tracking-tight text-gray-900 md:text-4xl">
           Sartaroshxonangiz uchun{" "}
-          <span className="text-gray-500">to&apos;liq tizim.</span>
+          <span className="text-gray-900">to&apos;liq tizim.</span>
         </h2>
       </div>
 
