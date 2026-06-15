@@ -134,7 +134,7 @@ function PlanCard({ plan, period }: { plan: Plan; period: BillingPeriod }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: EASE, layout: LAYOUT }}
-              className="text-base font-semibold text-gray-400 line-through decoration-2"
+              className="text-base font-normal text-gray-400 line-through decoration-1"
             >
               UZS {formatUZS(plan.price)}
             </motion.p>
