@@ -419,47 +419,56 @@ export function TenantView({
 
         {/* ===== Reviews — full-width row below both columns ===== */}
         {(tenant.reviews?.length ?? 0) > 0 && (
-          <section className="order-3 mt-10 rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5 lg:col-span-2 lg:mt-0">
+          <section className="order-3 mt-12 lg:col-span-2 lg:mt-2">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-bold text-foreground">{dict.reviews}</h2>
+              <h2 className="text-xl font-bold text-foreground">{dict.reviews}</h2>
               {tenant.reviewCount ? (
-                <span className="flex items-center gap-1 text-sm">
-                  <Star size={15} className="fill-amber-400 text-amber-400" />
+                <span className="flex items-center gap-1.5 text-sm">
+                  <Star size={16} className="fill-amber-400 text-amber-400" />
                   <span className="font-bold text-foreground">{tenant.averageRating}</span>
                   <span className="text-muted-foreground">· {tenant.reviewCount} {dict.reviewsCount}</span>
                 </span>
               ) : null}
             </div>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {(tenant.reviews ?? []).map((r) => (
-                <div key={r.id} className="flex flex-col rounded-xl border border-border p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="truncate font-semibold text-foreground">{r.customerName}</span>
-                    <span className="flex shrink-0 items-center gap-0.5">
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              {(tenant.reviews ?? []).map((r) => {
+                const svc = (r.services ?? [])
+                  .map((s) => localized(s as LocalizedText, '', locale))
+                  .filter(Boolean)
+                  .join(', ');
+                const meta = [
+                  r.servedBy,
+                  r.servedAt ? fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent') : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ');
+                return (
+                  <div key={r.id} className="flex flex-col rounded-2xl bg-foreground/[0.035] p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
+                        {initials(r.customerName)}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-foreground">{r.customerName}</p>
+                        {svc && <p className="truncate text-[13px] text-muted-foreground">{svc}</p>}
+                      </div>
+                    </div>
+                    <div className="mt-3.5 flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <Star
                           key={n}
-                          size={14}
-                          className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-border'}
+                          size={15}
+                          className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'}
                         />
                       ))}
-                    </span>
+                    </div>
+                    {r.comment && (
+                      <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
+                    )}
+                    {meta && <p className="mt-auto pt-3.5 text-xs text-muted-foreground">{meta}</p>}
                   </div>
-                  {(r.services?.length ?? 0) > 0 && (
-                    <p className="mt-1 text-xs font-medium text-muted-foreground">
-                      {r.services.map((s) => localized(s as LocalizedText, '', locale)).filter(Boolean).join(', ')}
-                    </p>
-                  )}
-                  {r.comment && <p className="mt-2 text-sm text-foreground/90">{r.comment}</p>}
-                  {(r.servedBy || r.servedAt) && (
-                    <p className="mt-auto pt-2.5 text-xs text-muted-foreground">
-                      {[r.servedBy, r.servedAt ? fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent') : null]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </p>
-                  )}
-                </div>
-              ))}
+                );
+              })}
             </div>
           </section>
         )}
