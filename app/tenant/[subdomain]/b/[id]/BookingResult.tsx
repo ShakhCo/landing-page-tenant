@@ -415,6 +415,14 @@ export function BookingResult({
       {branch ? (
         <div className="mx-auto max-w-[1350px]">
           <div className="relative">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              aria-label={dict.ariaBack}
+              className="absolute left-3 top-3 z-20 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-foreground/5"
+            >
+              <ChevronLeft size={22} />
+            </button>
             <div className="h-52 w-full overflow-hidden rounded-2xl rounded-t-none border border-t-none sm:h-80">
               <iframe
                 title="Map"
