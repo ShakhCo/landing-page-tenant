@@ -281,7 +281,7 @@ export function TenantView({
       </div>
 
       {/* ===== Body ===== */}
-      <div className="mt-10 flex flex-col px-4 pb-24 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-6 lg:pb-12">
+      <div className="mt-5 flex flex-col px-4 pb-24 lg:mt-10 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-6 lg:pb-12">
         {/* Right column: team/hours/contacts — on mobile it sits after services. */}
         <div className="order-2 mt-10 space-y-6 lg:order-2 lg:mt-0">
           {/* Team */}
