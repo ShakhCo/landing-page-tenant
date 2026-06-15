@@ -1166,7 +1166,7 @@ export function BookingFlow({
             {/* Keep the CTA mounted while the confirm modal is open (just disabled)
                 so the summary card doesn't shift. */}
             {step !== 'confirm' && (
-              <PrimaryBtn className="mt-5" disabled={action.disabled || confirmOpen} onClick={action.onClick}>
+              <PrimaryBtn className="mt-5 rounded-full!" disabled={action.disabled || confirmOpen} onClick={action.onClick}>
                 <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
               </PrimaryBtn>
             )}
@@ -1185,7 +1185,7 @@ export function BookingFlow({
               <span className="text-base font-extrabold text-foreground">{summaryPrice}</span>
             </div>
           )}
-          <PrimaryBtn disabled={action.disabled} onClick={action.onClick}>
+          <PrimaryBtn className="rounded-full!" disabled={action.disabled} onClick={action.onClick}>
             <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
           </PrimaryBtn>
         </div>
