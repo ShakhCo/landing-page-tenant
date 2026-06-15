@@ -86,7 +86,7 @@ function PlansFaq() {
     <div className="mt-24 md:mt-32">
       <div className="mx-auto max-w-2xl text-center">
         <h3 className="text-2xl font-extrabold tracking-tight text-gray-900 md:text-3xl lg:text-4xl">
-          Tez-tez beriladigan <span className="text-gray-500">savollar.</span>
+          Tez-tez beriladigan <span className="text-gray-900">savollar.</span>
         </h3>
       </div>
 
