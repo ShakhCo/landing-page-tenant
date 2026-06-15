@@ -11,7 +11,7 @@ function mapErrorCode(code: string): string {
   const map: Record<string, string> = {
     BOOKING_NOT_FOUND: "Bron topilmadi.",
     REVIEW_ALREADY_SUBMITTED: "Siz allaqachon baholagan edingiz.",
-    BOOKING_NOT_COMPLETED: "Faqat yakunlangan bronlarni baholash mumkin.",
+    INVALID_REVIEW: "Sharhni yuborib bo'lmadi. Iltimos, qaytadan urinib ko'ring.",
     BUSINESS_NOT_FOUND: 'Biznes topilmadi.',
   };
   return map[code] || "Xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.";
