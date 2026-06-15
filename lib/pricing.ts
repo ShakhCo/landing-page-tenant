@@ -206,9 +206,8 @@ export const PLANS: Plan[] = [
     id: "premium",
     name: "Enterprise",
     tagline: "Tarmoq va yirik bizneslar uchun",
-    price: 299_000,
-    custom: true,
-    priceLabel: "Kelishilgan narx",
+    price: 98_000,
+    perMember: true,
     features: [
       { text: "Har bir a'zoga 100 ta bepul SMS" },
       { text: "Har bir a'zoga 10 ta marketing SMS" },
