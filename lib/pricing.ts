@@ -157,6 +157,8 @@ export interface Plan {
   /** Visually lifts the card and shows the badge. */
   highlighted?: boolean;
   badge?: string;
+  /** Price is charged per team member (vs. a flat monthly fee). */
+  perMember?: boolean;
   /** Small label shown above the feature list (e.g. "…dagi hammasi, plyus"). */
   featuresIntro?: string;
   features: PlanFeature[];
@@ -165,7 +167,7 @@ export interface Plan {
 export const PLANS: Plan[] = [
   {
     id: "starter",
-    name: "Boshlang'ich",
+    name: "Yolg'iz",
     tagline: "Yakka master va kichik salonlar uchun",
     price: 49_000,
     features: [
@@ -188,12 +190,13 @@ export const PLANS: Plan[] = [
   },
   {
     id: "pro",
-    name: "Pro",
+    name: "Jamoa",
     tagline: "O'sayotgan sartaroshxonalar uchun",
     price: 129_000,
     highlighted: true,
     badge: "Tavsiya",
-    featuresIntro: "Boshlang'ichdagi hammasi, plyus:",
+    perMember: true,
+    featuresIntro: "Yolg'izdagi hammasi, plyus:",
     features: [
       { text: "5 tagacha master" },
       { text: "SMS eslatma (250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
@@ -217,10 +220,10 @@ export const PLANS: Plan[] = [
   },
   {
     id: "premium",
-    name: "Premium",
+    name: "Enterprise",
     tagline: "Tarmoq va yirik bizneslar uchun",
     price: 299_000,
-    featuresIntro: "Prodagi hammasi, plyus:",
+    featuresIntro: "Jamoadagi hammasi, plyus:",
     features: [
       { text: "Cheksiz master" },
       { text: "SMS eslatma (1250 martagacha) — kelmay qoladigan mijozlar kamayadi" },
@@ -293,7 +296,7 @@ export const PRICING_FAQ: PricingFAQ[] = [
   },
 ];
 
-/** FAQ for the 3-plan barbershop page (Boshlang'ich / Pro / Premium). */
+/** FAQ for the 3-plan barbershop page (Yolg'iz / Jamoa / Enterprise). */
 export const PLAN_FAQ: PricingFAQ[] = [
   {
     q: "Bepul sinab ko'rsam bo'ladimi?",
@@ -301,15 +304,15 @@ export const PLAN_FAQ: PricingFAQ[] = [
   },
   {
     q: "Keyinchalik tarifni o'zgartira olamanmi?",
-    a: "Ha, istalgan paytda Pro yoki Premiumga o'tishingiz mumkin. Narx faqat qolgan kunlar uchun proporsional hisoblanadi — ortiqcha to'lov olinmaydi.",
+    a: "Ha, istalgan paytda Jamoa yoki Enterprise'ga o'tishingiz mumkin. Narx faqat qolgan kunlar uchun proporsional hisoblanadi — ortiqcha to'lov olinmaydi.",
   },
   {
     q: "Instagram va WhatsApp avtomatlashtirish qanday ishlaydi?",
-    a: "Akkauntingizni bir marta ulaysiz — shundan so'ng tizim obunachilardan to'g'ridan-to'g'ri bron qabul qiladi, izoh va shaxsiy xabarlarga avtomatik javob beradi. Ikkala integratsiya ham Pro va Premium tariflarida mavjud.",
+    a: "Akkauntingizni bir marta ulaysiz — shundan so'ng tizim obunachilardan to'g'ridan-to'g'ri bron qabul qiladi, izoh va shaxsiy xabarlarga avtomatik javob beradi. Ikkala integratsiya ham Jamoa va Enterprise tariflarida mavjud.",
   },
   {
     q: "SMS eslatma limitidan oshib ketsam-chi?",
-    a: "Har bir tarifda oylik SMS eslatma soni belgilangan: Boshlang'ich — 50, Pro — 250, Premium — 1250 martagacha. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
+    a: "Har bir tarifda oylik SMS eslatma soni belgilangan: Yolg'iz — 50, Jamoa — 250, Enterprise — 1250 martagacha. Limit tugasa, qo'shimcha SMS paket ulashingiz yoki yuqori tarifga o'tishingiz mumkin.",
   },
   {
     q: "Qanday to'lov usullari bor va uzoq muddatga chegirma bormi?",
