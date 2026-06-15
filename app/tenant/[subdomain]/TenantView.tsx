@@ -465,11 +465,11 @@ export function TenantView({
                         />
                       ))}
                     </div>
-                    {r.servedBy && (
-                      <p className="mt-2 truncate text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
-                    )}
                     {r.comment && (
                       <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
+                    )}
+                    {r.servedBy && (
+                      <p className="mt-auto truncate pt-3 text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
                     )}
                   </div>
                 );
