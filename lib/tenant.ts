@@ -64,6 +64,8 @@ export interface PublicTenant {
     submittedAt: string | null;
     customerName: string;
     services: LocalizedText[];
+    servedBy?: string | null;
+    servedAt?: string | null;
   }>;
 }
 

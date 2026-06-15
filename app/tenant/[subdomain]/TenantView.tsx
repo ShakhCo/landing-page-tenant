@@ -46,6 +46,12 @@ function hm(t: string | null) {
   const [h, m] = t.split(':');
   return Number(h) * 60 + Number(m);
 }
+/** "15/06/2026, 14:00" in the branch timezone — when the service was taken. */
+function fmtServed(iso: string, tz: string) {
+  return new Intl.DateTimeFormat('en-GB', {
+    timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
+  }).format(new Date(iso));
+}
 function nowInTz(tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: tz, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
@@ -426,7 +432,7 @@ export function TenantView({
             </div>
             <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {(tenant.reviews ?? []).map((r) => (
-                <div key={r.id} className="rounded-xl border border-border p-4">
+                <div key={r.id} className="flex flex-col rounded-xl border border-border p-4">
                   <div className="flex items-center justify-between gap-2">
                     <span className="truncate font-semibold text-foreground">{r.customerName}</span>
                     <span className="flex shrink-0 items-center gap-0.5">
@@ -439,7 +445,19 @@ export function TenantView({
                       ))}
                     </span>
                   </div>
-                  {r.comment && <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>}
+                  {(r.services?.length ?? 0) > 0 && (
+                    <p className="mt-1 text-xs font-medium text-muted-foreground">
+                      {r.services.map((s) => localized(s as LocalizedText, '', locale)).filter(Boolean).join(', ')}
+                    </p>
+                  )}
+                  {r.comment && <p className="mt-2 text-sm text-foreground/90">{r.comment}</p>}
+                  {(r.servedBy || r.servedAt) && (
+                    <p className="mt-auto pt-2.5 text-xs text-muted-foreground">
+                      {[r.servedBy, r.servedAt ? fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent') : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
