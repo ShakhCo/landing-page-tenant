@@ -47,6 +47,8 @@ export const dict = {
   letsGo: 'Borish',
   reviews: 'Sharhlar',
   reviewsCount: 'ta sharh',
+  staffRole: 'Mutaxassis',
+  unitRole: 'Joy',
 };
 
 export type TenantDict = typeof dict;

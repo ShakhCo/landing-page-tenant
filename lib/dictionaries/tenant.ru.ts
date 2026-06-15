@@ -43,4 +43,6 @@ export const dict: TenantDict = {
   letsGo: 'Поехали',
   reviews: 'Отзывы',
   reviewsCount: 'отзывов',
+  staffRole: 'Специалист',
+  unitRole: 'Место',
 };

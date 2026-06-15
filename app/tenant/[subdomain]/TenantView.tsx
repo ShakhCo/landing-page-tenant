@@ -46,11 +46,11 @@ function hm(t: string | null) {
   const [h, m] = t.split(':');
   return Number(h) * 60 + Number(m);
 }
-/** "15/06/2026, 14:00" in the branch timezone — when the service was taken. */
+/** "15.06.2026" in the branch timezone — when the service was taken. */
 function fmtServed(iso: string, tz: string) {
   return new Intl.DateTimeFormat('en-GB', {
-    timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: false,
-  }).format(new Date(iso));
+    timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric',
+  }).format(new Date(iso)).replace(/\//g, '.');
 }
 function nowInTz(tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -80,6 +80,8 @@ export function TenantView({
   // "Mutaxassislar" shows people only — assets/units (bowling lanes etc.) are
   // bookable resources but not team members.
   const team = staff.filter((st) => (st.type ?? 'staff') === 'staff');
+  // Resource name → type, to label a review's server ("Mutaxassis" vs unit label).
+  const resourceType = new Map(staff.map((st) => [st.name, st.type ?? 'staff']));
   const branch = branches[0];
   const canBook = services.length > 0 && staff.length > 0;
 
@@ -436,12 +438,8 @@ export function TenantView({
                   .map((s) => localized(s as LocalizedText, '', locale))
                   .filter(Boolean)
                   .join(', ');
-                const meta = [
-                  r.servedBy,
-                  r.servedAt ? fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent') : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ');
+                const servedLabel =
+                  r.servedBy && resourceType.get(r.servedBy) === 'asset' ? dict.unitRole : dict.staffRole;
                 return (
                   <div key={r.id} className="flex flex-col rounded-2xl bg-foreground/[0.035] p-5">
                     <div className="flex items-start gap-3">
@@ -451,7 +449,15 @@ export function TenantView({
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-semibold text-foreground">{r.customerName}</p>
                         {svc && <p className="truncate text-[13px] text-muted-foreground">{svc}</p>}
+                        {r.servedBy && (
+                          <p className="truncate text-[13px] text-muted-foreground">{servedLabel}: {r.servedBy}</p>
+                        )}
                       </div>
+                      {r.servedAt && (
+                        <span className="shrink-0 text-[13px] text-muted-foreground">
+                          {fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent')}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-3.5 flex items-center gap-0.5">
                       {[1, 2, 3, 4, 5].map((n) => (
@@ -465,7 +471,6 @@ export function TenantView({
                     {r.comment && (
                       <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
                     )}
-                    {meta && <p className="mt-auto pt-3.5 text-xs text-muted-foreground">{meta}</p>}
                   </div>
                 );
               })}
