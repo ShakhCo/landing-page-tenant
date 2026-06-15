@@ -167,6 +167,13 @@ export function TenantView({
             ) : (
               <span className="font-semibold">{dict.closed}</span>
             ))}
+          {/* Address sits beside the status on desktop; mobile uses the location card below. */}
+          {branch?.address && (
+            <span className="hidden items-center gap-1 lg:flex">
+              <MapPin className="size-4" />
+              {localized(branch.address, '', locale)}
+            </span>
+          )}
         </div>
         {/* {canBook && (
           <Link
