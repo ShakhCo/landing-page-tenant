@@ -3,6 +3,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 /** Hosts that serve the main marketing site (no tenant). */
 const ROOT_HOSTS = new Set(['bookup.uz', 'www.bookup.uz', 'localhost', '127.0.0.1']);
 
+/** A single valid DNS label — what a real tenant subdomain looks like. Anything
+ *  else (uppercase, symbols, dots, over-long) can't be a tenant, so we reject it
+ *  at the edge instead of routing it into the tenant page + backend lookup. */
+const VALID_SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
+
 /**
  * Extract a tenant subdomain from the Host header, or null for the main site.
  * Prod:  `<sub>.bookup.uz`  ·  Dev: `<sub>.localhost`.
@@ -27,6 +32,11 @@ export function middleware(req: NextRequest) {
   const url = req.nextUrl;
 
   if (sub) {
+    // Malformed label (uppercase/symbols/dots/over-long) → never a real tenant.
+    // Reject at the edge so junk hostnames don't reach the tenant page/backend.
+    if (!VALID_SUBDOMAIN.test(sub)) {
+      return new NextResponse(null, { status: 404 });
+    }
     // Tenant host → serve the internal tenant route, preserving the path.
     const rewritten = url.clone();
     rewritten.pathname = `/tenant/${sub}${url.pathname === '/' ? '' : url.pathname}`;
