@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { getTenant, localized } from '@/lib/tenant';
 import { getTenantDict } from '@/lib/dictionaries/tenant';
 import { getSessionPhone } from '@/lib/session';
+import { noteMissingTenantHit } from '@/lib/tenant-jail-server';
 import { TenantView } from './TenantView';
 
 export async function generateMetadata({
@@ -60,6 +61,8 @@ export default async function TenantPage({
   const customerPhone = await getSessionPhone();
 
   if (!tenant) {
+    // Count this fake-subdomain hit against the caller's IP (bans repeat scanners).
+    await noteMissingTenantHit();
     return (
       <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
         <div>

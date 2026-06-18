@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
 import { getTenant, localized, mediaUrl } from '@/lib/tenant';
+import { noteMissingTenantHit } from '@/lib/tenant-jail-server';
 
 // Per-business OG/Twitter card (1200×630) — mirrors the tenant page identity:
 // avatar/initials, name + verified, address, rating, on the BOOKUP brand.
@@ -26,6 +27,12 @@ const LOGO_DATA_URL = `data:image/png;base64,${readFileSync(
 export default async function Image({ params }: { params: Promise<{ subdomain: string }> }) {
   const { subdomain } = await params;
   const tenant = await getTenant(subdomain);
+
+  if (!tenant) {
+    // Unknown subdomain: skip the costly Satori render and count it against the IP.
+    await noteMissingTenantHit();
+    return new Response('Not found', { status: 404 });
+  }
 
   const name = tenant?.business.name ?? 'BOOKUP';
   const avatar = tenant?.business.avatarUrl ? mediaUrl(tenant.business.avatarUrl) : null;

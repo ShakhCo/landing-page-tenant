@@ -174,19 +174,57 @@ export async function getBooking(subdomain: string, id: string): Promise<PublicB
   }
 }
 
+// Negative cache of confirmed-missing subdomains (outcome only — never a list).
+// A fake subdomain that 404s is remembered briefly so repeat hits (and the
+// page + OG image of the same junk request) skip the backend entirely. Bounds
+// the "many users hit the same dead link" case; the IP jail bounds the
+// "one IP enumerates many names" case.
+const MISSING_TTL_MS = 10 * 60_000;
+const MISSING_MAX = 50_000;
+const missingTenants = new Map<string, number>(); // subdomain -> expiresAt
+
+function isKnownMissing(sub: string): boolean {
+  const until = missingTenants.get(sub);
+  if (until === undefined) return false;
+  if (Date.now() >= until) {
+    missingTenants.delete(sub);
+    return false;
+  }
+  return true;
+}
+
+function rememberMissing(sub: string): void {
+  if (missingTenants.size > MISSING_MAX) {
+    const now = Date.now();
+    for (const [k, exp] of missingTenants) if (now >= exp) missingTenants.delete(k);
+    if (missingTenants.size > MISSING_MAX) missingTenants.clear();
+  }
+  missingTenants.set(sub, Date.now() + MISSING_TTL_MS);
+}
+
 /** Fetch a tenant's public business + services by subdomain. Null when missing. */
 export async function getTenant(subdomain: string): Promise<PublicTenant | null> {
+  const sub = subdomain.toLowerCase();
+  // Negative cache: recently confirmed missing → no backend round-trip.
+  if (isKnownMissing(sub)) return null;
   try {
     // Plain cached fetch (no per-request IP forwarding): this is a cacheable
     // read, and calling headers() would force dynamic rendering and defeat the
     // 60s ISR cache. Tenant reads aren't the rate-limit concern (OTP is).
     const res = await fetch(
-      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}`,
+      `${API_BASE}/public/tenants/${encodeURIComponent(sub)}`,
       { next: { revalidate: 60 } },
     );
-    if (!res.ok) return null;
+    if (res.status === 404) {
+      rememberMissing(sub); // definitively absent — cache the negative outcome
+      return null;
+    }
+    if (!res.ok) return null; // transient (5xx/timeout) — don't poison the cache
     const data = (await res.json()) as Partial<PublicTenant>;
-    if (!data || !data.business) return null;
+    if (!data || !data.business) {
+      rememberMissing(sub);
+      return null;
+    }
     // Normalize: an older/partial backend may omit arrays — never let the UI
     // read `.length` of undefined.
     return {
