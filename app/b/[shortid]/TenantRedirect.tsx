@@ -40,7 +40,7 @@ function TenantSkeleton() {
     <div className="mx-auto max-w-[1350px] animate-pulse">
       {/* Map hero + overlapping avatar */}
       <div className="relative">
-        <div className="h-64 w-full rounded-2xl rounded-t-none bg-muted sm:h-80" />
+        <div className="h-52 w-full rounded-2xl rounded-t-none bg-muted sm:h-80" />
         <div className="absolute bottom-0 left-1/2 size-24 -translate-x-1/2 translate-y-1/2 rounded-full bg-muted ring-4 ring-card" />
       </div>
 
@@ -53,8 +53,8 @@ function TenantSkeleton() {
       {/* Content card */}
       <div className="mx-auto mt-10 max-w-xl px-4 sm:px-6">
         <div className="rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6">
-          <div className="h-6 w-24 rounded-full bg-muted" />
-          <div className="mt-3 h-8 w-48 rounded-md bg-muted" />
+          <div className="h-5 w-20 rounded-full bg-muted" />
+          <div className="mt-3 h-7 w-40 rounded-md bg-muted" />
           <div className="mt-6 space-y-3.5 border-t border-border pt-5">
             {[0, 1, 2].map((i) => (
               <div key={i} className="flex items-center justify-between gap-4">
