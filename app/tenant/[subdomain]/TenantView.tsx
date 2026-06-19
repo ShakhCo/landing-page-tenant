@@ -563,7 +563,7 @@ export function TenantView({
         <div
           className={`fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur transition-transform duration-300 ease-out lg:hidden ${scrolled ? 'translate-y-full' : 'translate-y-0'}`}
         >
-          <Link href="/booking" className="flex h-14 items-center justify-center rounded-2xl bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
+          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
             {dict.book}
           </Link>
         </div>
