@@ -154,7 +154,7 @@ export interface PublicBookingView {
       endAt?: string | null;
       price: number;
     }>;
-    review?: { submitted: boolean; rating: number | null; comment: string | null } | null;
+    review?: { submitted: boolean; rating: number | null; comment: string | null; submittedAt: string | null } | null;
   };
 }
 

@@ -81,7 +81,8 @@ function whenLabel(iso: string, tz: string, dict: ResultDict, endIso?: string | 
   const tomorrow = localDay(new Date(Date.now() + 86_400_000), tz);
   if (bookingDay === today) return `${dict.today}, ${time}`;
   if (bookingDay === tomorrow) return `${dict.tomorrow}, ${time}`;
-  return `${p.wd}, ${p.day}-${p.mon} · ${time}`;
+  // Compact: "18 Iyun, 13:30" — no weekday, it just made the title long.
+  return `${p.day} ${p.mon}, ${time}`;
 }
 export function BookingResult({
   created,
@@ -172,6 +173,16 @@ export function BookingResult({
   const statusLabel = justBooked ? dict.booked : STATUS_MAP[booking.status] ?? booking.status;
   const badgeStyle = justBooked ? 'bg-emerald-50 text-emerald-600' : BADGE_STYLE[booking.status] ?? 'bg-foreground/5 text-muted-foreground';
   const badgeCheck = justBooked || booking.status === 'confirmed' || booking.status === 'completed';
+  // Completed bookings lead with a focused review card (no business hero); the
+  // booking details follow below as a normal card.
+  const isCompleted = booking.status === 'completed';
+  // "When the review was left" — formatted in the business timezone, same
+  // compact shape as the title ("18 Iyun, 13:30").
+  let reviewWhen: string | undefined;
+  if (booking.review?.submittedAt) {
+    const p = dateParts(booking.review.submittedAt, business.timezone, dict);
+    reviewWhen = `${p.day} ${p.mon}, ${p.time}`;
+  }
 
   // Only an upcoming, still-open booking can be rescheduled or cancelled.
   const manageable =
@@ -196,9 +207,11 @@ export function BookingResult({
     window.scrollTo(0, 0);
   };
 
-  // Cancelled / no-show bookings can't be revived — offer a fresh booking with
-  // the same services preselected (8-char id prefixes, as the booking page expects).
-  const showBookAgain = booking.status === 'cancelled' || booking.status === 'no_show';
+  // Finished bookings (cancelled / no-show / completed) can't be reopened —
+  // offer a fresh booking with the same services preselected (8-char id
+  // prefixes, as the booking page expects).
+  const showBookAgain =
+    booking.status === 'cancelled' || booking.status === 'no_show' || booking.status === 'completed';
   const bookAgain = () => {
     if (pending) return;
     const ids = Array.from(new Set(booking.items.map((i) => i.offeringId).filter(Boolean)))
@@ -411,8 +424,30 @@ export function BookingResult({
   const avatarUrl = tenant?.business?.avatarUrl ?? null;
   return (
     <div className="pb-16">
-      {/* ===== Identity header — same map hero as the tenant home ===== */}
-      {branch ? (
+      {/* ===== Completed → review card on top, focused, no business hero ===== */}
+      {isCompleted ? (
+        <div className="mx-auto max-w-xl px-4 pt-4 sm:px-6">
+          {/* No map hero here, so carry its own back button. */}
+          <button
+            type="button"
+            onClick={() => router.push('/')}
+            aria-label={dict.ariaBack}
+            className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+          >
+            <ChevronLeft size={22} />
+          </button>
+          <ReviewBlock
+            subdomain={subdomain}
+            bookingId={booking.id}
+            dict={dict}
+            initial={booking.review ?? null}
+            businessName={business.name}
+            submittedAtLabel={reviewWhen}
+            className="mt-4"
+          />
+        </div>
+      ) : /* ===== Identity header — same map hero as the tenant home ===== */
+      branch ? (
         <div className="mx-auto max-w-[1350px]">
           <div className="relative">
             <button
@@ -464,18 +499,23 @@ export function BookingResult({
 
       <div className="mx-auto max-w-xl px-4 sm:px-6">
       {/* ===== One card: status, time, details, total, actions, reference ===== */}
-      <div className="mt-10 rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6">
+      <div className={`rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6 ${isCompleted ? 'mt-4' : 'mt-10'}`}>
         {/* Status badge + time — one heading size for the whole card */}
         <motion.span
           initial={justBooked ? { scale: 0.6, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold ${badgeStyle}`}
+          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold sm:px-3 sm:py-1 sm:text-sm ${badgeStyle}`}
         >
-          {badgeCheck && <Check size={15} strokeWidth={3} />}
+          {badgeCheck && <Check size={14} strokeWidth={3} />}
           {statusLabel}
         </motion.span>
-        <h2 className="mt-3 text-2xl font-bold leading-tight text-foreground">{whenShort}</h2>
+        {/* Completed has no business hero, so the card leads with the business
+            name; the date/time still lives in the Vaqt row below. Other
+            statuses keep the time here (name is already in the hero above). */}
+        <h2 className="mt-3 text-xl font-bold leading-tight text-foreground sm:text-2xl">
+          {isCompleted ? business.name : whenShort}
+        </h2>
 
         {/* Receipt rows — muted label left, value right, all 15px */}
         <div className="mt-6 space-y-3.5">
@@ -518,15 +558,6 @@ export function BookingResult({
               </div>
             )}
         </div>
-
-        {booking.status === 'completed' && (
-          <ReviewBlock
-            subdomain={subdomain}
-            bookingId={booking.id}
-            dict={dict}
-            initial={booking.review ?? null}
-          />
-        )}
 
         {/* Total — the only divider in the card body */}
         <div className="mt-4 flex items-baseline justify-between gap-4 border-t border-border pt-4 text-[15px]">
