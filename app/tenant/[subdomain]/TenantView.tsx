@@ -241,11 +241,11 @@ export function TenantView({
       </div>
       <div className="mt-14 flex items-center justify-between gap-4 px-4 lg:px-6">
         <div className="min-w-0">
-          <h1 ref={nameRef} className="flex items-center gap-1.5 text-[27px] font-bold tracking-tight">
+          <h1 ref={nameRef} className="flex items-center gap-1.5 text-[27px] font-bold leading-tight tracking-tight">
             {business.name}
             <BadgeCheck className="size-6 shrink-0 fill-blue-500 text-card" />
           </h1>
-          <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground lg:mt-2">
             {/* Category — hidden in favor of the live open status. */}
             {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
             {/* Address first on desktop; mobile uses the location card below. */}
