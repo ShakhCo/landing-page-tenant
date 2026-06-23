@@ -74,7 +74,7 @@ export function ReviewBlock({
 
   if (done) {
     return (
-      <div className={`${className} rounded-2xl border border-border bg-card p-5`}>
+      <div className={`${className} rounded-2xl border border-foreground/10 bg-card p-5`}>
         {/* {businessName && <p className="text-sm text-muted-foreground">{businessName}</p>} */}
         <p className="mt-0.5 text-[15px] font-bold text-foreground">{dict.reviewThanks}</p>
         <div className="mt-3"><Stars readOnly /></div>
@@ -89,7 +89,7 @@ export function ReviewBlock({
   }
 
   return (
-    <div className={`${className} rounded-2xl border border-border bg-card p-5`}>
+    <div className={`${className} rounded-2xl border border-foreground/10 bg-card p-5`}>
       {businessName && <p className="text-sm text-muted-foreground">{businessName}</p>}
       <p className="mt-0.5 text-[15px] font-bold text-foreground">{dict.reviewTitle}</p>
       <div className="mt-3"><Stars /></div>

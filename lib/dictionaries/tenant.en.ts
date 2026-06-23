@@ -45,4 +45,6 @@ export const dict: TenantDict = {
   reviewsCount: 'reviews',
   staffRole: 'Specialist',
   unitRole: 'Spot',
+  profile: 'Profile',
+  appointmentsCompleted: 'Appointments completed',
 };

@@ -520,7 +520,7 @@ export function BookingFlow({
         </motion.div>
         <h1 className="mt-7 text-2xl font-extrabold text-foreground">{dict.doneTitle}</h1>
         <p className="mt-1.5 text-center text-muted-foreground">{dict.doneSubtitle}</p>
-        <div className="mt-7 w-full rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5">
+        <div className="mt-7 w-full rounded-2xl border border-foreground/10 bg-card p-5">
           <div className="space-y-3">
             <FieldRow label={resourceLabel} value={selectedStaff?.name ?? '—'} />
             <FieldRow label={dict.fieldTime} value={`${selDate?.day} ${selDate?.mon} · ${slot}`} />
@@ -710,7 +710,7 @@ export function BookingFlow({
           type="button"
           disabled={busy}
           onClick={() => { setOtpSent(false); setCode(''); setError(null); setResendIn(0); }}
-          className="mt-3 h-12 w-full rounded-full text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-40"
+          className="mt-3 h-12 w-full rounded-xl text-sm font-semibold text-muted-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-40"
         >
           {dict.changePhone}
         </button>
@@ -726,17 +726,17 @@ export function BookingFlow({
           type="button"
           onClick={back}
           aria-label={dict.ariaBack}
-          className="flex h-11 max-w-[60vw] items-center gap-1 rounded-full border border-border bg-card pl-2.5 pr-4 text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+          className="flex h-11 max-w-[60vw] items-center gap-1 rounded-xl border border-border bg-card pl-2.5 pr-4 text-foreground transition-colors duration-200 hover:bg-foreground/5"
         >
           <ChevronLeft size={20} className="shrink-0" />
           <span className="truncate text-sm font-semibold">{backLabel}</span>
         </button>
-        <button type="button" onClick={() => router.push('/')} aria-label={dict.ariaClose} className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5">
+        <button type="button" onClick={() => router.push('/')} aria-label={dict.ariaClose} className="grid size-11 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors duration-200 hover:bg-foreground/5">
           <X size={20} />
         </button>
       </div>
 
-      <div className="lg:grid lg:grid-cols-[1fr_420px] lg:items-start lg:gap-20">
+      <div className="lg:grid lg:grid-cols-[1fr_420px] lg:items-start lg:gap-12">
         {/* ===== LEFT: breadcrumb + title + choices ===== */}
         <div className="min-w-0 lg:order-1">
           {/* breadcrumb stepper — click a reached step to jump back to it */}
@@ -771,7 +771,7 @@ export function BookingFlow({
               );
             })}
           </nav>
-          <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground sm:text-4xl">{bigTitle}</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">{bigTitle}</h1>
 
           <div className="mt-6">
           <AnimatePresence mode="wait">
@@ -805,7 +805,7 @@ export function BookingFlow({
                       // services get "Qo'shish", and a selected one shows "Tanlandi".
                       const canAdd = !isUnitService(s) && !hourly;
                       const actionBtn = (
-                        <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                        <span className={`mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 ${on ? 'border-[1.5px] border-foreground bg-foreground/[0.04]' : 'border border-border group-hover:bg-foreground/5'}`}>
                           {on ? <Check size={15} strokeWidth={3} /> : canAdd ? <Plus size={15} /> : null}
                           {on ? dict.selectedLabel : canAdd ? dict.add : dict.choose}
                           {!on && !canAdd && <ChevronRight size={15} />}
@@ -819,10 +819,10 @@ export function BookingFlow({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
                           onClick={() => toggleService(s.id)}
-                          className="group relative overflow-hidden rounded-2xl border border-foreground/12 bg-card text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5"
+                          className="group relative overflow-hidden rounded-2xl border border-foreground/10 bg-card text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
                         >
                           {on && (
-                            <span className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-foreground text-background shadow-md ring-2 ring-white">
+                            <span className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-foreground text-background">
                               <Check size={16} strokeWidth={3} />
                             </span>
                           )}
@@ -872,15 +872,15 @@ export function BookingFlow({
                             setStep('time');
                           }
                         }}
-                        className={`flex items-center gap-3.5 rounded-2xl border bg-card p-4 text-left shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5 ${
-                          on ? 'border-foreground' : 'border-foreground/12'
+                        className={`flex items-center gap-3.5 rounded-2xl border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 ${
+                          on ? 'border-foreground' : 'border-foreground/10'
                         }`}
                       >
                         {st.photoUrl ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={mediaUrl(st.photoUrl)} alt={st.name} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
                         ) : (
-                          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
+                          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-sm font-semibold text-muted-foreground">
                             {initials(st.name)}
                           </span>
                         )}
@@ -891,8 +891,8 @@ export function BookingFlow({
                           )}
                         </span>
                         <span
-                          className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-full border px-4 py-2 text-sm font-bold transition-colors duration-200 ${
-                            on ? 'border-foreground bg-foreground text-background' : 'border-border text-foreground'
+                          className={`ml-auto flex shrink-0 items-center gap-1.5 rounded-xl px-4 py-2 text-sm font-bold transition-colors duration-200 ${
+                            on ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground' : 'border border-border text-foreground'
                           }`}
                         >
                           {on && <Check size={15} strokeWidth={3} />}
@@ -918,10 +918,10 @@ export function BookingFlow({
                         type="button"
                         onClick={() => setShowCal((v) => !v)}
                         aria-label={dict.ariaPickDate}
-                        className={`flex h-12 items-center gap-2 rounded-full border px-4 text-sm font-semibold transition-colors duration-200 ${
+                        className={`flex h-12 items-center gap-2 rounded-xl px-4 text-sm font-semibold transition-colors duration-200 ${
                           date !== todayIso && date !== tomorrowIso
-                            ? 'border-foreground bg-foreground text-background'
-                            : 'border-border bg-card text-foreground hover:bg-foreground/5'
+                            ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground'
+                            : 'border border-border bg-card text-foreground hover:bg-foreground/5'
                         }`}
                       >
                         <Calendar size={18} className={date !== todayIso && date !== tomorrowIso ? '' : 'text-muted-foreground'} />
@@ -938,7 +938,7 @@ export function BookingFlow({
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -6 }}
                               transition={{ duration: 0.15 }}
-                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-card p-4 shadow-xl shadow-black/10"
+                              className="absolute left-0 top-full z-30 mt-2 w-[320px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/10 bg-card p-4 shadow-xl shadow-black/10"
                             >
                               <DayPicker
                                 value={date}
@@ -964,7 +964,7 @@ export function BookingFlow({
                             type="button"
                             onClick={() => setShowStaff((v) => !v)}
                             aria-label={selectedStaff.name}
-                            className="flex h-12 max-w-[55vw] items-center gap-2 rounded-full border border-border bg-card py-1 pl-1.5 pr-3 text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+                            className="flex h-12 max-w-[55vw] items-center gap-2 rounded-xl border border-border bg-card py-1 pl-1.5 pr-3 text-foreground transition-colors duration-200 hover:bg-foreground/5"
                           >
                             <StaffAvatar st={selectedStaff} />
                             <span className="truncate text-sm font-semibold">{selectedStaff.name}</span>
@@ -979,7 +979,7 @@ export function BookingFlow({
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: -6 }}
                                   transition={{ duration: 0.15 }}
-                                  className="absolute left-0 top-full z-30 mt-2 w-[260px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/12 bg-card p-1.5 shadow-xl shadow-black/10 sm:left-auto sm:right-0"
+                                  className="absolute left-0 top-full z-30 mt-2 w-[260px] max-w-[calc(100vw-2rem)] rounded-2xl border border-foreground/10 bg-card p-1.5 shadow-xl shadow-black/10 sm:left-auto sm:right-0"
                                 >
                                   {eligibleSpecialists.map((st) => (
                                     <button
@@ -999,7 +999,7 @@ export function BookingFlow({
                           </AnimatePresence>
                         </div>
                       ) : (
-                        <div className="hidden h-12 max-w-[55vw] items-center gap-2 rounded-full border border-border bg-card py-1 pl-1.5 pr-4 text-foreground shadow-xs shadow-black/5 sm:ml-auto sm:flex">
+                        <div className="hidden h-12 max-w-[55vw] items-center gap-2 rounded-xl border border-border bg-card py-1 pl-1.5 pr-4 text-foreground sm:ml-auto sm:flex">
                           <StaffAvatar st={selectedStaff} />
                           <span className="truncate text-sm font-semibold">{selectedStaff.name}</span>
                         </div>
@@ -1015,13 +1015,13 @@ export function BookingFlow({
                     return (
                       <div className="mt-5">
                         <p className="mb-3 text-lg font-bold text-foreground">{dict.duration}</p>
-                        <div className="inline-flex h-13 items-center gap-1 rounded-full border border-border bg-card px-1.5">
+                        <div className="inline-flex h-13 items-center gap-1 rounded-xl border border-border bg-card px-1.5">
                           <button
                             type="button"
                             onClick={() => setDur(durationMin - 30)}
                             disabled={durationMin <= minDur}
                             aria-label={dict.ariaDecrease}
-                            className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
+                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Minus size={18} />
                           </button>
@@ -1031,7 +1031,7 @@ export function BookingFlow({
                             onClick={() => setDur(durationMin + 30)}
                             disabled={durationMin >= maxDur}
                             aria-label={dict.ariaIncrease}
-                            className="grid size-10 place-items-center rounded-full text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
+                            className="grid size-10 place-items-center rounded-lg text-foreground transition-colors duration-200 hover:bg-foreground/5 disabled:opacity-25"
                           >
                             <Plus size={18} />
                           </button>
@@ -1045,11 +1045,11 @@ export function BookingFlow({
                       // First load (no estimate yet) — generic skeleton chips.
                       <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4">
                         {Array.from({ length: skeletonCount }).map((_, i) => (
-                          <div key={i} className="h-12 animate-pulse rounded-full border border-foreground/12 bg-foreground/5" />
+                          <div key={i} className="h-12 animate-pulse rounded-xl border border-foreground/10 bg-foreground/5" />
                         ))}
                       </div>
                     ) : futureSlots.length === 0 ? (
-                      <div className="rounded-2xl border border-foreground/12 bg-card py-14 text-center shadow-xs shadow-black/5">
+                      <div className="rounded-2xl border border-foreground/10 bg-card py-14 text-center">
                         <Clock size={28} className="mx-auto text-muted-foreground/40" />
                         <p className="mt-3 text-sm text-muted-foreground">{dict.noSlots}</p>
                       </div>
@@ -1070,7 +1070,7 @@ export function BookingFlow({
                                 // While refetching, keep the grid + period labels but
                                 // skeletonise the chips (a slot may have just been booked).
                                 if (availLoading) {
-                                  return <div key={s.start} className="h-12 animate-pulse rounded-full border border-foreground/12 bg-foreground/5" />;
+                                  return <div key={s.start} className="h-12 animate-pulse rounded-xl border border-foreground/10 bg-foreground/5" />;
                                 }
                                 return (
                                   <motion.button
@@ -1080,10 +1080,10 @@ export function BookingFlow({
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.22, delay: Math.min(futureSlots.indexOf(s) * 0.015, 0.45), ease: 'easeOut' }}
                                     onClick={() => setSlot(s.start)}
-                                    className={`flex h-12 items-center justify-center rounded-full border text-sm font-semibold tabular-nums transition-colors duration-200 ${
+                                    className={`flex h-12 items-center justify-center rounded-xl text-sm font-semibold tabular-nums transition-colors duration-200 ${
                                       on
-                                        ? 'border-foreground bg-foreground text-background'
-                                        : 'border-border bg-card text-foreground hover:bg-foreground/5'
+                                        ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground'
+                                        : 'border border-border bg-card text-foreground hover:bg-foreground/5'
                                     }`}
                                   >
                                     {s.start}
@@ -1128,7 +1128,7 @@ export function BookingFlow({
           <motion.div
             layout
             transition={{ layout: { duration: 0.2, ease: 'easeOut' } }}
-            className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5"
+            className="rounded-2xl border border-foreground/10 bg-card p-6"
           >
             {/* business header */}
             <div className="flex items-start gap-3">
@@ -1136,7 +1136,7 @@ export function BookingFlow({
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={mediaUrl(business.avatarUrl)} alt={business.name} className="size-14 shrink-0 rounded-full object-cover ring-1 ring-border" />
               ) : (
-                <div className="grid size-14 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 via-zinc-800 to-zinc-950 text-lg font-semibold tracking-wide text-white">
+                <div className="grid size-14 shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-lg font-semibold tracking-wide text-muted-foreground">
                   {initials(business.name)}
                 </div>
               )}
@@ -1166,7 +1166,7 @@ export function BookingFlow({
             {/* Keep the CTA mounted while the confirm modal is open (just disabled)
                 so the summary card doesn't shift. */}
             {step !== 'confirm' && (
-              <PrimaryBtn className="mt-5 rounded-full!" disabled={action.disabled || confirmOpen} onClick={action.onClick}>
+              <PrimaryBtn className="mt-5" disabled={action.disabled || confirmOpen} onClick={action.onClick}>
                 <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
               </PrimaryBtn>
             )}
@@ -1185,7 +1185,7 @@ export function BookingFlow({
               <span className="text-base font-extrabold text-foreground">{summaryPrice}</span>
             </div>
           )}
-          <PrimaryBtn className="rounded-full!" disabled={action.disabled} onClick={action.onClick}>
+          <PrimaryBtn disabled={action.disabled} onClick={action.onClick}>
             <span className="inline-flex items-center gap-2">{action.label}<ArrowRight size={18} /></span>
           </PrimaryBtn>
         </div>
@@ -1380,7 +1380,7 @@ function StaffAvatar({ st, className = 'size-8' }: { st: { name: string; photoUr
     // eslint-disable-next-line @next/next/no-img-element
     <img src={mediaUrl(st.photoUrl)} alt={st.name} className={`${className} shrink-0 rounded-full object-cover`} />
   ) : (
-    <span className={`grid ${className} shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-xs font-semibold text-white`}>
+    <span className={`grid ${className} shrink-0 place-items-center rounded-full bg-foreground/[0.08] text-xs font-semibold text-muted-foreground`}>
       {initials(st.name)}
     </span>
   );
@@ -1391,8 +1391,8 @@ function CatPill({ active, onClick, children }: { active: boolean; onClick: () =
     <button
       type="button"
       onClick={onClick}
-      className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-        active ? 'bg-foreground text-background' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
+      className={`flex-shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+        active ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
       }`}
     >
       {children}
@@ -1405,8 +1405,8 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`flex h-12 items-center justify-center rounded-full border px-5 text-sm font-semibold transition-colors duration-200 ${
-        on ? 'border-foreground bg-foreground text-background' : 'border-border bg-card text-foreground hover:bg-foreground/5'
+      className={`flex h-12 items-center justify-center rounded-xl px-5 text-sm font-semibold transition-colors duration-200 ${
+        on ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
       }`}
     >
       {children}

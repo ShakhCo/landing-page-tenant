@@ -12,9 +12,9 @@ const fmtLocal = (d: string) =>
   [d.slice(0, 2), d.slice(2, 5), d.slice(5, 7), d.slice(7, 9)].filter(Boolean).join(' ');
 const toLocal = (v: string) => v.replace(/\D/g, '').replace(/^998/, '').slice(0, UZ_LEN);
 
-/** The pill style shared with the LocaleSwitcher button — keeps the pair matched. */
+/** Trigger style shared with the LocaleSwitcher button — keeps the pair matched. */
 const PILL =
-  'inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition-shadow hover:shadow-md';
+  'inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition-shadow hover:shadow-md';
 
 /**
  * Account control next to the language switcher: shows the signed-in customer's
@@ -132,12 +132,12 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
         {open && (
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-            <div className="absolute right-0 top-full z-50 mt-1 min-w-44 rounded-2xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5">
+            <div className="absolute right-0 top-full z-50 mt-1.5 min-w-44 rounded-xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5">
               <button
                 type="button"
                 onClick={logout}
                 disabled={busy}
-                className="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:opacity-40"
               >
                 <LogOut size={16} />
                 {dict.logout}

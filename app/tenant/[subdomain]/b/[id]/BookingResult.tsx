@@ -294,7 +294,7 @@ export function BookingResult({
                 onBack={() => { if (!pending) { setView('cancel'); setNotice(null); } }}
                 onClose={() => router.push('/')}
               />
-              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">{dict.rescheduleQ}</h1>
+              <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-foreground">{dict.rescheduleQ}</h1>
 
               <p className="mt-6 text-base text-foreground">
                 {dict.rescheduleHint}
@@ -310,7 +310,7 @@ export function BookingResult({
                 type="button"
                 onClick={reschedule}
                 disabled={pending}
-                className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-foreground py-3.5 text-[15px] font-bold text-background shadow-lg transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               >
                 <CalendarClock size={18} />
                 {dict.rescheduleYes}
@@ -319,7 +319,7 @@ export function BookingResult({
                 type="button"
                 onClick={confirmCancel}
                 disabled={pending}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl border border-destructive/30 bg-card py-3.5 text-[15px] font-semibold text-destructive transition-colors duration-200 hover:bg-destructive/[0.06] disabled:opacity-50"
               >
                 {pending ? dict.cancelling : dict.cancelNo}
               </button>
@@ -340,7 +340,7 @@ export function BookingResult({
                 }}
                 onClose={() => router.push('/')}
               />
-              <h1 className="mt-2 text-3xl font-extrabold leading-tight text-foreground">
+              <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-foreground">
                 {otpStep ? dict.smsTitle : dict.cancelTitle}
               </h1>
               <p className="mt-1.5 text-base text-muted-foreground">{whenShort} · {business.name}</p>
@@ -387,7 +387,7 @@ export function BookingResult({
                             window.scrollTo(0, 0);
                           }
                         }}
-                        className="flex items-center gap-4 rounded-2xl border border-foreground/12 bg-card p-4 text-left shadow-xs shadow-black/5 transition-colors duration-200 hover:border-foreground/30"
+                        className="flex items-center gap-4 rounded-2xl border border-foreground/10 bg-card p-4 text-left transition-colors duration-200 hover:border-foreground/30"
                       >
                         <span className="font-semibold text-foreground">{localized(r.label, '', locale)}</span>
                         <span className={`ml-auto grid size-7 shrink-0 place-items-center rounded-full border-2 transition-colors ${on ? 'border-foreground bg-foreground text-background' : 'border-border'}`}>
@@ -410,7 +410,7 @@ export function BookingResult({
                 type="button"
                 onClick={confirmCancel}
                 disabled={pending || (otpStep && otpCode.length < 5)}
-                className="mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
+                className="mt-7 flex w-full items-center justify-center gap-2 rounded-xl bg-destructive py-3.5 text-[15px] font-bold text-white shadow-lg shadow-destructive/20 transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-50"
               >
                 {pending ? dict.cancelling : dict.cancelConfirm}
               </button>
@@ -432,7 +432,7 @@ export function BookingResult({
             type="button"
             onClick={() => router.push('/')}
             aria-label={dict.ariaBack}
-            className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+            className="grid size-11 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors duration-200 hover:bg-foreground/5"
           >
             <ChevronLeft size={22} />
           </button>
@@ -454,7 +454,7 @@ export function BookingResult({
               type="button"
               onClick={() => router.push('/')}
               aria-label={dict.ariaBack}
-              className="absolute left-3 top-3 z-20 grid size-11 place-items-center rounded-full border border-border bg-card/90 text-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-foreground/5"
+              className="absolute left-3 top-3 z-20 grid size-11 place-items-center rounded-xl border border-border bg-card/90 text-foreground shadow-sm backdrop-blur transition-colors duration-200 hover:bg-foreground/5"
             >
               <ChevronLeft size={22} />
             </button>
@@ -467,12 +467,12 @@ export function BookingResult({
                 referrerPolicy="no-referrer-when-downgrade"
               />
             </div>
-            <div className="absolute bottom-0 left-1/2 size-24 -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-full shadow-lg ring-4 ring-card">
+            <div className="absolute bottom-0 left-1/2 size-24 -translate-x-1/2 translate-y-1/2 overflow-hidden rounded-full bg-card shadow-lg ring-4 ring-card">
               {avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={mediaUrl(avatarUrl)} alt={business.name} className="h-full w-full object-cover" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-600 via-zinc-800 to-zinc-950 text-3xl font-semibold tracking-wide text-white">
+                <div className="flex h-full w-full items-center justify-center bg-foreground/[0.08] text-3xl font-semibold tracking-wide text-muted-foreground">
                   {initials(business.name)}
                 </div>
               )}
@@ -499,13 +499,13 @@ export function BookingResult({
 
       <div className="mx-auto max-w-xl px-4 sm:px-6">
       {/* ===== One card: status, time, details, total, actions, reference ===== */}
-      <div className={`rounded-2xl border border-foreground/12 bg-card p-5 shadow-xs shadow-black/5 sm:p-6 ${isCompleted ? 'mt-4' : 'mt-10'}`}>
+      <div className={`rounded-2xl border border-foreground/10 bg-card p-5 sm:p-6 ${isCompleted ? 'mt-4' : 'mt-10'}`}>
         {/* Status badge + time — one heading size for the whole card */}
         <motion.span
           initial={justBooked ? { scale: 0.6, opacity: 0 } : false}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ type: 'spring', damping: 14, stiffness: 220 }}
-          className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold sm:px-3 sm:py-1 sm:text-sm ${badgeStyle}`}
+          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-0.5 text-xs font-semibold sm:px-3 sm:py-1 sm:text-sm ${badgeStyle}`}
         >
           {badgeCheck && <Check size={14} strokeWidth={3} />}
           {statusLabel}
@@ -639,7 +639,7 @@ function TopChrome({ onBack, onClose, dict }: { onBack: () => void; onClose: () 
         type="button"
         onClick={onBack}
         aria-label={dict.ariaBack}
-        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+        className="grid size-11 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors duration-200 hover:bg-foreground/5"
       >
         <ChevronLeft size={22} />
       </button>
@@ -647,7 +647,7 @@ function TopChrome({ onBack, onClose, dict }: { onBack: () => void; onClose: () 
         type="button"
         onClick={onClose}
         aria-label={dict.ariaClose}
-        className="grid size-11 place-items-center rounded-full border border-border bg-card text-foreground shadow-xs shadow-black/5 transition-colors duration-200 hover:bg-foreground/5"
+        className="grid size-11 place-items-center rounded-xl border border-border bg-card text-foreground transition-colors duration-200 hover:bg-foreground/5"
       >
         <X size={20} />
       </button>

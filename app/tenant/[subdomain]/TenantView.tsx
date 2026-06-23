@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Clock, ChevronDown, BadgeCheck, Phone, Globe, Send, MapPin, Navigation, Star } from 'lucide-react';
+import { Clock, ChevronDown, ChevronRight, BadgeCheck, Phone, Globe, Send, MapPin, ArrowRight, Star, X } from 'lucide-react';
 import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
@@ -12,6 +12,7 @@ import { AccountMenu } from './AccountMenu';
 
 const FEATURED_LIMIT = 6;
 const TEAM_LIMIT = 5;
+const REVIEW_PREVIEW = 6;
 
 // Lucide dropped brand icons, so Instagram is drawn locally in the same stroke style.
 function InstagramIcon({ className }: { className?: string }) {
@@ -30,6 +31,16 @@ function initials(name: string) {
     .slice(0, 2)
     .map((w) => w[0].toUpperCase())
     .join('');
+}
+// Stable per-name avatar color so a reviewer always gets the same swatch.
+const AVATAR_COLORS = [
+  'bg-slate-500', 'bg-indigo-500', 'bg-violet-500', 'bg-rose-500', 'bg-emerald-500',
+  'bg-sky-500', 'bg-amber-500', 'bg-teal-500', 'bg-fuchsia-500', 'bg-cyan-600',
+];
+function avatarColor(name: string) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 function money(amount: number, currency: string, som: string) {
   const n = amount.toLocaleString('ru-RU');
@@ -51,6 +62,13 @@ function fmtServed(iso: string, tz: string) {
   return new Intl.DateTimeFormat('en-GB', {
     timeZone: tz, day: '2-digit', month: '2-digit', year: 'numeric',
   }).format(new Date(iso)).replace(/\//g, '.');
+}
+const DATE_LOCALE: Record<TenantLocale, string> = { uz: 'uz-UZ', ru: 'ru-RU', en: 'en-GB' };
+/** "Mon, 22 Jun 2026, 8:30" — richer review timestamp, localized. */
+function fmtReviewDate(iso: string, tz: string, locale: TenantLocale) {
+  return new Intl.DateTimeFormat(DATE_LOCALE[locale] ?? 'en-GB', {
+    timeZone: tz, weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit',
+  }).format(new Date(iso));
 }
 function nowInTz(tz: string) {
   const parts = new Intl.DateTimeFormat('en-US', {
@@ -80,15 +98,29 @@ export function TenantView({
   // "Mutaxassislar" shows people only — assets/units (bowling lanes etc.) are
   // bookable resources but not team members.
   const team = staff.filter((st) => (st.type ?? 'staff') === 'staff');
-  // Resource name → type, to label a review's server ("Mutaxassis" vs unit label).
-  const resourceType = new Map(staff.map((st) => [st.name, st.type ?? 'staff']));
   const branch = branches[0];
   const canBook = services.length > 0 && staff.length > 0;
 
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
   const [showAllTeam, setShowAllTeam] = useState(false);
+  const [showAllReviews, setShowAllReviews] = useState(false);
   const [showHours, setShowHours] = useState(false);
+  // Staff member whose details are shown in the big modal (null = closed).
+  const [staffDetail, setStaffDetail] = useState<(typeof staff)[number] | null>(null);
+  const [staffTab, setStaffTab] = useState<'profile' | 'services' | 'reviews'>('profile');
+  // True once the big hero has scrolled past — fades in the compact header title.
+  const [heroPassed, setHeroPassed] = useState(false);
+  const staffScrollRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef<HTMLDivElement>(null);
+  const profileRef = useRef<HTMLDivElement>(null);
+  const servicesRef = useRef<HTMLDivElement>(null);
+  const reviewsRef = useRef<HTMLDivElement>(null);
+  // While a tab-click smooth-scroll is running, suppress scroll-spy so it can't
+  // override the clicked tab mid-flight.
+  const programmaticScrollRef = useRef(false);
+  // Reviews section — the header rating jumps here on click.
+  const reviewsSectionRef = useRef<HTMLElement>(null);
   // Sticky navbar appears once the business name scrolls out of view.
   const [scrolled, setScrolled] = useState(false);
   const nameRef = useRef<HTMLHeadingElement>(null);
@@ -107,13 +139,22 @@ export function TenantView({
 
   // Lock background scroll while the hours sheet is open.
   useEffect(() => {
-    if (!showHours) return;
+    if (!showHours && !staffDetail) return;
     const prev = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     return () => {
       document.body.style.overflow = prev;
     };
-  }, [showHours]);
+  }, [showHours, staffDetail]);
+
+  // Reset the staff modal to the top / Profile tab each time it opens.
+  useEffect(() => {
+    if (!staffDetail) return;
+    setStaffTab('profile');
+    setHeroPassed(false);
+    programmaticScrollRef.current = false;
+    requestAnimationFrame(() => staffScrollRef.current?.scrollTo({ top: 0 }));
+  }, [staffDetail]);
 
   const now = branch ? nowInTz(branch.timezone) : null;
   const today = branch?.workingHours.find((w) => w.weekday === now?.weekday);
@@ -147,10 +188,63 @@ export function TenantView({
     { label: 'Telefon', icon: Phone, href: business.phone ? `tel:${business.phone}` : null, tint: 'border-emerald-500/40 bg-emerald-500/10 text-emerald-500' },
   ];
 
+  // What the open staff member offers and the reviews they've earned.
+  const staffServices = staffDetail ? services.filter((s) => staffDetail.offeringIds?.includes(s.id)) : [];
+  const staffReviews = staffDetail ? sortedReviews.filter((r) => r.servedBy === staffDetail.name) : [];
+  const staffReviewCount = staffReviews.length;
+  const staffAvg = staffReviewCount ? staffReviews.reduce((a, r) => a + (r.rating ?? 0), 0) / staffReviewCount : 0;
+  // Tabs to render — Profile always, the others only when there's content.
+  const staffTabs = (['profile', 'services', 'reviews'] as const).filter(
+    (t) => t === 'profile' || (t === 'services' && staffServices.length) || (t === 'reviews' && staffReviewCount),
+  );
+
+  // Sticky-header height (compact title + tabs) and the compact title's own
+  // height — the title only mounts once scrolled, so a tab-click target has to
+  // add it back since the sections will shift down as it expands.
+  const STAFF_STICKY = 112;
+  const STAFF_COMPACT_H = 48;
+  const sectionRef = (k: 'profile' | 'services' | 'reviews') =>
+    k === 'profile' ? profileRef : k === 'services' ? servicesRef : reviewsRef;
+  function handleStaffScroll() {
+    const c = staffScrollRef.current;
+    if (!c) return;
+    setHeroPassed(c.scrollTop >= (heroRef.current?.offsetHeight ?? 0) - 8);
+    // Don't let scroll-spy fight the tab the user just clicked.
+    if (programmaticScrollRef.current) return;
+    const pos = c.scrollTop + STAFF_STICKY + 12;
+    let active: 'profile' | 'services' | 'reviews' = 'profile';
+    for (const k of staffTabs) {
+      const el = sectionRef(k).current;
+      if (el && el.offsetTop <= pos) active = k;
+    }
+    setStaffTab(active);
+  }
+  function goToStaffSection(k: 'profile' | 'services' | 'reviews') {
+    const c = staffScrollRef.current;
+    if (!c) return;
+    setStaffTab(k);
+    // Lock out scroll-spy until the smooth scroll settles.
+    programmaticScrollRef.current = true;
+    setTimeout(() => { programmaticScrollRef.current = false; }, 700);
+    if (k === 'profile') {
+      setHeroPassed(false);
+      c.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    // Measure now (compact title still hidden in the DOM), then add its height
+    // back: as it animates open the target section shifts down by that much.
+    const el = sectionRef(k).current;
+    if (!el) return;
+    const shift = heroPassed ? 0 : STAFF_COMPACT_H;
+    const top = c.scrollTop + el.getBoundingClientRect().top - c.getBoundingClientRect().top - STAFF_STICKY + shift;
+    setHeroPassed(true);
+    c.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+  }
+
   return (
     <div className="bg-card min-h-screen">
       <div className="max-w-[1350px] mx-auto">
-      <div className="relative">
+      <div className="relative px-4 pt-3 lg:px-6 lg:pt-4">
         {/* Account + language stay pinned to the viewport while scrolling, but
             aligned to the right edge of the centered content (not the screen). */}
         <AnimatePresence initial={false}>
@@ -185,7 +279,7 @@ export function TenantView({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img src={mediaUrl(business.avatarUrl)} alt="" className="size-11 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-foreground text-sm font-bold text-background">
+                    <span className={`grid size-11 shrink-0 place-items-center rounded-full text-sm font-bold text-muted-foreground bg-foreground/[0.08]`}>
                       {initials(business.name)}
                     </span>
                   )}
@@ -210,7 +304,7 @@ export function TenantView({
                   {canBook && (
                     <Link
                       href="/booking"
-                      className="inline-flex h-9 items-center justify-center rounded-full bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98]"
+                      className="inline-flex h-9 items-center justify-center rounded-xl bg-foreground px-5 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98]"
                     >
                       {dict.book}
                     </Link>
@@ -220,7 +314,7 @@ export function TenantView({
             </motion.div>
           )}
         </AnimatePresence>
-        <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-t-none rounded-t-none bg-gradient-to-br from-muted/15 to-muted/5">
+        <div className="w-full h-52 sm:h-80 rounded-2xl overflow-hidden border border-border bg-gradient-to-br from-muted/15 to-muted/5">
           <iframe
             title="Map"
             src={`https://maps.google.com/maps?q=${branch.latitude},${branch.longitude}&z=15&output=embed&iwloc=near`}
@@ -229,73 +323,113 @@ export function TenantView({
             referrerPolicy="no-referrer-when-downgrade"
           />
         </div>
-        <div className="absolute left-4 bottom-0 translate-y-1/2 size-24 rounded-full ring-4 ring-card overflow-hidden shadow-lg lg:left-6">
-          {business.avatarUrl ? (
-            <img src={mediaUrl(business.avatarUrl)} alt={business.name} className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-zinc-600 via-zinc-800 to-zinc-950 text-3xl font-semibold tracking-wide text-white">
-              {initials(business.name)}
-            </div>
-          )}
-        </div>
       </div>
-      <div className="mt-14 flex items-center justify-between gap-4 px-4 lg:px-6">
-        <div className="min-w-0">
-          <h1 ref={nameRef} className="flex items-center gap-1.5 text-[27px] font-bold leading-tight tracking-tight">
-            {business.name}
-            <BadgeCheck className="size-6 shrink-0 fill-blue-500 text-card" />
-          </h1>
-          <div className="mt-1.5 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm text-muted-foreground lg:mt-2">
-            {/* Category — hidden in favor of the live open status. */}
-            {false && business.category && <span>{localized(business.category!.name, '', locale)}</span>}
-            {/* Address first on desktop; mobile uses the location card below. */}
+      <div className="mt-5 px-4 lg:mt-6 lg:px-6">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3 lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card lg:px-7 lg:py-5">
+          {/* Avatar */}
+          {business.avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={mediaUrl(business.avatarUrl)} alt={business.name} className="size-14 shrink-0 rounded-full object-cover ring-1 ring-border" />
+          ) : (
+            <span className={`grid size-14 shrink-0 place-items-center rounded-full text-base font-semibold text-muted-foreground bg-foreground/[0.08]`}>
+              {initials(business.name)}
+            </span>
+          )}
+
+          {/* Name + handle */}
+          <div className="min-w-0">
+            <h1 ref={nameRef} className="flex items-center gap-1.5 text-xl font-bold leading-tight tracking-tight text-foreground">
+              <span className="truncate">{business.name}</span>
+              <BadgeCheck className="size-5 shrink-0 fill-blue-500 text-card" />
+            </h1>
             {branch?.address && (
-              <span className="hidden items-center gap-1 text-[15px] lg:flex">
-                <MapPin className="size-4" />
-                {localized(branch.address, '', locale)}
-              </span>
+              <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+                <MapPin className="size-3.5 shrink-0" />
+                <span className="truncate">{localized(branch.address, '', locale)}</span>
+              </p>
             )}
-            {branch &&
-              (open ? (
-                <span className="font-semibold text-emerald-600">{dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}</span>
-              ) : (
-                <span className="font-semibold">{dict.closed}</span>
-              ))}
-            {tenant.reviewCount ? (
-              <span className="flex items-center gap-1">
-                <Star size={15} className="fill-amber-400 text-amber-400" />
-                <span className="font-semibold text-foreground">{tenant.averageRating}</span>
-                <span>· {tenant.reviewCount} {dict.reviewsCount}</span>
+          </div>
+
+          {/* Chip — rating if reviewed, otherwise the live open status */}
+          {tenant.reviewCount ? (
+            <button
+              type="button"
+              onClick={() => reviewsSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="hidden items-center gap-1.5 rounded-xl px-2.5 py-1 text-[13px] font-bold text-foreground transition-colors hover:bg-foreground/5 sm:inline-flex"
+            >
+              <Star size={13} className="fill-amber-400 text-amber-400" />
+              {tenant.averageRating}
+              <span className="font-medium text-muted-foreground">· {tenant.reviewCount} {dict.reviewsCount}</span>
+            </button>
+          ) : branch ? (
+            open ? (
+              <span className="hidden items-center gap-1.5 rounded-xl bg-emerald-500/10 px-3 py-1 text-[13px] font-bold text-emerald-600 sm:inline-flex">
+                <span className="size-1.5 rounded-full bg-emerald-500" />
+                {dict.open}
               </span>
-            ) : null}
+            ) : (
+              <span className="hidden items-center gap-1.5 rounded-xl bg-foreground/5 px-3 py-1 text-[13px] font-bold text-muted-foreground sm:inline-flex">
+                <span className="size-1.5 rounded-full bg-muted-foreground/40" />
+                {dict.closed}
+              </span>
+            )
+          ) : null}
+
+          {/* Right cluster — availability (opens hours) + book. On mobile it
+              becomes a full-width row under the name with a top divider. */}
+          <div className="flex w-full items-center gap-4 border-b border-border pb-3 sm:ml-auto sm:w-auto sm:border-b-0 sm:pb-0 sm:gap-6">
+            {branch && <span className="hidden h-7 w-px bg-border sm:block" />}
+            {branch && (
+              <button
+                type="button"
+                onClick={() => setShowHours(true)}
+                className="-mx-2.5 flex w-full items-center justify-between gap-2 rounded-xl px-2.5 py-1.5 text-sm font-semibold transition-colors hover:bg-foreground/5 sm:w-auto sm:justify-start"
+              >
+                <span className="flex items-center gap-2">
+                  <Clock size={16} className={open ? 'text-emerald-600' : 'text-muted-foreground'} />
+                  <span className={open ? 'text-emerald-600' : 'text-foreground'}>
+                    {open ? `${dict.open}${closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}` : dict.closed}
+                  </span>
+                </span>
+                <ChevronRight size={16} className="text-muted-foreground" />
+              </button>
+            )}
+            {canBook && (
+              <Link
+                href="/booking"
+                className="hidden h-11 shrink-0 items-center justify-center rounded-xl bg-foreground px-7 text-sm font-bold text-background transition-all hover:opacity-90 active:scale-[0.98] lg:inline-flex"
+              >
+                {dict.book}
+              </Link>
+            )}
           </div>
         </div>
-        {canBook && (
-          <Link
-            href="/booking"
-            className="hidden h-12 shrink-0 items-center justify-center rounded-full bg-foreground px-9 text-base font-bold text-background shadow-md transition-all hover:opacity-90 active:scale-[0.98] lg:inline-flex"
-          >
-            {dict.book}
-          </Link>
-        )}
       </div>
 
       {/* ===== Body ===== */}
-      <div className="mt-5 flex flex-col px-4 pb-24 lg:mt-10 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-12 lg:px-6 lg:pb-12">
+      <div className="mt-6 flex flex-col gap-12 px-4 pb-24 lg:mt-6 lg:grid lg:grid-cols-[1fr_480px] lg:items-start lg:gap-6 lg:px-6 lg:pb-12">
         {/* Right column: team/hours/contacts — on mobile it sits after services. */}
-        <div className="order-2 mt-10 space-y-6 lg:order-2 lg:mt-0">
+        <div className="order-2 space-y-6 lg:order-2">
           {/* Team */}
           {team.length > 0 && (
-            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
-              <h2 className="text-lg font-bold text-foreground">{dict.specialists}</h2>
-              <div className="mt-2 divide-y divide-border">
-                {(showAllTeam ? team : team.slice(0, TEAM_LIMIT)).map((st) => (
-                  <div key={st.id} className="flex items-center gap-3.5 py-3.5">
+            <section className="lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card lg:p-7">
+              <h2 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.specialists}</h2>
+              <div className="mt-4">
+                {(showAllTeam ? team : team.slice(0, TEAM_LIMIT)).map((st, i) => (
+                  <div key={st.id}>
+                    {i > 0 && <div className="h-px bg-border" />}
+                    <div
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => setStaffDetail(st)}
+                      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setStaffDetail(st); } }}
+                      className="group flex cursor-pointer items-center gap-3.5 rounded-xl py-3.5 transition-colors hover:bg-foreground/5 lg:-mx-3 lg:px-3"
+                    >
                     {st.photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={mediaUrl(st.photoUrl)} alt={st.name} className="size-12 shrink-0 rounded-full object-cover ring-1 ring-border" />
                     ) : (
-                      <span className="grid size-12 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
+                      <span className={`grid size-12 shrink-0 place-items-center rounded-full text-sm font-semibold text-muted-foreground bg-foreground/[0.08]`}>
                         {initials(st.name)}
                       </span>
                     )}
@@ -307,11 +441,14 @@ export function TenantView({
                       <Link
                         href={`/booking?staff=${st.id.slice(0, 8)}`}
                         aria-label={`${st.name} — ${dict.book}`}
-                        className="shrink-0 rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border px-4 py-2 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
                       >
                         {dict.book}
+                        <ArrowRight className="size-4" />
                       </Link>
                     )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -319,7 +456,7 @@ export function TenantView({
                 <button
                   type="button"
                   onClick={() => setShowAllTeam((v) => !v)}
-                  className="mt-1 flex w-full items-center justify-center gap-1 rounded-full border border-border py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                  className="mt-1 flex w-full items-center justify-center gap-1 rounded-xl border-[1.5px] border-foreground py-2 text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
                 >
                   {showAllTeam ? dict.showLess : `${dict.showMore} (${team.length})`}
                   <ChevronDown size={15} className={`transition-transform duration-200 ${showAllTeam ? 'rotate-180' : ''}`} />
@@ -330,9 +467,9 @@ export function TenantView({
 
           {/* Working hours (today highlighted) — shown in place of contacts for now. */}
           {branch && branch.workingHours.length > 0 && (
-            <section className="rounded-2xl border border-foreground/12 bg-card p-6 shadow-xs shadow-black/5">
+            <section className="lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card lg:p-7">
               <div className="flex items-center justify-between gap-3">
-                <h2 className="text-lg font-bold text-foreground">{dict.workingHours}</h2>
+                <h2 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.workingHours}</h2>
                 {open ? (
                   <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600">
                     {dict.open}{closing ? ` · ${dict.untilPrefix}${closing}${dict.untilSuffix}` : ''}
@@ -341,7 +478,7 @@ export function TenantView({
                   <span className="rounded-full bg-foreground/5 px-3 py-1 text-xs font-bold text-muted-foreground">{dict.closed}</span>
                 )}
               </div>
-              <div className="mt-2 divide-y divide-border">
+              <div className="mt-4 divide-y divide-border">
                 {branch.workingHours.map((w) => {
                   const isToday = w.weekday === now?.weekday;
                   const off = w.isDayOff || !w.openTime || !w.closeTime;
@@ -366,7 +503,7 @@ export function TenantView({
           {/* Location — map + address with a directions CTA (mobile only; desktop
               already shows the map in the hero header). */}
           {branch && (
-            <section className="overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 lg:hidden">
+            <section className="overflow-hidden lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card">
               <div className="h-44 w-full bg-gradient-to-br from-muted/15 to-muted/5">
                 <iframe
                   title="Map"
@@ -376,10 +513,10 @@ export function TenantView({
                   referrerPolicy="no-referrer-when-downgrade"
                 />
               </div>
-              <div className="p-6">
-                <h2 className="text-lg font-bold text-foreground">{dict.location}</h2>
+              <div className="py-4 lg:p-7">
+                <h2 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.location}</h2>
                 {branch.address && (
-                  <p className="mt-2 flex items-start gap-2 text-sm text-muted-foreground">
+                  <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 size-4 shrink-0" />
                     {localized(branch.address, '', locale)}
                   </p>
@@ -388,10 +525,10 @@ export function TenantView({
                   href={`https://www.google.com/maps/dir/?api=1&destination=${mapsQuery}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 hover:bg-foreground/5"
+                  className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-xl bg-foreground/5 py-2.5 text-center text-sm font-bold text-foreground transition-colors hover:bg-foreground/10"
                 >
-                  <Navigation className="size-4" />
                   {dict.letsGo}
+                  <ArrowRight className="size-4" />
                 </a>
               </div>
             </section>
@@ -421,10 +558,14 @@ export function TenantView({
 
         </div>
 
-        {/* Left column: services */}
-        <section className="order-1 lg:order-1">
+        {/* Left column on desktop (services + reviews); on mobile `contents`
+            lets services / sidebar / reviews reorder independently. */}
+        <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-6 lg:order-1">
+        <section className="order-1">
+          <div className="lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card lg:p-7">
+          <h2 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.services}</h2>
           {cats.length > 1 && (
-            <div className="scrollbar-hide mt-4 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
+            <div className="scrollbar-hide mt-5 flex gap-2 overflow-x-auto pb-1 [mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] [-webkit-mask-image:linear-gradient(to_right,#000_calc(100%_-_1.5rem),transparent)] lg:[mask-image:none] lg:[-webkit-mask-image:none]">
               <Pill active={activeCat === null} onClick={() => { setActiveCat(null); setShowAll(false); }}>{dict.all}</Pill>
               {cats.map((c) => (
                 <Pill key={c} active={activeCat === c} onClick={() => { setActiveCat(c); setShowAll(false); }}>{c}</Pill>
@@ -435,7 +576,7 @@ export function TenantView({
           {services.length === 0 ? (
             <p className="py-12 text-center text-sm text-muted-foreground">{dict.noServices}</p>
           ) : (
-            <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
               {visible.map((s) => {
                 const name = localized(s.name as LocalizedText, '', locale);
                 const price =
@@ -467,14 +608,15 @@ export function TenantView({
                         )}
                       </div>
                       {canBook && (
-                        <span className="mt-3 block w-full rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors duration-200 group-hover:bg-foreground/5">
+                        <span className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-border py-2.5 text-center text-sm font-bold text-foreground transition-colors group-hover:bg-foreground/5">
                           {dict.book}
+                          <ArrowRight className="size-4" />
                         </span>
                       )}
                     </div>
                   </>
                 );
-                const cardClass = 'overflow-hidden rounded-2xl border border-foreground/12 bg-card shadow-xs shadow-black/5 transition-all hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/5';
+                const cardClass = 'overflow-hidden rounded-2xl border border-foreground/8 bg-card transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5';
                 return canBook ? (
                   <Link key={s.id} href={`/booking?services=${s.id.slice(0, 8)}`} className={`group block ${cardClass} active:scale-[0.99]`}>
                     {inner}
@@ -490,71 +632,67 @@ export function TenantView({
             <button
               type="button"
               onClick={() => setShowAll(true)}
-              className="mt-4 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+              className="mt-4 rounded-xl border-[1.5px] border-foreground px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
             >
               {dict.showMore}
             </button>
           )}
+          </div>
         </section>
 
-        {/* ===== Reviews — full-width row below both columns ===== */}
+        {/* ===== Reviews — left column on desktop, last on mobile ===== */}
         {(tenant.reviews?.length ?? 0) > 0 && (
-          <section className="order-3 mt-12 lg:col-span-2 lg:mt-2">
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-xl font-bold text-foreground">{dict.reviews}</h2>
+          <section ref={reviewsSectionRef} className="order-3 scroll-mt-24">
+            <div className="lg:rounded-2xl lg:border lg:border-foreground/10 lg:bg-card lg:p-7">
+              <h2 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.reviews}</h2>
               {tenant.reviewCount ? (
-                <span className="flex items-center gap-1.5 text-sm">
-                  <Star size={16} className="fill-amber-400 text-amber-400" />
-                  <span className="font-bold text-foreground">{tenant.averageRating}</span>
-                  <span className="text-muted-foreground">· {tenant.reviewCount} {dict.reviewsCount}</span>
-                </span>
+                <div className="mt-4 flex items-center gap-1">
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <Star key={n} size={22} className={Math.round(tenant.averageRating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'} />
+                  ))}
+                </div>
               ) : null}
-            </div>
-            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {sortedReviews.map((r) => {
-                const svc = (r.services ?? [])
-                  .map((s) => localized(s as LocalizedText, '', locale))
-                  .filter(Boolean)
-                  .join(', ');
-                // Show the server only for staff (people), never for units/assets.
-                const servedStaff = r.servedBy && resourceType.get(r.servedBy) !== 'asset' ? r.servedBy : null;
-                return (
-                  <div key={r.id} className="flex flex-col rounded-2xl bg-foreground/[0.035] p-5">
-                    <div className="flex items-start gap-3">
-                      <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-zinc-600 to-zinc-900 text-sm font-semibold text-white">
-                        {initials(r.customerName)}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate font-semibold text-foreground">{r.customerName}</p>
-                        {svc && <p className="truncate text-[13px] text-muted-foreground">{svc}</p>}
-                      </div>
-                      {r.servedAt && (
-                        <span className="shrink-0 text-[13px] text-muted-foreground">
-                          {fmtServed(r.servedAt, branch?.timezone ?? 'Asia/Tashkent')}
+              <div className="mt-7 grid gap-x-10 gap-y-9 sm:grid-cols-2">
+                {(showAllReviews ? sortedReviews : sortedReviews.slice(0, REVIEW_PREVIEW)).map((r) => {
+                  const when = r.servedAt ?? r.submittedAt;
+                  return (
+                    <div key={r.id} className="min-w-0">
+                      <div className="flex items-center gap-3.5">
+                        <span className={`grid size-14 shrink-0 place-items-center rounded-full text-base font-semibold text-white ${avatarColor(r.customerName)}`}>
+                          {initials(r.customerName)}
                         </span>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-foreground">{r.customerName}</p>
+                          {when && (
+                            <p className="truncate text-sm text-muted-foreground">{fmtReviewDate(when, branch?.timezone ?? 'Asia/Tashkent', locale)}</p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="mt-3.5 flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((n) => (
+                          <Star key={n} size={16} className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'} />
+                        ))}
+                      </div>
+                      {r.comment && (
+                        <p className="mt-3 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
                       )}
                     </div>
-                    <div className="mt-3.5 flex items-center gap-0.5">
-                      {[1, 2, 3, 4, 5].map((n) => (
-                        <Star
-                          key={n}
-                          size={15}
-                          className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'}
-                        />
-                      ))}
-                    </div>
-                    {r.comment && (
-                      <p className="mt-2.5 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>
-                    )}
-                    {servedStaff && (
-                      <p className="mt-auto truncate pt-3 text-[13px] text-muted-foreground">{servedStaff}</p>
-                    )}
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+              {sortedReviews.length > REVIEW_PREVIEW && !showAllReviews && (
+                <button
+                  type="button"
+                  onClick={() => setShowAllReviews(true)}
+                  className="mt-8 rounded-xl border-[1.5px] border-foreground px-6 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+                >
+                  {dict.showMore}
+                </button>
+              )}
             </div>
           </section>
         )}
+        </div>
       </div>
 
       {/* Mobile sticky Book CTA — slides away once the top navbar (which carries
@@ -563,11 +701,227 @@ export function TenantView({
         <div
           className={`fixed inset-x-0 bottom-0 z-20 border-t border-border bg-card/95 p-4 backdrop-blur transition-transform duration-300 ease-out lg:hidden ${scrolled ? 'translate-y-full' : 'translate-y-0'}`}
         >
-          <Link href="/booking" className="flex h-14 items-center justify-center rounded-full bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
+          <Link href="/booking" className="flex h-14 items-center justify-center rounded-xl bg-foreground text-base font-bold text-background shadow-lg active:scale-[0.99]">
             {dict.book}
           </Link>
         </div>
       )}
+
+      {/* Staff details modal — Fresha-style: gray hero, sticky tabs, sticky CTA */}
+      <AnimatePresence>
+        {staffDetail && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 lg:items-center lg:p-6"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            onClick={() => setStaffDetail(null)}
+          >
+            <motion.div
+              className="relative flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[28px] bg-card lg:max-h-[88vh] lg:w-[640px] lg:rounded-3xl"
+              initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Persistent close button, top-right over everything */}
+              <button
+                type="button"
+                onClick={() => setStaffDetail(null)}
+                aria-label="Close"
+                className="absolute right-4 top-4 z-30 grid size-9 place-items-center rounded-full bg-card/80 text-foreground backdrop-blur transition-colors hover:bg-foreground/10"
+              >
+                <X size={20} />
+              </button>
+
+              <div
+                ref={staffScrollRef}
+                onScroll={handleStaffScroll}
+                className="relative flex-1 overflow-y-auto [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-foreground/15 [&::-webkit-scrollbar-track]:bg-transparent"
+              >
+                {/* Hero */}
+                <div ref={heroRef} className="bg-foreground/[0.03] px-6 pb-8 pt-12 text-center">
+                  {staffDetail.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={mediaUrl(staffDetail.photoUrl)} alt={staffDetail.name} className="mx-auto size-32 rounded-full object-cover ring-1 ring-border" />
+                  ) : (
+                    <span className={`mx-auto grid size-32 place-items-center rounded-full text-4xl font-semibold text-muted-foreground bg-foreground/[0.08]`}>
+                      {initials(staffDetail.name)}
+                    </span>
+                  )}
+                  <h3 className="mt-5 text-3xl font-bold tracking-tight text-foreground">{staffDetail.name}</h3>
+                  {staffReviewCount > 0 && (
+                    <div className="mt-3 flex items-center justify-center gap-1.5 text-sm">
+                      <span className="font-bold text-foreground">{staffAvg.toFixed(1)}</span>
+                      <Star size={15} className="fill-amber-400 text-amber-400" />
+                      <span className="text-muted-foreground">({staffReviewCount})</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Sticky header — compact title (on scroll) + tabs */}
+                <div className="sticky top-0 z-20 bg-card/95 backdrop-blur">
+                  <AnimatePresence initial={false}>
+                    {heroPassed && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="flex items-center gap-2.5 px-6 pt-4">
+                          {staffDetail.photoUrl ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <motion.img
+                              src={mediaUrl(staffDetail.photoUrl)}
+                              alt=""
+                              className="size-8 shrink-0 rounded-full object-cover"
+                              initial={{ scale: 0.6 }}
+                              animate={{ scale: 1 }}
+                              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                            />
+                          ) : (
+                            <span className={`grid size-8 shrink-0 place-items-center rounded-full text-[11px] font-semibold text-muted-foreground bg-foreground/[0.08]`}>{initials(staffDetail.name)}</span>
+                          )}
+                          <motion.span
+                            className="truncate text-lg font-bold text-foreground"
+                            initial={{ x: -8 }}
+                            animate={{ x: 0 }}
+                            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                          >
+                            {staffDetail.name}
+                          </motion.span>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <div className="flex gap-2 px-6 py-3">
+                    {staffTabs.map((k) => {
+                      const label = k === 'profile' ? dict.profile : k === 'services' ? dict.services : dict.reviews;
+                      const isActive = staffTab === k;
+                      return (
+                        <button
+                          key={k}
+                          type="button"
+                          onClick={() => goToStaffSection(k)}
+                          className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-colors ${isActive ? 'bg-foreground text-background' : 'border border-border text-foreground hover:bg-foreground/5'}`}
+                        >
+                          {label}
+                          {k === 'reviews' && (
+                            <span className={`rounded-md px-1.5 text-xs font-bold ${isActive ? 'bg-background/25 text-background' : 'bg-foreground/10 text-muted-foreground'}`}>
+                              {staffReviewCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="h-px bg-border" />
+                </div>
+
+                {/* Profile */}
+                <div ref={profileRef} className="px-6 pt-7">
+                  <div className="flex items-center justify-between gap-3 text-[15px]">
+                    <span className="text-foreground">{dict.appointmentsCompleted}</span>
+                    <span className="font-semibold text-muted-foreground">{(staffDetail.bookingsCount ?? 0).toLocaleString('ru-RU')}</span>
+                  </div>
+                </div>
+
+                {/* Services */}
+                {staffServices.length > 0 && (
+                  <div ref={servicesRef} className="mt-8 bg-foreground/[0.03] px-6 py-7">
+                    <h4 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.services}</h4>
+                    <div className="mt-4 space-y-3">
+                      {staffServices.map((s) => {
+                        const name = localized(s.name as LocalizedText, '', locale);
+                        const price =
+                          s.pricingMode === 'time_rate'
+                            ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
+                            : s.price != null ? money(s.price, business.currency, dict.som) : '';
+                        return (
+                          <div key={s.id} className="rounded-2xl border border-foreground/10 bg-card p-5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="font-semibold text-foreground">{name}</p>
+                                {s.durationMinutes != null && (
+                                  <p className="mt-1 text-sm text-muted-foreground">{dur(s.durationMinutes, dict)}</p>
+                                )}
+                              </div>
+                              {canBook && (
+                                <Link
+                                  href={`/booking?services=${s.id.slice(0, 8)}`}
+                                  className="shrink-0 rounded-xl border-[1.5px] border-foreground px-5 py-2 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
+                                >
+                                  {dict.bookShort}
+                                </Link>
+                              )}
+                            </div>
+                            {price && <p className="mt-3 font-bold text-foreground">{price}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Reviews */}
+                {staffReviewCount > 0 && (
+                  <div ref={reviewsRef} className="px-6 pt-8">
+                    <h4 className="text-[26px] font-bold leading-none tracking-tight text-foreground">{dict.reviews}</h4>
+                    <div className="mt-3 flex items-center gap-1">
+                      {[1, 2, 3, 4, 5].map((n) => (
+                        <Star key={n} size={22} className={Math.round(staffAvg) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'} />
+                      ))}
+                    </div>
+                    <p className="mt-2.5 text-[15px]">
+                      <span className="font-bold text-foreground">{staffAvg.toFixed(1)}</span>{' '}
+                      <span className="text-muted-foreground">({staffReviewCount})</span>
+                    </p>
+                    <div className="mt-5 space-y-6">
+                      {staffReviews.map((r) => {
+                        const when = r.servedAt ?? r.submittedAt;
+                        return (
+                          <div key={r.id} className="border-t border-border pt-6 first:border-0 first:pt-0">
+                            <div className="flex items-center gap-3">
+                              <span className={`grid size-14 shrink-0 place-items-center rounded-full text-base font-semibold text-white ${avatarColor(r.customerName)}`}>
+                                {initials(r.customerName)}
+                              </span>
+                              <div className="min-w-0">
+                                <p className="truncate font-semibold text-foreground">{r.customerName}</p>
+                                {when && (
+                                  <p className="text-[13px] text-muted-foreground">{fmtServed(when, branch?.timezone ?? 'Asia/Tashkent')}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="mt-2.5 flex items-center gap-0.5">
+                              {[1, 2, 3, 4, 5].map((n) => (
+                                <Star key={n} size={17} className={(r.rating ?? 0) >= n ? 'fill-amber-400 text-amber-400' : 'text-foreground/15'} />
+                              ))}
+                            </div>
+                            {r.comment && <p className="mt-2 text-[15px] leading-relaxed text-foreground/80">{r.comment}</p>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-6" />
+              </div>
+
+              {/* Sticky Book now */}
+              {canBook && (
+                <div className="border-t border-border bg-card p-4">
+                  <Link
+                    href={`/booking?staff=${staffDetail.id.slice(0, 8)}`}
+                    className="flex w-full items-center justify-center rounded-xl bg-foreground py-4 text-base font-bold text-background transition-all hover:opacity-90 active:scale-[0.99]"
+                  >
+                    {dict.bookShort}
+                  </Link>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Working hours modal */}
       <AnimatePresence>
@@ -914,8 +1268,8 @@ function Pill({ active, onClick, children }: { active: boolean; onClick: () => v
     <button
       type="button"
       onClick={onClick}
-      className={`flex-shrink-0 rounded-full px-5 py-2.5 text-sm font-semibold transition-all ${
-        active ? 'border border-foreground/20 bg-foreground/10 text-foreground shadow-sm shadow-black/5' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
+      className={`flex-shrink-0 rounded-xl px-5 py-2.5 text-sm font-semibold transition-all ${
+        active ? 'border-[1.5px] border-foreground bg-foreground/[0.04] text-foreground' : 'border border-border bg-card text-foreground hover:bg-foreground/5'
       }`}
     >
       {children}

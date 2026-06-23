@@ -48,7 +48,7 @@ export function LocaleSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition-shadow hover:shadow-md"
+        className="inline-flex items-center gap-1.5 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm transition-shadow hover:shadow-md"
       >
         <span aria-hidden>{cur.flag}</span>
         <span>{cur.code}</span>
@@ -62,7 +62,7 @@ export function LocaleSwitcher({
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-40 mt-1 min-w-44 rounded-2xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5"
+          className="absolute right-0 top-full z-40 mt-1.5 min-w-44 rounded-xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5"
         >
           {ORDER.map((l) => {
             const meta = META[l];
@@ -73,7 +73,7 @@ export function LocaleSwitcher({
                 href={meta.href}
                 aria-current={active ? 'true' : undefined}
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-medium transition ${
+                className={`flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition ${
                   active ? 'bg-accent/10 text-accent' : 'text-foreground hover:bg-foreground/5'
                 }`}
               >

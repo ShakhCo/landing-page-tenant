@@ -15,8 +15,8 @@ export const dict = {
   dayOff: 'Dam olish',
   all: 'Barchasi',
   otherCategory: 'Boshqa',
-  book: 'Bron qilish',
-  bookShort: 'Bron',
+  book: 'Yozilish',
+  bookShort: 'Yozilish',
   bookings: 'ta bron',
   showMore: "Barchasini ko'rish",
   showLess: "Kamroq ko'rish",
@@ -49,6 +49,8 @@ export const dict = {
   reviewsCount: 'ta sharh',
   staffRole: 'Mutaxassis',
   unitRole: 'Joy',
+  profile: 'Profil',
+  appointmentsCompleted: 'Bajarilgan bronlar',
 };
 
 export type TenantDict = typeof dict;
