@@ -1141,7 +1141,11 @@ export function BookingFlow({
         <aside className="hidden lg:order-2 lg:block lg:sticky lg:top-24">
           <motion.div
             layout
-            transition={{ layout: { duration: 0.2, ease: 'easeOut' } }}
+            // All layout animations inside the card share this exact transition so
+            // the nested boxes (list, rows, staff, total) resize/reposition in
+            // lockstep — mismatched timings (esp. framer's default bouncy spring)
+            // are what made the summary jitter on add/remove.
+            transition={{ layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }}
             className="rounded-2xl border border-foreground/10 bg-card p-6"
           >
             {/* business header */}
@@ -1309,7 +1313,7 @@ function SummaryBody({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: 0.15, layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }}
             // The last row's pb-3.5 would stack with the next section's mt-4,
             // making Xizmatlar visually bottom-heavy vs the other sections.
             className="[&>div:last-child>div]:pb-0"
@@ -1369,7 +1373,7 @@ function SummaryBody({
         )}
       </AnimatePresence>
 
-      <motion.div layout className="mt-4 border-t border-border pt-4">
+      <motion.div layout transition={{ layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }} className="mt-4 border-t border-border pt-4">
         <p className="text-sm text-muted-foreground">{dict.total}{totalMin ? ` · ${dur(totalMin, dict)}` : ''}</p>
         <AnimatePresence mode="wait">
           <motion.p
