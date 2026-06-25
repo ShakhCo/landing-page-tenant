@@ -49,6 +49,8 @@ export const metadata: Metadata = {
   publisher: "BOOKUP",
   category: "business",
   alternates: { canonical: "https://bookup.uz" },
+  // Search-engine site verification (renders <meta name="yandex-verification" …>).
+  verification: { yandex: "481b12bd09fa6c6f" },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
