@@ -774,13 +774,18 @@ export function BookingFlow({
           <h1 className="mt-2 text-3xl font-bold leading-tight tracking-tight text-foreground sm:text-4xl">{bigTitle}</h1>
 
           <div className="mt-6">
-          <AnimatePresence mode="wait">
+          {/* initial={false}: on first load only the cards inside stagger in —
+              the step container itself doesn't also slide (no double entrance).
+              Vertical (not x) avoids a horizontal-overflow scrollbar flash on
+              mobile; fast eased-in exit + smooth eased-out enter keeps the
+              mode="wait" handoff from feeling blank. */}
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={step}
-              initial={{ opacity: 0, x: 16 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -16 }}
-              transition={{ duration: 0.18 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8, transition: { duration: 0.12, ease: 'easeIn' } }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             >
               {/* ---- services ---- */}
               {step === 'services' && (
@@ -818,8 +823,13 @@ export function BookingFlow({
                           initial={{ opacity: 0, y: 8 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
+                          // framer owns the transform — the hover lift + tap live here, NOT in
+                          // a Tailwind `hover:-translate`/`transition-all` (CSS transitioning the
+                          // same transform framer animates per-frame is what made entrances stutter).
+                          whileHover={{ y: -2, transition: { duration: 0.18, ease: 'easeOut' } }}
+                          whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
                           onClick={() => toggleService(s.id)}
-                          className="group relative overflow-hidden rounded-2xl border border-foreground/10 bg-card text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5"
+                          className="group relative overflow-hidden rounded-2xl border border-foreground/10 bg-card text-left transition-shadow duration-200 hover:shadow-lg hover:shadow-black/5"
                         >
                           {on && (
                             <span className="absolute right-3 top-3 z-10 flex size-8 items-center justify-center rounded-full bg-foreground text-background">
@@ -864,6 +874,10 @@ export function BookingFlow({
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.25, delay: Math.min(i * 0.04, 0.4), ease: 'easeOut' }}
+                        // Same as the service cards: framer drives the transform (lift/tap), CSS
+                        // only transitions shadow + the selection border — never `transform`.
+                        whileHover={{ y: -2, transition: { duration: 0.18, ease: 'easeOut' } }}
+                        whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
                         onClick={() => {
                           setStaffId(st.id);
                           // Units (assets) auto-advance on pick; staff confirm via "Davom etish".
@@ -872,7 +886,7 @@ export function BookingFlow({
                             setStep('time');
                           }
                         }}
-                        className={`flex items-center gap-3.5 rounded-2xl border bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/5 ${
+                        className={`flex items-center gap-3.5 rounded-2xl border bg-card p-4 text-left transition-[box-shadow,border-color] duration-200 hover:shadow-lg hover:shadow-black/5 ${
                           on ? 'border-foreground' : 'border-foreground/10'
                         }`}
                       >
