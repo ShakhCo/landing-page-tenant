@@ -49,8 +49,12 @@ export const metadata: Metadata = {
   publisher: "BOOKUP",
   category: "business",
   alternates: { canonical: "https://bookup.uz" },
-  // Search-engine site verification (renders <meta name="yandex-verification" …>).
-  verification: { yandex: "481b12bd09fa6c6f" },
+  // Search-engine site verification (Yandex + Bing). `other` renders the raw
+  // <meta name="msvalidate.01" …> Bing requires (no dedicated Next.js field).
+  verification: {
+    yandex: "481b12bd09fa6c6f",
+    other: { "msvalidate.01": "D69901EE4F2AFA34F691A28226979F95" },
+  },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
