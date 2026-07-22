@@ -50,6 +50,12 @@ export const dict = {
   staffRole: 'Mutaxassis',
   unitRole: 'Joy',
   profile: 'Profil',
+  myBookings: 'Mening bronlarim',
+  myBookingsEmpty: 'Sizda hali bronlar yo‘q',
+  statusConfirmed: 'Tasdiqlangan',
+  statusCompleted: 'Bajarilgan',
+  statusCancelled: 'Bekor qilingan',
+  statusNoShow: 'Kelmagan',
   appointmentsCompleted: 'Bajarilgan bronlar',
 };
 

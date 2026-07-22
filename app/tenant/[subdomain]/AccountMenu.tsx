@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ChevronDown, ChevronLeft, X } from 'lucide-react';
+import { User, LogOut, ChevronDown, ChevronLeft, X, CalendarDays } from 'lucide-react';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { OtpInput } from './booking/OtpInput';
 import { requestOtpAction, loginAction, logoutAction } from './booking/actions';
@@ -133,6 +133,13 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <div className="absolute right-0 top-full z-50 mt-1.5 min-w-44 rounded-xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5">
+              <a
+                href="/bookings"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/5"
+              >
+                <CalendarDays size={16} className="text-muted-foreground" />
+                {dict.myBookings}
+              </a>
               <button
                 type="button"
                 onClick={logout}

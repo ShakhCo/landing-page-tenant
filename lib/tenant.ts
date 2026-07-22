@@ -83,6 +83,25 @@ export function mediaUrl(url: string): string {
   return url.startsWith('/') ? `${API_BASE}${url}` : url;
 }
 
+/** One logical booking in the customer's "my bookings" list. */
+export interface MyBooking {
+  id: string;
+  status: string;
+  startAt: string;
+  endAt: string | null;
+  totalPrice: number | null;
+  items: Array<{
+    name: LocalizedText | null;
+    resourceName: string;
+    startAt: string;
+    price: number;
+  }>;
+}
+export interface MyBookingsResult {
+  business: { name: string; currency: string; timezone: string };
+  bookings: MyBooking[];
+}
+
 /** Resolve a short booking id to its tenant subdomain; null when unknown/ambiguous. */
 export async function locateBooking(shortId: string): Promise<string | null> {
   try {

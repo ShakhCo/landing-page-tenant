@@ -46,5 +46,11 @@ export const dict: TenantDict = {
   staffRole: 'Специалист',
   unitRole: 'Место',
   profile: 'Профиль',
+  myBookings: 'Мои брони',
+  myBookingsEmpty: 'У вас пока нет броней',
+  statusConfirmed: 'Подтверждена',
+  statusCompleted: 'Завершена',
+  statusCancelled: 'Отменена',
+  statusNoShow: 'Не пришёл',
   appointmentsCompleted: 'Выполненные записи',
 };

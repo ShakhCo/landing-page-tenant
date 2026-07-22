@@ -46,5 +46,11 @@ export const dict: TenantDict = {
   staffRole: 'Specialist',
   unitRole: 'Spot',
   profile: 'Profile',
+  myBookings: 'My bookings',
+  myBookingsEmpty: 'You have no bookings yet',
+  statusConfirmed: 'Confirmed',
+  statusCompleted: 'Completed',
+  statusCancelled: 'Cancelled',
+  statusNoShow: 'No-show',
   appointmentsCompleted: 'Appointments completed',
 };
