@@ -1,3 +1,5 @@
+import { isMigratedTenant, newApiFetch } from './newapi';
+
 export type LocalizedText = { uz?: string; ru?: string; en?: string };
 
 /** Languages the public tenant pages support. */
@@ -211,10 +213,14 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
     // Plain cached fetch (no per-request IP forwarding): this is a cacheable
     // read, and calling headers() would force dynamic rendering and defeat the
     // 60s ISR cache. Tenant reads aren't the rate-limit concern (OTP is).
-    const res = await fetch(
-      `${API_BASE}/public/tenants/${encodeURIComponent(sub)}`,
-      { next: { revalidate: 60 } },
-    );
+    // Tenants already cut over to the new Workers backend are fetched from
+    // it instead (signed; contract-compatible response).
+    const res = isMigratedTenant(sub)
+      ? await newApiFetch(`/public/tenants/${encodeURIComponent(sub)}`)
+      : await fetch(
+          `${API_BASE}/public/tenants/${encodeURIComponent(sub)}`,
+          { next: { revalidate: 60 } },
+        );
     if (res.status === 404) {
       rememberMissing(sub); // definitively absent — cache the negative outcome
       return null;

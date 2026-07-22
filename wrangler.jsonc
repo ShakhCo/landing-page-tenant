@@ -20,6 +20,9 @@
     { "pattern": "*.bookup.uz/*", "zone_name": "bookup.uz" }
   ],
   "vars": {
-    "NEXT_PUBLIC_API_BASE_URL": "https://bookup-api.automations.uz"
+    "NEXT_PUBLIC_API_BASE_URL": "https://bookup-api.automations.uz",
+    // Tenants served by the new Workers backend (comma-separated subdomains)
+    "NEW_API_TENANTS": "barber",
+    "NEW_API_ORIGIN": "https://apis.automations.uz"
   }
 }
