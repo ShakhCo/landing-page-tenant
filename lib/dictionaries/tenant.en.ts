@@ -46,6 +46,8 @@ export const dict: TenantDict = {
   staffRole: 'Specialist',
   unitRole: 'Spot',
   profile: 'Profile',
+  refreshPrompt: 'This page is out of date — refresh and try again',
+  refresh: 'Refresh',
   myBookings: 'My bookings',
   myBookingsEmpty: 'You have no bookings yet',
   statusConfirmed: 'Confirmed',

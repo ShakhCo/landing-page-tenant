@@ -50,6 +50,8 @@ export const dict = {
   staffRole: 'Mutaxassis',
   unitRole: 'Joy',
   profile: 'Profil',
+  refreshPrompt: 'Sahifa eskirgan — yangilab, qayta urining',
+  refresh: 'Yangilash',
   myBookings: 'Mening bronlarim',
   myBookingsEmpty: 'Sizda hali bronlar yo‘q',
   statusConfirmed: 'Tasdiqlangan',

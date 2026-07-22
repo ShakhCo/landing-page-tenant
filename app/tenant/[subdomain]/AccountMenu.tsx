@@ -39,6 +39,9 @@ export function AccountMenu({
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [drawerData, setDrawerData] = useState<MyBookingsResult | null>(null);
   const [drawerLoading, setDrawerLoading] = useState(false);
+  // Set when the server action itself fails — typically a tab loaded
+  // before the latest deploy (stale action id). A refresh fixes it.
+  const [drawerStale, setDrawerStale] = useState(false);
   const [digits, setDigits] = useState('');
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -95,10 +98,16 @@ export function AccountMenu({
     setDrawerMounted(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setDrawerVisible(true)));
     setDrawerLoading(true);
-    void myBookingsAction(subdomain).then((r) => {
-      setDrawerLoading(false);
-      setDrawerData(r.ok ? r.data : null);
-    });
+    setDrawerStale(false);
+    void myBookingsAction(subdomain)
+      .then((r) => {
+        setDrawerLoading(false);
+        setDrawerData(r.ok ? r.data : null);
+      })
+      .catch(() => {
+        setDrawerLoading(false);
+        setDrawerStale(true);
+      });
   };
 
   const closeDrawer = () => {
@@ -164,6 +173,19 @@ export function AccountMenu({
               {[0, 1, 2].map((i) => (
                 <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-foreground/5" />
               ))}
+            </div>
+          ) : drawerStale ? (
+            <div className="grid h-full place-items-center">
+              <div className="text-center">
+                <p className="text-sm font-semibold text-muted-foreground">{dict.refreshPrompt}</p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="mt-4 h-11 rounded-2xl bg-foreground px-6 text-sm font-bold text-background transition-opacity hover:opacity-90"
+                >
+                  {dict.refresh}
+                </button>
+              </div>
             </div>
           ) : !drawerData || drawerData.bookings.length === 0 ? (
             <div className="grid h-full place-items-center">
