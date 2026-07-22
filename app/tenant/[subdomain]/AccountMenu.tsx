@@ -123,7 +123,13 @@ export function AccountMenu({
     void myBookingsAction(subdomain)
       .then((r) => {
         setDrawerLoading(false);
-        setDrawerData(r.ok ? r.data : null);
+        // Only a genuine success shows the list (empty list => "no bookings").
+        // Any failure — expired session, backend blip, timeout, or a stale
+        // server action after a deploy — must NOT masquerade as "no bookings";
+        // show the reload prompt instead. A reload is the only reliable
+        // recovery (it re-runs SSR and rebinds fresh action ids).
+        if (r.ok) setDrawerData(r.data);
+        else setDrawerStale(true);
       })
       .catch(() => {
         setDrawerLoading(false);
@@ -371,12 +377,20 @@ export function AccountMenu({
     if (digits.length !== UZ_LEN || busy) return;
     setBusy(true);
     setError(null);
-    const r = await requestOtpAction(`+998${digits}`, 'login');
-    setBusy(false);
-    if (r.ok) {
-      setSent(true);
-      setResendIn(60); // 60s cooldown before the next code can be requested
-    } else setError(r.error);
+    try {
+      const r = await requestOtpAction(`+998${digits}`, 'login');
+      setBusy(false);
+      if (r.ok) {
+        setSent(true);
+        setResendIn(60); // 60s cooldown before the next code can be requested
+      } else setError(r.error);
+    } catch {
+      // A rejected server action (typically a stale action id after a deploy)
+      // would otherwise leave the button stuck in its busy state with no
+      // feedback. Unstick it and point the user at a reload.
+      setBusy(false);
+      setError(dict.refreshPrompt);
+    }
   };
 
   // Code step → back to phone entry (keep the typed number).
@@ -391,15 +405,21 @@ export function AccountMenu({
     if (c.length < 5 || busy) return;
     setBusy(true);
     setError(null);
-    const r = await loginAction(`+998${digits}`, c);
-    if (r.ok) {
-      reset();
-      router.refresh();
-      return; // keep busy while the route refreshes
+    try {
+      const r = await loginAction(`+998${digits}`, c);
+      if (r.ok) {
+        reset();
+        router.refresh();
+        return; // keep busy while the route refreshes
+      }
+      setBusy(false);
+      setCode(''); // wrong code → clear the boxes for a fresh entry
+      setError(r.error);
+    } catch {
+      setBusy(false);
+      setCode('');
+      setError(dict.refreshPrompt); // stale action / hard failure → prompt reload
     }
-    setBusy(false);
-    setCode(''); // wrong code → clear the boxes for a fresh entry
-    setError(r.error);
   };
 
   // Auto-submit as soon as all 5 digits are in.
