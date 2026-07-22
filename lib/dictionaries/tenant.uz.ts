@@ -56,6 +56,7 @@ export const dict = {
   myBookingsEmpty: 'Sizda hali bronlar yo‘q',
   bookingDetails: 'Bron tafsilotlari',
   total: 'Jami',
+  sessionExpired: 'Sessiya muddati tugagan — qaytadan kiring',
   statusConfirmed: 'Tasdiqlangan',
   statusCompleted: 'Bajarilgan',
   statusCancelled: 'Bekor qilingan',

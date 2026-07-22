@@ -64,6 +64,9 @@ export function AccountMenu({
   // Set when the server action itself fails — typically a tab loaded
   // before the latest deploy (stale action id). A refresh fixes it.
   const [drawerStale, setDrawerStale] = useState(false);
+  // Set when the backend rejected the session (expired / rotated secret).
+  // A refresh won't help — the customer must log in again.
+  const [drawerNeedsLogin, setDrawerNeedsLogin] = useState(false);
   // The booking whose details are shown inside the drawer (null = list view).
   // The drawer slides horizontally between the list and this detail panel.
   const [selected, setSelected] = useState<MyBooking | null>(null);
@@ -125,21 +128,30 @@ export function AccountMenu({
     requestAnimationFrame(() => requestAnimationFrame(() => setDrawerVisible(true)));
     setDrawerLoading(true);
     setDrawerStale(false);
+    setDrawerNeedsLogin(false);
     void myBookingsAction(subdomain)
       .then((r) => {
         setDrawerLoading(false);
         // Only a genuine success shows the list (empty list => "no bookings").
-        // Any failure — expired session, backend blip, timeout, or a stale
-        // server action after a deploy — must NOT masquerade as "no bookings";
-        // show the reload prompt instead. A reload is the only reliable
-        // recovery (it re-runs SSR and rebinds fresh action ids).
+        // A failure must NOT masquerade as "no bookings":
+        //  - needsLogin => the session was rejected; only re-login recovers.
+        //  - anything else (backend blip, timeout, stale server action after a
+        //    deploy) => a reload is the reliable fix.
         if (r.ok) setDrawerData(r.data);
+        else if (r.needsLogin) setDrawerNeedsLogin(true);
         else setDrawerStale(true);
       })
       .catch(() => {
         setDrawerLoading(false);
         setDrawerStale(true);
       });
+  };
+
+  // Session rejected → clear it and reload so the header drops to logged-out
+  // and the customer can log in fresh (a plain refresh keeps the dead cookie).
+  const relogin = async () => {
+    await logoutAction();
+    window.location.reload();
   };
 
   const closeDrawer = () => {
@@ -229,6 +241,19 @@ export function AccountMenu({
                   {[0, 1, 2].map((i) => (
                     <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-foreground/5" />
                   ))}
+                </div>
+              ) : drawerNeedsLogin ? (
+                <div className="grid h-full place-items-center">
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-muted-foreground">{dict.sessionExpired}</p>
+                    <button
+                      type="button"
+                      onClick={relogin}
+                      className="mt-4 h-11 rounded-2xl bg-foreground px-6 text-sm font-bold text-background transition-opacity hover:opacity-90"
+                    >
+                      {dict.login}
+                    </button>
+                  </div>
                 </div>
               ) : drawerStale ? (
                 <div className="grid h-full place-items-center">

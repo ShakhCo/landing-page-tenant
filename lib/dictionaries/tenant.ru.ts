@@ -52,6 +52,7 @@ export const dict: TenantDict = {
   myBookingsEmpty: 'У вас пока нет броней',
   bookingDetails: 'Детали брони',
   total: 'Итого',
+  sessionExpired: 'Сессия истекла — войдите снова',
   statusConfirmed: 'Подтверждена',
   statusCompleted: 'Завершена',
   statusCancelled: 'Отменена',

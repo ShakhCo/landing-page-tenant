@@ -194,7 +194,8 @@ export async function hasSessionAction(): Promise<boolean> {
 export async function myBookingsAction(
   subdomain: string,
 ): Promise<{ ok: true; data: MyBookingsResult } | { ok: false; needsLogin?: boolean }> {
-  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
   if (!token) return { ok: false, needsLogin: true };
   try {
     const res = await serverFetch(
@@ -206,7 +207,14 @@ export async function myBookingsAction(
         cache: 'no-store',
       },
     );
-    if (res.status === 401) return { ok: false, needsLogin: true };
+    // Session rejected by the backend (expired, or signed under a rotated
+    // secret). The display-only decode can't catch this, so the whole page
+    // still thinks the customer is logged in — clear the stale cookie so a
+    // reload drops to the logged-out state and they can re-authenticate.
+    if (res.status === 401) {
+      jar.delete(SESSION_COOKIE);
+      return { ok: false, needsLogin: true };
+    }
     if (!res.ok) return { ok: false };
     return { ok: true, data: (await res.json()) as MyBookingsResult };
   } catch {
