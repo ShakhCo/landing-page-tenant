@@ -1,64 +1,57 @@
-// Per-tenant cutover to the new Workers backend (apis.automations.uz).
-// Tenants listed in NEW_API_TENANTS (comma-separated subdomains) are
-// served from the new API; everyone else stays on the monolith. Server
-// side only — the HMAC secret must never reach the browser.
+// The Workers backend (apis.automations.uz) requires per-platform HMAC
+// request signatures on its public endpoints. Server side only — the
+// secret must never reach the browser.
 
-const NEW_API_ORIGIN =
+export const NEW_API_ORIGIN =
   process.env.NEW_API_ORIGIN ?? 'https://apis.automations.uz';
-
-const MIGRATED = new Set(
-  (process.env.NEW_API_TENANTS ?? '')
-    .split(',')
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean),
-);
-
-export function isMigratedTenant(subdomain: string): boolean {
-  return MIGRATED.has(subdomain.toLowerCase());
-}
 
 const hex = (buf: ArrayBuffer) =>
   [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 
 /**
- * GET from the new API with the per-platform HMAC request signature
- * (x-client-id/x-timestamp/x-signature over ts\nMETHOD\npath\nsha256(body)).
- * Signing is skipped when NEW_API_HMAC_SECRET is unset (e.g. staging).
+ * HMAC headers for a request to the new API
+ * (canonical = ts\nMETHOD\npath?query\nsha256hex(body)).
+ * Empty when NEW_API_HMAC_SECRET is unset (signing disabled, e.g. dev).
  */
+export async function signedHeaders(
+  method: string,
+  pathWithQuery: string,
+  bodyText = '',
+): Promise<Record<string, string>> {
+  const secret = process.env.NEW_API_HMAC_SECRET;
+  if (!secret) return {};
+
+  const ts = String(Math.floor(Date.now() / 1000));
+  const enc = new TextEncoder();
+  const bodyHash = hex(await crypto.subtle.digest('SHA-256', enc.encode(bodyText)));
+  const canonical = [ts, method.toUpperCase(), pathWithQuery, bodyHash].join('\n');
+  const key = await crypto.subtle.importKey(
+    'raw',
+    enc.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign'],
+  );
+  const signature = hex(await crypto.subtle.sign('HMAC', key, enc.encode(canonical)));
+  return { 'x-client-id': 'web', 'x-timestamp': ts, 'x-signature': signature };
+}
+
+/** Signed GET against the new API; `path` starts at /public/... */
 export async function newApiFetch(
   pathWithQuery: string,
   init?: RequestInit,
 ): Promise<Response> {
   const path = `/v1${pathWithQuery}`;
   const headers = new Headers(init?.headers);
-
-  const secret = process.env.NEW_API_HMAC_SECRET;
-  if (secret) {
-    const ts = String(Math.floor(Date.now() / 1000));
-    const bodyHash = hex(await crypto.subtle.digest('SHA-256', new ArrayBuffer(0)));
-    const canonical = [ts, 'GET', path, bodyHash].join('\n');
-    const key = await crypto.subtle.importKey(
-      'raw',
-      new TextEncoder().encode(secret),
-      { name: 'HMAC', hash: 'SHA-256' },
-      false,
-      ['sign'],
-    );
-    const signature = hex(
-      await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(canonical)),
-    );
-    headers.set('x-client-id', 'web');
-    headers.set('x-timestamp', ts);
-    headers.set('x-signature', signature);
+  for (const [k, v] of Object.entries(await signedHeaders('GET', path))) {
+    headers.set(k, v);
   }
-
   return fetch(`${NEW_API_ORIGIN}${path}`, {
     ...init,
     method: 'GET',
     headers,
-    // The signature timestamp makes responses uncacheable by Next's data
-    // cache anyway; the new API keeps its own 60s edge cache, so this
-    // stays cheap without ISR.
+    // The signature timestamp defeats Next's data cache anyway; the API
+    // keeps its own 60s edge cache, so this stays cheap without ISR.
     cache: 'no-store',
     signal: init?.signal ?? AbortSignal.timeout(12_000),
   });

@@ -1,4 +1,5 @@
 import { headers } from 'next/headers';
+import { NEW_API_ORIGIN, signedHeaders } from './newapi';
 
 /** Abort a backend call that stalls, so an SSR render / server action can't hang. */
 const REQUEST_TIMEOUT_MS = 12_000;
@@ -19,9 +20,21 @@ const REQUEST_TIMEOUT_MS = 12_000;
  */
 export async function serverFetch(url: string, init: RequestInit = {}): Promise<Response> {
   const fwd = await forwardHeaders();
+
+  // The Workers backend requires HMAC request signatures on public routes.
+  const u = new URL(url);
+  const hmac =
+    u.origin === NEW_API_ORIGIN
+      ? await signedHeaders(
+          init.method ?? 'GET',
+          u.pathname + u.search,
+          typeof init.body === 'string' ? init.body : '',
+        )
+      : {};
+
   return fetch(url, {
     ...init,
-    headers: { ...fwd, ...(init.headers as Record<string, string> | undefined) },
+    headers: { ...fwd, ...hmac, ...(init.headers as Record<string, string> | undefined) },
     // Caller signal wins if provided; otherwise enforce the timeout.
     signal: init.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });

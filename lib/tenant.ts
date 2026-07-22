@@ -1,4 +1,4 @@
-import { isMigratedTenant, newApiFetch } from './newapi';
+import { newApiFetch } from './newapi';
 
 export type LocalizedText = { uz?: string; ru?: string; en?: string };
 
@@ -72,7 +72,7 @@ export interface PublicTenant {
 }
 
 export const API_BASE =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://bookup-api.automations.uz';
+  process.env.NEXT_PUBLIC_API_BASE_URL ?? 'https://apis.automations.uz/v1';
 
 /**
  * Resolves a backend media URL for <img src>. The API stores relative paths
@@ -86,9 +86,8 @@ export function mediaUrl(url: string): string {
 /** Resolve a short booking id to its tenant subdomain; null when unknown/ambiguous. */
 export async function locateBooking(shortId: string): Promise<string | null> {
   try {
-    const res = await fetch(
-      `${API_BASE}/public/bookings/${encodeURIComponent(shortId)}/locate`,
-      { cache: 'no-store', signal: AbortSignal.timeout(READ_TIMEOUT_MS) },
+    const res = await newApiFetch(
+      `/public/bookings/${encodeURIComponent(shortId)}/locate`,
     );
     if (!res.ok) return null;
     const data = (await res.json()) as { subdomain?: string };
@@ -163,9 +162,8 @@ export interface PublicBookingView {
 /** Fetch a single booking's public details by id. Null when missing. */
 export async function getBooking(subdomain: string, id: string): Promise<PublicBookingView | null> {
   try {
-    const res = await fetch(
-      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}`,
-      { cache: 'no-store', signal: AbortSignal.timeout(READ_TIMEOUT_MS) },
+    const res = await newApiFetch(
+      `/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}`,
     );
     if (!res.ok) return null;
     const data = (await res.json()) as PublicBookingView;
@@ -210,17 +208,9 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
   // Negative cache: recently confirmed missing → no backend round-trip.
   if (isKnownMissing(sub)) return null;
   try {
-    // Plain cached fetch (no per-request IP forwarding): this is a cacheable
-    // read, and calling headers() would force dynamic rendering and defeat the
-    // 60s ISR cache. Tenant reads aren't the rate-limit concern (OTP is).
-    // Tenants already cut over to the new Workers backend are fetched from
-    // it instead (signed; contract-compatible response).
-    const res = isMigratedTenant(sub)
-      ? await newApiFetch(`/public/tenants/${encodeURIComponent(sub)}`)
-      : await fetch(
-          `${API_BASE}/public/tenants/${encodeURIComponent(sub)}`,
-          { next: { revalidate: 60 } },
-        );
+    // Signed read from the Workers backend; its own 60s edge cache does
+    // the caching (Next's data cache can't, since signatures vary).
+    const res = await newApiFetch(`/public/tenants/${encodeURIComponent(sub)}`);
     if (res.status === 404) {
       rememberMissing(sub); // definitively absent — cache the negative outcome
       return null;
