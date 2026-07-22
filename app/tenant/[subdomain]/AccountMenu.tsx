@@ -192,40 +192,38 @@ export function AccountMenu({
                   .map((it) => (it.name ? localized(it.name, 'uz') : ''))
                   .filter(Boolean)
                   .join(' · ');
-                const past = b.status !== 'confirmed';
                 return (
                   <li key={b.id}>
                     <a
                       href={`/b/${encodeURIComponent(b.id)}`}
                       className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:bg-foreground/[0.03]"
                     >
-                      <div
-                        className={`grid size-14 shrink-0 place-items-center rounded-xl ${past ? 'bg-foreground/5' : 'bg-foreground text-background'}`}
-                      >
+                      <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-foreground/5">
                         <div className="text-center leading-none">
-                          <div className={`text-lg font-extrabold tabular-nums ${past ? 'text-foreground' : ''}`}>
+                          <div className="text-lg font-extrabold tabular-nums text-foreground">
                             {parts.day}
                           </div>
-                          <div className={`mt-0.5 text-[10px] font-bold uppercase tracking-wide ${past ? 'text-muted-foreground' : 'text-background/80'}`}>
+                          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                             {UZ_MONTHS[Number(parts.month) - 1]}
                           </div>
                         </div>
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-[15px] font-bold text-foreground">{services || '—'}</p>
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="truncate text-[15px] font-bold text-foreground">{services || '—'}</p>
+                          <span
+                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[b.status] ?? 'bg-muted text-muted-foreground'}`}
+                          >
+                            {statusLabel[b.status] ?? b.status}
+                          </span>
+                        </div>
                         <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
                           {parts.hour}:{parts.minute}
                           {b.totalPrice != null && (
                             <span> · {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}</span>
                           )}
                         </p>
-                        <span
-                          className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[b.status] ?? 'bg-muted text-muted-foreground'}`}
-                        >
-                          {statusLabel[b.status] ?? b.status}
-                        </span>
                       </div>
-                      <ChevronRight size={16} className="shrink-0 text-muted-foreground/60" />
                     </a>
                   </li>
                 );
