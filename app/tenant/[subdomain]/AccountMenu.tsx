@@ -137,7 +137,7 @@ export function AccountMenu({
   const drawer = drawerMounted ? (
     <div className="fixed inset-0 z-[100]">
       <div
-        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`absolute inset-0 bg-black/25 transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
         onClick={closeDrawer}
       />
       <aside
@@ -147,12 +147,7 @@ export function AccountMenu({
         className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300 ease-out ${drawerVisible ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <div>
-            <h2 className="text-lg font-extrabold text-foreground">{dict.myBookings}</h2>
-            {drawerData && (
-              <p className="text-xs font-semibold text-muted-foreground">{drawerData.business.name}</p>
-            )}
-          </div>
+          <h2 className="text-lg font-extrabold text-foreground">{dict.myBookings}</h2>
           <button
             type="button"
             onClick={closeDrawer}
@@ -180,43 +175,57 @@ export function AccountMenu({
           ) : (
             <ul className="space-y-3">
               {drawerData.bookings.map((b) => {
-                const fmt = new Intl.DateTimeFormat('ru-RU', {
-                  timeZone: drawerData.business.timezone,
-                  day: '2-digit',
-                  month: '2-digit',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                });
+                const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+                const parts = Object.fromEntries(
+                  new Intl.DateTimeFormat('en-GB', {
+                    timeZone: drawerData.business.timezone,
+                    day: '2-digit',
+                    month: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false,
+                  })
+                    .formatToParts(new Date(b.startAt))
+                    .map((p) => [p.type, p.value]),
+                );
                 const services = b.items
                   .map((it) => (it.name ? localized(it.name, 'uz') : ''))
                   .filter(Boolean)
                   .join(' · ');
+                const past = b.status !== 'confirmed';
                 return (
                   <li key={b.id}>
                     <a
                       href={`/b/${encodeURIComponent(b.id)}`}
-                      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                      className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:bg-foreground/[0.03]"
                     >
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[b.status] ?? 'border-border bg-muted text-muted-foreground'}`}
-                          >
-                            {statusLabel[b.status] ?? b.status}
-                          </span>
-                          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
-                            {fmt.format(new Date(b.startAt))}
-                          </span>
+                      <div
+                        className={`grid size-14 shrink-0 place-items-center rounded-xl ${past ? 'bg-foreground/5' : 'bg-foreground text-background'}`}
+                      >
+                        <div className="text-center leading-none">
+                          <div className={`text-lg font-extrabold tabular-nums ${past ? 'text-foreground' : ''}`}>
+                            {parts.day}
+                          </div>
+                          <div className={`mt-0.5 text-[10px] font-bold uppercase tracking-wide ${past ? 'text-muted-foreground' : 'text-background/80'}`}>
+                            {UZ_MONTHS[Number(parts.month) - 1]}
+                          </div>
                         </div>
-                        <p className="mt-1.5 truncate text-sm font-bold text-foreground">{services || '—'}</p>
-                        {b.totalPrice != null && (
-                          <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                            {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}
-                          </p>
-                        )}
                       </div>
-                      <ChevronRight size={16} className="shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-[15px] font-bold text-foreground">{services || '—'}</p>
+                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                          {parts.hour}:{parts.minute}
+                          {b.totalPrice != null && (
+                            <span> · {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}</span>
+                          )}
+                        </p>
+                        <span
+                          className={`mt-1.5 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[b.status] ?? 'bg-muted text-muted-foreground'}`}
+                        >
+                          {statusLabel[b.status] ?? b.status}
+                        </span>
+                      </div>
+                      <ChevronRight size={16} className="shrink-0 text-muted-foreground/60" />
                     </a>
                   </li>
                 );
