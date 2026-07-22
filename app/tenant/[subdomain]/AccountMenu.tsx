@@ -2,10 +2,11 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ChevronDown, ChevronLeft, X, CalendarDays } from 'lucide-react';
+import { User, LogOut, ChevronDown, ChevronLeft, ChevronRight, X, CalendarDays } from 'lucide-react';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
+import { localized, type MyBookingsResult } from '@/lib/tenant';
 import { OtpInput } from './booking/OtpInput';
-import { requestOtpAction, loginAction, logoutAction } from './booking/actions';
+import { requestOtpAction, loginAction, logoutAction, myBookingsAction } from './booking/actions';
 
 const UZ_LEN = 9;
 const fmtLocal = (d: string) =>
@@ -21,9 +22,23 @@ const PILL =
  * phone with a log-out menu, or a "Log in" entry that opens a centered modal
  * running a phone + OTP flow.
  */
-export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | null; dict: TenantDict }) {
+export function AccountMenu({
+  customerPhone,
+  dict,
+  subdomain,
+}: {
+  customerPhone?: string | null;
+  dict: TenantDict;
+  subdomain: string;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  // "My bookings" right drawer: mounted + visible are separate so the
+  // slide/fade transition can play in both directions.
+  const [drawerMounted, setDrawerMounted] = useState(false);
+  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [drawerData, setDrawerData] = useState<MyBookingsResult | null>(null);
+  const [drawerLoading, setDrawerLoading] = useState(false);
   const [digits, setDigits] = useState('');
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -75,6 +90,144 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
     router.refresh();
   };
 
+  const openDrawer = () => {
+    setOpen(false);
+    setDrawerMounted(true);
+    requestAnimationFrame(() => requestAnimationFrame(() => setDrawerVisible(true)));
+    setDrawerLoading(true);
+    void myBookingsAction(subdomain).then((r) => {
+      setDrawerLoading(false);
+      setDrawerData(r.ok ? r.data : null);
+    });
+  };
+
+  const closeDrawer = () => {
+    setDrawerVisible(false);
+    setTimeout(() => setDrawerMounted(false), 300); // let the slide-out play
+  };
+
+  // Escape closes the drawer; background scroll locks while it is open.
+  useEffect(() => {
+    if (!drawerMounted) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeDrawer();
+    };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [drawerMounted]);
+
+  const STATUS_STYLE: Record<string, string> = {
+    confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    completed: 'bg-blue-50 text-blue-700 border-blue-200',
+    cancelled: 'bg-red-50 text-red-600 border-red-200',
+    no_show: 'bg-amber-50 text-amber-700 border-amber-200',
+  };
+  const statusLabel: Record<string, string> = {
+    confirmed: dict.statusConfirmed,
+    completed: dict.statusCompleted,
+    cancelled: dict.statusCancelled,
+    no_show: dict.statusNoShow,
+  };
+
+  const drawer = drawerMounted ? (
+    <div className="fixed inset-0 z-[100]">
+      <div
+        className={`absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${drawerVisible ? 'opacity-100' : 'opacity-0'}`}
+        onClick={closeDrawer}
+      />
+      <aside
+        role="dialog"
+        aria-modal="true"
+        aria-label={dict.myBookings}
+        className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300 ease-out ${drawerVisible ? 'translate-x-0' : 'translate-x-full'}`}
+      >
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
+          <div>
+            <h2 className="text-lg font-extrabold text-foreground">{dict.myBookings}</h2>
+            {drawerData && (
+              <p className="text-xs font-semibold text-muted-foreground">{drawerData.business.name}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={closeDrawer}
+            aria-label={dict.back}
+            className="grid size-9 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {drawerLoading ? (
+            <div className="space-y-3">
+              {[0, 1, 2].map((i) => (
+                <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-foreground/5" />
+              ))}
+            </div>
+          ) : !drawerData || drawerData.bookings.length === 0 ? (
+            <div className="grid h-full place-items-center">
+              <div className="text-center">
+                <CalendarDays size={32} className="mx-auto text-muted-foreground" />
+                <p className="mt-3 text-sm font-semibold text-muted-foreground">{dict.myBookingsEmpty}</p>
+              </div>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {drawerData.bookings.map((b) => {
+                const fmt = new Intl.DateTimeFormat('ru-RU', {
+                  timeZone: drawerData.business.timezone,
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                });
+                const services = b.items
+                  .map((it) => (it.name ? localized(it.name, 'uz') : ''))
+                  .filter(Boolean)
+                  .join(' · ');
+                return (
+                  <li key={b.id}>
+                    <a
+                      href={`/b/${encodeURIComponent(b.id)}`}
+                      className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm transition-shadow hover:shadow-md"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`inline-flex rounded-full border px-2.5 py-0.5 text-xs font-bold ${STATUS_STYLE[b.status] ?? 'border-border bg-muted text-muted-foreground'}`}
+                          >
+                            {statusLabel[b.status] ?? b.status}
+                          </span>
+                          <span className="text-xs font-semibold tabular-nums text-muted-foreground">
+                            {fmt.format(new Date(b.startAt))}
+                          </span>
+                        </div>
+                        <p className="mt-1.5 truncate text-sm font-bold text-foreground">{services || '—'}</p>
+                        {b.totalPrice != null && (
+                          <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
+                            {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}
+                          </p>
+                        )}
+                      </div>
+                      <ChevronRight size={16} className="shrink-0 text-muted-foreground" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </aside>
+    </div>
+  ) : null;
+
   const sendCode = async () => {
     if (digits.length !== UZ_LEN || busy) return;
     setBusy(true);
@@ -120,9 +273,11 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
     <p className="mb-4 text-sm font-semibold text-red-600">{error}</p>
   ) : null;
 
-  // ---- signed in: phone + log-out menu ----
+  // ---- signed in: phone + menu (my bookings drawer, log out) ----
   if (customerPhone) {
     return (
+      <>
+      {drawer}
       <div className="relative">
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={PILL}>
           <User size={16} className="text-muted-foreground" />
@@ -133,13 +288,14 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
           <>
             <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
             <div className="absolute right-0 top-full z-50 mt-1.5 min-w-44 rounded-xl border border-border bg-card p-2 shadow-lg ring-1 ring-black/5">
-              <a
-                href="/bookings"
+              <button
+                type="button"
+                onClick={openDrawer}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-foreground transition-colors hover:bg-foreground/5"
               >
                 <CalendarDays size={16} className="text-muted-foreground" />
                 {dict.myBookings}
-              </a>
+              </button>
               <button
                 type="button"
                 onClick={logout}
@@ -153,6 +309,7 @@ export function AccountMenu({ customerPhone, dict }: { customerPhone?: string | 
           </>
         )}
       </div>
+      </>
     );
   }
 

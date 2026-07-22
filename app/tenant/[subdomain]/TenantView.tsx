@@ -259,7 +259,7 @@ export function TenantView({
             >
               <div className="mx-auto flex max-w-[1350px] justify-end px-3">
                 <div className="pointer-events-auto flex items-center gap-2">
-                  <AccountMenu customerPhone={customerPhone} dict={dict} />
+                  <AccountMenu customerPhone={customerPhone} dict={dict} subdomain={business.subdomain} />
                   <LocaleSwitcher current={locale} />
                 </div>
               </div>
@@ -298,7 +298,7 @@ export function TenantView({
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="hidden items-center gap-2 sm:flex">
-                    <AccountMenu customerPhone={customerPhone} dict={dict} />
+                    <AccountMenu customerPhone={customerPhone} dict={dict} subdomain={business.subdomain} />
                     <LocaleSwitcher current={locale} />
                   </div>
                   {canBook && (

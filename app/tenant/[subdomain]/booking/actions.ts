@@ -1,7 +1,12 @@
 'use server';
 
 import { cookies, headers } from 'next/headers';
-import { API_BASE, type AvailabilityResult, type CreateBookingInput } from '@/lib/tenant';
+import {
+  API_BASE,
+  type AvailabilityResult,
+  type CreateBookingInput,
+  type MyBookingsResult,
+} from '@/lib/tenant';
 import { serverFetch, NETWORK_ERROR_UZ } from '@/lib/serverFetch';
 
 /** "Remember me" session cookie, scoped to all *.bookup.uz subdomains. */
@@ -183,4 +188,28 @@ export async function createBookingAction(
 /** True when a remembered customer session cookie is present (read-only check). */
 export async function hasSessionAction(): Promise<boolean> {
   return (await cookies()).has(SESSION_COOKIE);
+}
+
+/** The signed-in customer's bookings at this tenant (for the drawer). */
+export async function myBookingsAction(
+  subdomain: string,
+): Promise<{ ok: true; data: MyBookingsResult } | { ok: false; needsLogin?: boolean }> {
+  const token = (await cookies()).get(SESSION_COOKIE)?.value;
+  if (!token) return { ok: false, needsLogin: true };
+  try {
+    const res = await serverFetch(
+      `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/my-bookings`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ sessionToken: token }),
+        cache: 'no-store',
+      },
+    );
+    if (res.status === 401) return { ok: false, needsLogin: true };
+    if (!res.ok) return { ok: false };
+    return { ok: true, data: (await res.json()) as MyBookingsResult };
+  } catch {
+    return { ok: false };
+  }
 }

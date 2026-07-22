@@ -24,12 +24,20 @@ export function Header({
   const navItems: Array<{ label: string; href: string }> = [
     { label: dict.nav.home, href: localePath(locale) },
     { label: dict.nav.features, href: "#" },
-    { label: dict.nav.forBusiness, href: "#" },
+    { label: dict.nav.forBusiness, href: "/business/barbershops" },
     { label: dict.nav.forCustomers, href: "#" },
     { label: dict.nav.pricing, href: "/narxlar" },
     { label: dict.nav.partners, href: "#" },
     { label: dict.nav.about, href: "#" },
   ];
+
+  function isActive(href: string): boolean {
+    if (href === "#") return false;
+    if (href === localePath(locale)) {
+      return ["/", "/oz", "/ru", "/en"].includes(pathname);
+    }
+    return pathname === href || pathname.startsWith(href + "/");
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -46,19 +54,16 @@ export function Header({
       <div className="sticky top-0 z-30 hidden border-b border-black/10 bg-white/90 backdrop-blur md:block">
         <div className="mx-auto flex max-w-[1360px] items-center gap-5 px-5 py-3">
           <nav className="flex flex-1 items-center gap-1 overflow-x-auto text-sm">
-            {navItems.map((item, i) => (
+            {navItems.map((item) => (
               <a
                 key={item.label}
                 href={item.href}
-                className={
-                  i === 0
-                    ? "inline-flex items-center gap-2 rounded-full px-4 py-2 font-medium text-[var(--accent)]"
-                    : "rounded-full px-4 py-2 text-gray-700 hover:bg-gray-50"
-                }
+                className={`rounded-full px-4 py-2 text-sm transition ${
+                  isActive(item.href)
+                    ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                    : "font-medium text-gray-700 hover:bg-gray-50"
+                }`}
               >
-                {i === 0 && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                )}
                 {item.label}
               </a>
             ))}
@@ -145,20 +150,17 @@ export function Header({
           />
           <div className="relative z-30 border-t border-black/10 bg-white md:hidden">
             <nav className="mx-auto flex max-w-[1360px] flex-col gap-1 px-5 py-4">
-              {navItems.map((item, i) => (
+              {navItems.map((item) => (
                 <a
                   key={item.label}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className={
-                    i === 0
-                      ? "inline-flex items-center gap-2 rounded-full px-4 py-3 text-base font-semibold text-[var(--accent)]"
-                      : "rounded-full px-4 py-3 text-base font-medium text-gray-700 hover:bg-gray-50"
-                  }
+                  className={`rounded-full px-4 py-3 text-base transition ${
+                    isActive(item.href)
+                      ? "bg-[var(--accent)]/10 font-semibold text-[var(--accent)]"
+                      : "font-medium text-gray-700 hover:bg-gray-50"
+                  }`}
                 >
-                  {i === 0 && (
-                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--accent)]" />
-                  )}
                   {item.label}
                 </a>
               ))}
