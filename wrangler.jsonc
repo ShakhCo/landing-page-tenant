@@ -1,0 +1,25 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bookup-frontend",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    // OpenNext incremental (ISR) cache — shared across isolates
+    { "binding": "NEXT_INC_CACHE_KV", "id": "f9bd480ec36643d4ab414928c1c39e3a" }
+  ],
+  "routes": [
+    { "pattern": "bookup.uz/*", "zone_name": "bookup.uz" },
+    { "pattern": "www.bookup.uz/*", "zone_name": "bookup.uz" },
+    // tenant sites: <subdomain>.bookup.uz
+    { "pattern": "*.bookup.uz/*", "zone_name": "bookup.uz" }
+  ],
+  "vars": {
+    "NEXT_PUBLIC_API_BASE_URL": "https://bookup-api.automations.uz"
+  }
+}

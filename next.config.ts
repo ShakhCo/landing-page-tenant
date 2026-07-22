@@ -43,6 +43,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
   // Drop the "X-Powered-By: Next.js" tech-disclosure header.
   poweredByHeader: false,
+  // Cloudflare Workers have no sharp; local marketing images are already
+  // sized, tenant pages use plain <img> for backend media anyway.
+  images: { unoptimized: true },
   allowedDevOrigins: [
     "lcd-and-down-infrared.trycloudflare.com",
     "*.trycloudflare.com",

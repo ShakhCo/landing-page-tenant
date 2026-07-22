@@ -1,6 +1,5 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { ImageResponse } from 'next/og';
+import { LOGO_DATA_URL } from '@/lib/og-logo';
 import { getTenant, localized, mediaUrl } from '@/lib/tenant';
 import { noteMissingTenantHit } from '@/lib/tenant-jail-server';
 
@@ -18,11 +17,6 @@ function initials(name: string) {
     .map((w) => w[0]?.toUpperCase() ?? '')
     .join('');
 }
-
-// Real BOOKUP wordmark, inlined so Satori can render it without a fetch.
-const LOGO_DATA_URL = `data:image/png;base64,${readFileSync(
-  join(process.cwd(), 'public', 'bookup-logo.png'),
-).toString('base64')}`;
 
 export default async function Image({ params }: { params: Promise<{ subdomain: string }> }) {
   const { subdomain } = await params;
