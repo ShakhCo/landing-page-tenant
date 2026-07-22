@@ -10,6 +10,11 @@ import { requestOtpAction, loginAction, logoutAction, myBookingsAction } from '.
 
 const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
 
+// Soft fade at the top (just under the drawer header) and bottom (screen edge)
+// so list items dissolve instead of hard-clipping as they scroll past.
+const FADE_MASK = 'linear-gradient(to bottom, transparent 0, #000 22px, #000 calc(100% - 32px), transparent 100%)';
+const fadeStyle = { WebkitMaskImage: FADE_MASK, maskImage: FADE_MASK } as const;
+
 /** Break an ISO instant into day/month/hour/minute parts in the tenant timezone. */
 const fmtParts = (iso: string, tz: string) =>
   Object.fromEntries(
@@ -218,7 +223,7 @@ export function AccountMenu({
             className={`flex h-full w-[200%] transition-transform duration-300 ease-out ${selected ? '-translate-x-1/2' : 'translate-x-0'}`}
           >
             {/* ---- panel 1: the list ---- */}
-            <div className="h-full w-1/2 overflow-y-auto p-4" aria-hidden={selected ? true : undefined}>
+            <div className="h-full w-1/2 overflow-y-auto p-4" style={fadeStyle} aria-hidden={selected ? true : undefined}>
               {drawerLoading ? (
                 <div className="space-y-3">
                   {[0, 1, 2].map((i) => (
@@ -294,7 +299,7 @@ export function AccountMenu({
             </div>
 
             {/* ---- panel 2: the selected booking's details ---- */}
-            <div className="h-full w-1/2 overflow-y-auto p-4" aria-hidden={selected ? undefined : true}>
+            <div className="h-full w-1/2 overflow-y-auto p-4" style={fadeStyle} aria-hidden={selected ? undefined : true}>
               {selected && (() => {
                 const tz = drawerData?.business.timezone ?? 'Asia/Tashkent';
                 const currency = drawerData?.business.currency ?? '';
