@@ -2,11 +2,28 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, ChevronDown, ChevronLeft, ChevronRight, X, CalendarDays } from 'lucide-react';
+import { User, LogOut, ChevronDown, ChevronLeft, ChevronRight, X, CalendarDays, Clock } from 'lucide-react';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
-import { localized, type MyBookingsResult } from '@/lib/tenant';
+import { localized, type MyBooking, type MyBookingsResult } from '@/lib/tenant';
 import { OtpInput } from './booking/OtpInput';
 import { requestOtpAction, loginAction, logoutAction, myBookingsAction } from './booking/actions';
+
+const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
+
+/** Break an ISO instant into day/month/hour/minute parts in the tenant timezone. */
+const fmtParts = (iso: string, tz: string) =>
+  Object.fromEntries(
+    new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      day: '2-digit',
+      month: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    })
+      .formatToParts(new Date(iso))
+      .map((p) => [p.type, p.value]),
+  ) as Record<'day' | 'month' | 'hour' | 'minute', string>;
 
 const UZ_LEN = 9;
 const fmtLocal = (d: string) =>
@@ -42,6 +59,9 @@ export function AccountMenu({
   // Set when the server action itself fails — typically a tab loaded
   // before the latest deploy (stale action id). A refresh fixes it.
   const [drawerStale, setDrawerStale] = useState(false);
+  // The booking whose details are shown inside the drawer (null = list view).
+  // The drawer slides horizontally between the list and this detail panel.
+  const [selected, setSelected] = useState<MyBooking | null>(null);
   const [digits, setDigits] = useState('');
   const [code, setCode] = useState('');
   const [sent, setSent] = useState(false);
@@ -95,6 +115,7 @@ export function AccountMenu({
 
   const openDrawer = () => {
     setOpen(false);
+    setSelected(null);
     setDrawerMounted(true);
     requestAnimationFrame(() => requestAnimationFrame(() => setDrawerVisible(true)));
     setDrawerLoading(true);
@@ -112,14 +133,19 @@ export function AccountMenu({
 
   const closeDrawer = () => {
     setDrawerVisible(false);
-    setTimeout(() => setDrawerMounted(false), 300); // let the slide-out play
+    setTimeout(() => {
+      setDrawerMounted(false);
+      setSelected(null); // reset to the list for the next open (after slide-out)
+    }, 300); // let the slide-out play
   };
 
   // Escape closes the drawer; background scroll locks while it is open.
   useEffect(() => {
     if (!drawerMounted) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') closeDrawer();
+      if (e.key !== 'Escape') return;
+      if (selected) setSelected(null); // detail → list first
+      else closeDrawer();
     };
     document.addEventListener('keydown', onKey);
     const prev = document.body.style.overflow;
@@ -128,7 +154,7 @@ export function AccountMenu({
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = prev;
     };
-  }, [drawerMounted]);
+  }, [drawerMounted, selected]);
 
   const STATUS_STYLE: Record<string, string> = {
     confirmed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
@@ -156,102 +182,186 @@ export function AccountMenu({
         className={`absolute inset-y-0 right-0 flex w-full max-w-md flex-col bg-card shadow-2xl transition-transform duration-300 ease-out ${drawerVisible ? 'translate-x-0' : 'translate-x-full'}`}
       >
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h2 className="text-lg font-extrabold text-foreground">{dict.myBookings}</h2>
+          <div className="flex min-w-0 items-center gap-1">
+            {selected && (
+              <button
+                type="button"
+                onClick={() => setSelected(null)}
+                aria-label={dict.back}
+                className="-ml-2 mr-0.5 grid size-8 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-foreground/5"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            )}
+            <h2 className="truncate text-lg font-extrabold text-foreground">
+              {selected ? dict.bookingDetails : dict.myBookings}
+            </h2>
+          </div>
           <button
             type="button"
             onClick={closeDrawer}
             aria-label={dict.back}
-            className="grid size-9 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
+            className="grid size-9 shrink-0 place-items-center rounded-full border border-border text-foreground transition-colors hover:bg-foreground/5"
           >
             <X size={18} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          {drawerLoading ? (
-            <div className="space-y-3">
-              {[0, 1, 2].map((i) => (
-                <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-foreground/5" />
-              ))}
-            </div>
-          ) : drawerStale ? (
-            <div className="grid h-full place-items-center">
-              <div className="text-center">
-                <p className="text-sm font-semibold text-muted-foreground">{dict.refreshPrompt}</p>
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="mt-4 h-11 rounded-2xl bg-foreground px-6 text-sm font-bold text-background transition-opacity hover:opacity-90"
-                >
-                  {dict.refresh}
-                </button>
-              </div>
-            </div>
-          ) : !drawerData || drawerData.bookings.length === 0 ? (
-            <div className="grid h-full place-items-center">
-              <div className="text-center">
-                <CalendarDays size={32} className="mx-auto text-muted-foreground" />
-                <p className="mt-3 text-sm font-semibold text-muted-foreground">{dict.myBookingsEmpty}</p>
-              </div>
-            </div>
-          ) : (
-            <ul className="space-y-3">
-              {drawerData.bookings.map((b) => {
-                const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
-                const parts = Object.fromEntries(
-                  new Intl.DateTimeFormat('en-GB', {
-                    timeZone: drawerData.business.timezone,
-                    day: '2-digit',
-                    month: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false,
-                  })
-                    .formatToParts(new Date(b.startAt))
-                    .map((p) => [p.type, p.value]),
-                );
-                const services = b.items
-                  .map((it) => (it.name ? localized(it.name, 'uz') : ''))
-                  .filter(Boolean)
-                  .join(' · ');
-                return (
-                  <li key={b.id}>
-                    <a
-                      href={`/b/${encodeURIComponent(b.id)}`}
-                      className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:bg-foreground/[0.03]"
+        <div className="relative flex-1 overflow-hidden">
+          <div
+            className={`flex h-full w-[200%] transition-transform duration-300 ease-out ${selected ? '-translate-x-1/2' : 'translate-x-0'}`}
+          >
+            {/* ---- panel 1: the list ---- */}
+            <div className="h-full w-1/2 overflow-y-auto p-4" aria-hidden={selected ? true : undefined}>
+              {drawerLoading ? (
+                <div className="space-y-3">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="h-24 animate-pulse rounded-2xl border border-border bg-foreground/5" />
+                  ))}
+                </div>
+              ) : drawerStale ? (
+                <div className="grid h-full place-items-center">
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-muted-foreground">{dict.refreshPrompt}</p>
+                    <button
+                      type="button"
+                      onClick={() => window.location.reload()}
+                      className="mt-4 h-11 rounded-2xl bg-foreground px-6 text-sm font-bold text-background transition-opacity hover:opacity-90"
                     >
-                      <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-foreground/5">
-                        <div className="text-center leading-none">
-                          <div className="text-lg font-extrabold tabular-nums text-foreground">
-                            {parts.day}
+                      {dict.refresh}
+                    </button>
+                  </div>
+                </div>
+              ) : !drawerData || drawerData.bookings.length === 0 ? (
+                <div className="grid h-full place-items-center">
+                  <div className="text-center">
+                    <CalendarDays size={32} className="mx-auto text-muted-foreground" />
+                    <p className="mt-3 text-sm font-semibold text-muted-foreground">{dict.myBookingsEmpty}</p>
+                  </div>
+                </div>
+              ) : (
+                <ul className="space-y-3">
+                  {drawerData.bookings.map((b) => {
+                    const parts = fmtParts(b.startAt, drawerData.business.timezone);
+                    const services = b.items
+                      .map((it) => (it.name ? localized(it.name, 'uz') : ''))
+                      .filter(Boolean)
+                      .join(' · ');
+                    return (
+                      <li key={b.id}>
+                        <button
+                          type="button"
+                          onClick={() => setSelected(b)}
+                          className="flex w-full items-center gap-4 rounded-2xl border border-border bg-card p-3.5 text-left transition-colors hover:bg-foreground/[0.03]"
+                        >
+                          <div className="grid size-14 shrink-0 place-items-center rounded-xl bg-foreground/5">
+                            <div className="text-center leading-none">
+                              <div className="text-lg font-extrabold tabular-nums text-foreground">{parts.day}</div>
+                              <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                                {UZ_MONTHS[Number(parts.month) - 1]}
+                              </div>
+                            </div>
                           </div>
-                          <div className="mt-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                            {UZ_MONTHS[Number(parts.month) - 1]}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-2">
+                              <p className="truncate text-[15px] font-bold text-foreground">{services || '—'}</p>
+                              <span
+                                className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[b.status] ?? 'bg-muted text-muted-foreground'}`}
+                              >
+                                {statusLabel[b.status] ?? b.status}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                              {parts.hour}:{parts.minute}
+                              {b.totalPrice != null && (
+                                <span> · {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}</span>
+                              )}
+                            </p>
+                          </div>
+                          <ChevronRight size={18} className="shrink-0 text-muted-foreground" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* ---- panel 2: the selected booking's details ---- */}
+            <div className="h-full w-1/2 overflow-y-auto p-4" aria-hidden={selected ? undefined : true}>
+              {selected && (() => {
+                const tz = drawerData?.business.timezone ?? 'Asia/Tashkent';
+                const currency = drawerData?.business.currency ?? '';
+                const start = fmtParts(selected.startAt, tz);
+                const end = selected.endAt ? fmtParts(selected.endAt, tz) : null;
+                return (
+                  <div className="space-y-4">
+                    {/* summary */}
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <div className="text-2xl font-extrabold tabular-nums text-foreground">
+                            {start.day} {UZ_MONTHS[Number(start.month) - 1]}
+                          </div>
+                          <div className="mt-1.5 flex items-center gap-1.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                            <Clock size={14} />
+                            {start.hour}:{start.minute}
+                            {end && ` – ${end.hour}:${end.minute}`}
                           </div>
                         </div>
+                        <span
+                          className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-bold ${STATUS_STYLE[selected.status] ?? 'bg-muted text-muted-foreground'}`}
+                        >
+                          {statusLabel[selected.status] ?? selected.status}
+                        </span>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="truncate text-[15px] font-bold text-foreground">{services || '—'}</p>
-                          <span
-                            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-bold ${STATUS_STYLE[b.status] ?? 'bg-muted text-muted-foreground'}`}
-                          >
-                            {statusLabel[b.status] ?? b.status}
-                          </span>
-                        </div>
-                        <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
-                          {parts.hour}:{parts.minute}
-                          {b.totalPrice != null && (
-                            <span> · {b.totalPrice.toLocaleString('ru-RU')} {drawerData.business.currency}</span>
-                          )}
-                        </p>
+                    </div>
+
+                    {/* line items */}
+                    <ul className="space-y-2">
+                      {selected.items.map((it, i) => {
+                        const t = fmtParts(it.startAt, tz);
+                        return (
+                          <li key={i} className="rounded-2xl border border-border bg-card p-3.5">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <p className="text-[15px] font-bold text-foreground">
+                                  {it.name ? localized(it.name, 'uz') : '—'}
+                                </p>
+                                {it.resourceName && (
+                                  <p className="mt-0.5 text-sm text-muted-foreground">{it.resourceName}</p>
+                                )}
+                              </div>
+                              <div className="shrink-0 text-right">
+                                <p className="text-sm font-semibold tabular-nums text-foreground">
+                                  {t.hour}:{t.minute}
+                                </p>
+                                {it.price != null && (
+                                  <p className="mt-0.5 text-sm font-semibold tabular-nums text-muted-foreground">
+                                    {it.price.toLocaleString('ru-RU')} {currency}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+
+                    {/* total */}
+                    {selected.totalPrice != null && (
+                      <div className="flex items-center justify-between rounded-2xl bg-foreground/5 px-4 py-3.5">
+                        <span className="text-sm font-bold text-foreground">{dict.total}</span>
+                        <span className="text-base font-extrabold tabular-nums text-foreground">
+                          {selected.totalPrice.toLocaleString('ru-RU')} {currency}
+                        </span>
                       </div>
-                    </a>
-                  </li>
+                    )}
+                  </div>
                 );
-              })}
-            </ul>
-          )}
+              })()}
+            </div>
+          </div>
         </div>
       </aside>
     </div>

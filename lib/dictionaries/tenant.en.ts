@@ -50,6 +50,8 @@ export const dict: TenantDict = {
   refresh: 'Refresh',
   myBookings: 'My bookings',
   myBookingsEmpty: 'You have no bookings yet',
+  bookingDetails: 'Booking details',
+  total: 'Total',
   statusConfirmed: 'Confirmed',
   statusCompleted: 'Completed',
   statusCancelled: 'Cancelled',

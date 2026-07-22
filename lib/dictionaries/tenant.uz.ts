@@ -54,6 +54,8 @@ export const dict = {
   refresh: 'Yangilash',
   myBookings: 'Mening bronlarim',
   myBookingsEmpty: 'Sizda hali bronlar yo‘q',
+  bookingDetails: 'Bron tafsilotlari',
+  total: 'Jami',
   statusConfirmed: 'Tasdiqlangan',
   statusCompleted: 'Bajarilgan',
   statusCancelled: 'Bekor qilingan',
