@@ -34,18 +34,21 @@ export default async function BookingRoute({
     redirect('/');
   }
 
-  // Preselected services: `services` is a comma list of short (8-char) id
-  // prefixes; the legacy `service` (full uuid) still resolves. Tokens match by
-  // unique prefix against THIS tenant's services only — an unknown or ambiguous
-  // token is silently dropped (worst case: nothing preselected).
+  // Preselected services: `services` is a comma list of id tokens. The new
+  // backend uses short integer ids (e.g. "227"), so a token is usually the FULL
+  // id (exact match); legacy UUIDs come through as an 8-char prefix. Match exact
+  // first, else a UNIQUE prefix against THIS tenant's services only — an unknown
+  // or ambiguous token is silently dropped (worst case: nothing preselected).
   const svcParam = services ?? service ?? '';
   const initialServiceIds = Array.from(
     new Set(
       svcParam
         .split(',')
         .map((t) => t.trim())
-        .filter((t) => t.length >= 4)
+        .filter(Boolean)
         .map((tok) => {
+          const exact = tenant.services.find((s) => s.id === tok);
+          if (exact) return exact.id;
           const matches = tenant.services.filter((s) => s.id.startsWith(tok));
           return matches.length === 1 ? matches[0].id : null;
         })
@@ -59,7 +62,8 @@ export default async function BookingRoute({
   let scopedStaffId: string | undefined;
   if (staffParam && !reschedule) {
     const tok = staffParam.trim();
-    const matches = tok.length >= 4 ? tenant.staff.filter((st) => st.id.startsWith(tok)) : [];
+    const exact = tenant.staff.find((st) => st.id === tok);
+    const matches = exact ? [exact] : tok ? tenant.staff.filter((st) => st.id.startsWith(tok)) : [];
     const picked = matches.length === 1 ? matches[0] : null;
     if (picked && picked.offeringIds.length > 0) scopedStaffId = picked.id;
   }
