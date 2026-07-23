@@ -20,7 +20,7 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
-  "connect-src 'self' https://bookup-api.automations.uz",
+  "connect-src 'self' https://apis.automations.uz",
   "frame-src https://maps.google.com https://www.google.com",
 ].join("; ");
 
