@@ -182,10 +182,12 @@ export function BookingFlow({
     return unit ? [unit] : valid;
   })();
   const initService = initIds.length === 1 ? services.find((s) => s.id === initIds[0]) ?? null : null;
-  const initSkip =
-    initService && (isUnitService(initService) || offerServices.every((s) => s.id === initService.id || isUnitService(s)))
-      ? initService
-      : null;
+  // A single service tapped from a service card (?services=<one id>) skips the
+  // browse step and goes straight to the specialist step — and, when exactly one
+  // specialist offers it, straight to the time step (see the step logic below).
+  // The business-level "Book" (no preselection) and multi-service URLs still
+  // open on the browse list. Back-navigation returns to services to add more.
+  const initSkip = initService;
   const skipService = onlyService ?? initSkip;
   const skipEligible = skipService ? staff.filter((st) => st.offeringIds.includes(skipService.id)) : [];
   // The pre-locked resource: the scoped specialist (staff "Bron"), or — on a
