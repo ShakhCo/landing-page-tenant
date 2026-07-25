@@ -272,8 +272,10 @@ export function localized(
 }
 
 // Trims a raw geocoded address ("8736+P98, Rakatboshi ko'chasi, 100031,
-// Toshkent, Toshkent, O'zbekiston") down to the useful "street, city": drops the
-// Plus Code, postal code, and country, and de-duplicates repeated parts.
+// Toshkent, Toshkent, O'zbekiston") down to just "street, city": drops the Plus
+// Code, postal code, and country, then keeps only the first meaningful part
+// (street) and the last (city). Handles duplicate city parts that differ only by
+// Cyrillic/Latin lookalikes ("Тоshkent" vs "Toshkent").
 export function cleanAddress(full: string): string {
   if (!full) return '';
   const parts = full
@@ -286,13 +288,8 @@ export function cleanAddress(full: string): string {
         !/^\d{3,6}$/.test(p) && // postal code, e.g. 100031
         !/^(o['’ʻ`]?zbekiston|uzbekistan|узбекистан)$/i.test(p), // country
     );
-  const seen = new Set<string>();
-  return parts
-    .filter((p) => {
-      const key = p.toLowerCase();
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    })
-    .join(', ');
+  if (parts.length === 0) return '';
+  const street = parts[0];
+  const city = parts[parts.length - 1];
+  return street === city ? street : `${street}, ${city}`;
 }
