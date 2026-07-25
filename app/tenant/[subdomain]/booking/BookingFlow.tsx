@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult, type TenantLocale } from '@/lib/tenant';
+import { cleanAddress, localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult, type TenantLocale } from '@/lib/tenant';
 import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
@@ -1163,7 +1163,7 @@ export function BookingFlow({
               <div className="min-w-0">
                 <p className="text-lg font-bold leading-tight text-foreground">{business.name}</p>
                 {branch?.address && (
-                  <p className="mt-1 truncate text-sm text-muted-foreground">{localized(branch.address, '', locale)}</p>
+                  <p className="mt-1 truncate text-sm text-muted-foreground">{cleanAddress(localized(branch.address, '', locale))}</p>
                 )}
               </div>
             </div>

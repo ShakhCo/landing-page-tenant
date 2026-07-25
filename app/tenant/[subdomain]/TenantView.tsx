@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, ChevronDown, ChevronRight, BadgeCheck, Phone, Globe, Send, MapPin, ArrowRight, Star, X } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
+import { cleanAddress, localized, mediaUrl, type LocalizedText, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { ServiceMonogram } from './ServiceMonogram';
 import { LocaleSwitcher } from './LocaleSwitcher';
@@ -345,7 +345,7 @@ export function TenantView({
             {branch?.address && (
               <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
                 <MapPin className="size-3.5 shrink-0" />
-                <span className="truncate">{localized(branch.address, '', locale)}</span>
+                <span className="truncate">{cleanAddress(localized(branch.address, '', locale))}</span>
               </p>
             )}
           </div>
@@ -518,7 +518,7 @@ export function TenantView({
                 {branch.address && (
                   <p className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
                     <MapPin className="mt-0.5 size-4 shrink-0" />
-                    {localized(branch.address, '', locale)}
+                    {cleanAddress(localized(branch.address, '', locale))}
                   </p>
                 )}
                 <a
