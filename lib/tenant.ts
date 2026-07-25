@@ -271,11 +271,20 @@ export function localized(
   return t.uz || t.ru || t.en || fallback;
 }
 
+// Cyrillic letters that look identical to a Latin one (Тоshkent vs Toshkent).
+const CYRILLIC_LOOKALIKE: Record<string, string> = {
+  а: 'a', в: 'b', е: 'e', к: 'k', м: 'm', н: 'h', о: 'o',
+  р: 'p', с: 'c', т: 't', у: 'y', х: 'x',
+};
+const lookalikeKey = (s: string) =>
+  s.toLowerCase().replace(/[а-я]/g, (ch) => CYRILLIC_LOOKALIKE[ch] ?? ch);
+const cyrillicCount = (s: string) => (s.match(/[а-яё]/gi) ?? []).length;
+
 // Trims a raw geocoded address ("8736+P98, Rakatboshi ko'chasi, 100031,
-// Toshkent, Toshkent, O'zbekiston") down to just "street, city": drops the Plus
-// Code, postal code, and country, then keeps only the first meaningful part
-// (street) and the last (city). Handles duplicate city parts that differ only by
-// Cyrillic/Latin lookalikes ("Тоshkent" vs "Toshkent").
+// Toshkent, Toshkent, O'zbekiston") down to "street, district, city": drops the
+// Plus Code, postal code, and country, and de-duplicates repeated parts —
+// including ones that differ only by Cyrillic/Latin lookalikes, preferring the
+// more-Latin spelling.
 export function cleanAddress(full: string): string {
   if (!full) return '';
   const parts = full
@@ -288,8 +297,17 @@ export function cleanAddress(full: string): string {
         !/^\d{3,6}$/.test(p) && // postal code, e.g. 100031
         !/^(o['’ʻ`]?zbekiston|uzbekistan|узбекистан)$/i.test(p), // country
     );
-  if (parts.length === 0) return '';
-  const street = parts[0];
-  const city = parts[parts.length - 1];
-  return street === city ? street : `${street}, ${city}`;
+  const chosen = new Map<string, string>();
+  const order: string[] = [];
+  for (const p of parts) {
+    const key = lookalikeKey(p);
+    const prev = chosen.get(key);
+    if (prev === undefined) {
+      chosen.set(key, p);
+      order.push(key);
+    } else if (cyrillicCount(p) < cyrillicCount(prev)) {
+      chosen.set(key, p); // keep the more-Latin variant
+    }
+  }
+  return order.map((k) => chosen.get(k)!).join(', ');
 }
