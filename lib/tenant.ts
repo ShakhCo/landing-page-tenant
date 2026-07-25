@@ -28,6 +28,8 @@ export interface PublicTenant {
     longitude: number;
     timezone: string;
     address: LocalizedText | null;
+    district?: LocalizedText | null;
+    region?: LocalizedText | null;
     workingHours: Array<{
       weekday: number;
       isDayOff: boolean;
@@ -310,4 +312,26 @@ export function cleanAddress(full: string): string {
     }
   }
   return order.map((k) => chosen.get(k)!).join(', ');
+}
+
+// Branch address for display: "street, district, city". Uses the cleaned
+// formatted address for street + city, and inserts the branch's district (tuman)
+// between them — Google's formatted address omits it for Tashkent, but it's
+// stored on the branch. Skips the district if it's already in the string.
+export function formatBranchAddress(
+  branch: { address?: LocalizedText | null; district?: LocalizedText | null },
+  locale: TenantLocale = 'uz',
+): string {
+  const cleaned = cleanAddress(localized(branch.address ?? null, '', locale));
+  const district = localized(branch.district ?? null, '', locale);
+  if (!district) return cleaned;
+  if (!cleaned) return district;
+  const parts = cleaned.split(', ');
+  const dKey = lookalikeKey(district);
+  if (parts.some((p) => lookalikeKey(p) === dKey)) return cleaned; // already present
+  const street = parts[0];
+  const city = parts[parts.length - 1];
+  return street === city
+    ? `${street}, ${district}`
+    : `${street}, ${district}, ${city}`;
 }
