@@ -4,7 +4,7 @@ import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
-import { localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant, type TenantLocale } from '@/lib/tenant';
+import { formatBranchAddress, localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
@@ -121,7 +121,7 @@ export function BookingResult({
   const [resendIn, setResendIn] = useState(0);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
-  const address = branch?.address ? localized(branch.address, '', locale) : null;
+  const address = branch?.address ? formatBranchAddress(branch, locale) : null;
 
   const total = booking.totalPrice ?? booking.items.reduce((s, i) => s + (i.price ?? 0), 0);
   // Hourly (time-rate) booking that has started and is still running — open OR
