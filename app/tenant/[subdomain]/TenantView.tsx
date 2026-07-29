@@ -156,7 +156,14 @@ export function TenantView({
     requestAnimationFrame(() => staffScrollRef.current?.scrollTo({ top: 0 }));
   }, [staffDetail]);
 
-  const now = branch ? nowInTz(branch.timezone) : null;
+  // Current time drives the open/closed status and today-highlighting. Computed
+  // AFTER mount (null on the server + first client render) so the server clock
+  // and the hydration clock can't disagree — that mismatch was the React #418
+  // hydration error. It fills in a tick after load.
+  const [now, setNow] = useState<{ weekday: number; minutes: number } | null>(null);
+  useEffect(() => {
+    if (branch) setNow(nowInTz(branch.timezone));
+  }, [branch]);
   const today = branch?.workingHours.find((w) => w.weekday === now?.weekday);
   const oMin = hm(today?.openTime ?? null);
   const cMin = hm(today?.closeTime ?? null);
