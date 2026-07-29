@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronDown, Check, Clock, Calendar, Phone, Minus, Plus, X, ArrowRight, HelpCircle } from 'lucide-react';
 import { formatBranchAddress, localized, mediaUrl, type LocalizedText, type PublicTenant, type AvailabilityResult, type TenantLocale } from '@/lib/tenant';
 import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
@@ -153,6 +153,8 @@ export function BookingFlow({
   // Desktop shows confirm as a modal overlay WITHOUT advancing the step, so the
   // time step stays mounted behind it (no availability refetch when it closes).
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // "Individual narx" explainer modal (variable-priced services).
+  const [individualInfo, setIndividualInfo] = useState(false);
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -1199,6 +1201,7 @@ export function BookingFlow({
               startTime={slot ?? null}
               totalMin={durationKnown ? totalMin : 0}
               priceText={summaryPrice}
+              onExplainIndividual={variable ? () => setIndividualInfo(true) : undefined}
             />
 
             {/* Keep the CTA mounted while the confirm modal is open (just disabled)
@@ -1220,7 +1223,14 @@ export function BookingFlow({
               <span className="text-muted-foreground">
                 {selected.length} {dict.serviceCount}{durationKnown && totalMin ? ` · ${dur(totalMin, dict)}` : ''}
               </span>
-              <span className="text-base font-extrabold text-foreground">{summaryPrice}</span>
+              <span className="inline-flex items-center gap-1.5 text-base font-extrabold text-foreground">
+                {summaryPrice}
+                {variable && (
+                  <button type="button" onClick={() => setIndividualInfo(true)} aria-label={dict.individual} className="text-muted-foreground">
+                    <HelpCircle size={16} />
+                  </button>
+                )}
+              </span>
             </div>
           )}
           <PrimaryBtn disabled={action.disabled} onClick={action.onClick}>
@@ -1268,6 +1278,54 @@ export function BookingFlow({
         )}
       </AnimatePresence>
 
+      {/* "Individual narx" explainer — a big centered modal. */}
+      <AnimatePresence>
+        {individualInfo && (
+          <motion.div
+            key="individual-info"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIndividualInfo(false)}
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/50 lg:items-center lg:p-6"
+          >
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', damping: 30, stiffness: 300 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full rounded-t-[28px] bg-card p-7 pb-9 lg:w-[520px] lg:rounded-3xl"
+            >
+              <button
+                type="button"
+                onClick={() => setIndividualInfo(false)}
+                aria-label={dict.ariaClose}
+                className="absolute right-5 top-5 grid size-9 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/5"
+              >
+                <X size={20} />
+              </button>
+              <span className="grid size-14 place-items-center rounded-2xl bg-foreground/[0.06] text-foreground">
+                <HelpCircle size={28} />
+              </span>
+              <h3 className="mt-5 text-2xl font-extrabold tracking-tight text-foreground">
+                {dict.individual}
+              </h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted-foreground">
+                {dict.individualInfo}
+              </p>
+              <button
+                type="button"
+                onClick={() => setIndividualInfo(false)}
+                className="mt-7 h-[52px] w-full rounded-2xl bg-foreground text-[16px] font-bold text-background"
+              >
+                {dict.gotIt}
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
@@ -1283,6 +1341,7 @@ function SummaryBody({
   startTime,
   totalMin,
   priceText,
+  onExplainIndividual,
 }: {
   selected: PublicTenant['services'];
   currency: string;
@@ -1297,6 +1356,8 @@ function SummaryBody({
   totalMin: number;
   /** Pre-formatted total — a money amount, or an hourly rate ("…/soat") while the duration is still unchosen. */
   priceText: string;
+  /** Set for variable-priced ("Individual") bookings — renders a "?" explainer. */
+  onExplainIndividual?: () => void;
 }) {
   // Once a slot is picked, walk the services in order to show each one's
   // start–end window (back-to-back from the chosen start time).
@@ -1396,16 +1457,26 @@ function SummaryBody({
       <motion.div layout transition={{ layout: { duration: 0.26, ease: [0.22, 1, 0.36, 1] } }} className="mt-4 border-t border-border pt-4">
         <p className="text-sm text-muted-foreground">{dict.total}{totalMin ? ` · ${dur(totalMin, dict)}` : ''}</p>
         <AnimatePresence mode="wait">
-          <motion.p
+          <motion.div
             key={priceText}
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
-            className="text-3xl font-extrabold text-foreground"
+            className="flex items-center gap-2"
           >
-            {priceText}
-          </motion.p>
+            <span className="text-3xl font-extrabold text-foreground">{priceText}</span>
+            {onExplainIndividual && (
+              <button
+                type="button"
+                onClick={onExplainIndividual}
+                aria-label={dict.individual}
+                className="text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <HelpCircle size={20} />
+              </button>
+            )}
+          </motion.div>
         </AnimatePresence>
       </motion.div>
     </>

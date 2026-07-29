@@ -76,6 +76,8 @@ export const dict: BookingDict = {
 
   ariaBack: 'Назад',
   ariaClose: 'Закрыть',
+  individualInfo: "Цена этой услуги зависит от клиента, поэтому не указывается заранее. Точную стоимость мастер назовёт на месте.",
+  gotIt: "Понятно",
   ariaPickDate: 'Выбрать дату',
   ariaDecrease: 'Уменьшить',
   ariaIncrease: 'Увеличить',

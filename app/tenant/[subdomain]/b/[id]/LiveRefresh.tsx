@@ -29,11 +29,16 @@ export function LiveRefresh({ refId }: { refId: string }) {
       refreshTimer.current = setTimeout(() => router.refresh(), 300);
     };
 
+    // The room is keyed by the booking's 8-char hex prefix — the same key the
+    // backend signals with. Normalize whatever id the URL carries (full uuid
+    // with dashes, or the short id) to that prefix, or the socket never matches.
+    const ref = refId.replace(/-/g, '').slice(0, 8).toLowerCase();
+
     const connect = () => {
-      if (closed) return;
+      if (closed || ref.length < 8) return;
       const base = API_BASE.replace(/^http/, 'ws');
       try {
-        ws = new WebSocket(`${base}/realtime/booking?ref=${encodeURIComponent(refId)}`);
+        ws = new WebSocket(`${base}/realtime/booking?ref=${ref}`);
       } catch {
         retry();
         return;

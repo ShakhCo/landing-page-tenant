@@ -75,6 +75,8 @@ export const dict: BookingDict = {
 
   ariaBack: 'Back',
   ariaClose: 'Close',
+  individualInfo: "This service’s price varies by customer, so it isn’t set in advance. The specialist tells you the exact amount at the venue.",
+  gotIt: "Got it",
   ariaPickDate: 'Pick a date',
   ariaDecrease: 'Decrease',
   ariaIncrease: 'Increase',

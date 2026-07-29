@@ -91,6 +91,8 @@ export const dict = {
   // aria
   ariaBack: 'Orqaga',
   ariaClose: 'Yopish',
+  individualInfo: "Bu xizmatning narxi mijozga qarab farq qiladi, shuning uchun oldindan belgilanmaydi. Aniq narxni ustaning o‘zi joyida aytadi.",
+  gotIt: "Tushunarli",
   ariaPickDate: 'Sana tanlash',
   ariaDecrease: 'Kamaytirish',
   ariaIncrease: "Ko'paytirish",
