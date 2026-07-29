@@ -100,6 +100,7 @@ export const dict = {
   invalidLinkTitle: 'Havola yaroqsiz',
   invalidLinkText: "Bu o'zgartirish havolasi eskirgan yoki yaroqsiz. Yangi bron qilishingiz mumkin.",
   newBooking: 'Yangi bron qilish',
+  rescheduleStarted: "Bu yozuv vaqti allaqachon boshlangan — uni boshqa vaqtga ko'chirib bo'lmaydi.",
 };
 
 export type BookingDict = typeof dict;

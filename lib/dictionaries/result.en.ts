@@ -57,4 +57,5 @@ export const dict: ResultDict = {
   reviewCommentLabel: 'Comment (optional)',
   reviewSubmit: 'Submit',
   reviewThanks: 'Thanks for your review!',
+  startedNotice: "This booking has already started — it can no longer be changed or cancelled.",
 };

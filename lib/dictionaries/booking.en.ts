@@ -83,4 +83,5 @@ export const dict: BookingDict = {
   invalidLinkTitle: 'Invalid link',
   invalidLinkText: 'This reschedule link is expired or invalid. You can make a new booking.',
   newBooking: 'New booking',
+  rescheduleStarted: "This booking has already started — it can no longer be rescheduled.",
 };

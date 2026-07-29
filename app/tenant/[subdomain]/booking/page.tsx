@@ -76,6 +76,15 @@ export default async function BookingRoute({
   let initialStaffId: string | undefined;
   if (reschedule) {
     const original = await getBooking(subdomain, reschedule);
+    // Already started (or no longer open) → nothing can be rescheduled; send
+    // the customer back to the booking page, which explains why inline.
+    if (
+      original &&
+      (Date.parse(original.booking.startAt) <= Date.now() ||
+        !['pending', 'confirmed'].includes(original.booking.status))
+    ) {
+      redirect(`/b/${reschedule.slice(0, 8)}`);
+    }
     if (!original) {
       return (
         <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center bg-card px-6 text-center">

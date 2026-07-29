@@ -505,6 +505,14 @@ export function BookingFlow({
       setCode('');
       setResendIn(0);
     }
+    // Rescheduling a booking whose time already arrived — close any confirm UI
+    // so the localized inline alert is actually visible.
+    if (rescheduleId && r.code === 'INVALID_BOOKING') {
+      setConfirmOpen(false);
+      if (step === 'confirm') setStep('time');
+      setError(dict.rescheduleStarted);
+      return;
+    }
     setError(r.error);
   };
 

@@ -38,7 +38,7 @@ const dict = {
     card3: {
       titleLine1Accent: "Aqlli onlayn",
       titleLine2: "jadval va kalendar",
-      body1: "Barcha yozuvlar bitta tizimda: xodimlar, xonalar va stollar bandligi doim nazoratda bo'ladi.",
+      body1: "Barcha yozuvlar bitta tizimda: xodimlar, xonalar va stollar jadvali doim nazoratda bo'ladi.",
       body2: "Mijozlar esa bo'sh vaqtlarni online ko'rib, o'zlariga qulay vaqtni tanlashadi.",
       cta: "Batafsil",
     },

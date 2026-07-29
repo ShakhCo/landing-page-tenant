@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { newApiFetch } from './newapi';
 
 export type LocalizedText = { uz?: string; ru?: string; en?: string };
@@ -105,7 +106,7 @@ export interface MyBookingsResult {
 }
 
 /** Resolve a short booking id to its tenant subdomain; null when unknown/ambiguous. */
-export async function locateBooking(shortId: string): Promise<string | null> {
+export const locateBooking = cache(async function locateBooking(shortId: string): Promise<string | null> {
   try {
     const res = await newApiFetch(
       `/public/bookings/${encodeURIComponent(shortId)}/locate`,
@@ -116,7 +117,7 @@ export async function locateBooking(shortId: string): Promise<string | null> {
   } catch {
     return null;
   }
-}
+});
 
 export interface AvailabilitySlot {
   start: string;
@@ -181,7 +182,7 @@ export interface PublicBookingView {
 }
 
 /** Fetch a single booking's public details by id. Null when missing. */
-export async function getBooking(subdomain: string, id: string): Promise<PublicBookingView | null> {
+export const getBooking = cache(async function getBooking(subdomain: string, id: string): Promise<PublicBookingView | null> {
   try {
     const res = await newApiFetch(
       `/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}`,
@@ -193,7 +194,7 @@ export async function getBooking(subdomain: string, id: string): Promise<PublicB
   } catch {
     return null;
   }
-}
+});
 
 // Negative cache of confirmed-missing subdomains (outcome only — never a list).
 // A fake subdomain that 404s is remembered briefly so repeat hits (and the
@@ -224,7 +225,7 @@ function rememberMissing(sub: string): void {
 }
 
 /** Fetch a tenant's public business + services by subdomain. Null when missing. */
-export async function getTenant(subdomain: string): Promise<PublicTenant | null> {
+export const getTenant = cache(async function getTenant(subdomain: string): Promise<PublicTenant | null> {
   const sub = subdomain.toLowerCase();
   // Negative cache: recently confirmed missing → no backend round-trip.
   if (isKnownMissing(sub)) return null;
@@ -256,7 +257,7 @@ export async function getTenant(subdomain: string): Promise<PublicTenant | null>
   } catch {
     return null;
   }
-}
+});
 
 /**
  * Pick a localized string for `locale`, falling back across the other languages

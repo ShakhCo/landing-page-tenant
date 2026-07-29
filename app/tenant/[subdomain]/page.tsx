@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 import { getTenant, localized } from '@/lib/tenant';
 import { getTenantDict } from '@/lib/dictionaries/tenant';
 import { getSessionPhone } from '@/lib/session';
@@ -61,22 +62,10 @@ export default async function TenantPage({
   const customerPhone = await getSessionPhone();
 
   if (!tenant) {
-    // Count this fake-subdomain hit against the caller's IP (bans repeat scanners).
+    // Count this fake-subdomain hit against the caller's IP (bans repeat
+    // scanners), then bounce to the marketing home instead of a dead end.
     await noteMissingTenantHit();
-    return (
-      <main className="grid min-h-screen place-items-center bg-background px-6 text-center">
-        <div>
-          <h1 className="text-2xl font-extrabold text-foreground">Topilmadi</h1>
-          <p className="mt-2 text-muted-foreground">Bunday sahifa mavjud emas.</p>
-          <a
-            href="https://bookup.uz"
-            className="mt-5 inline-block rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground"
-          >
-            bookup.uz
-          </a>
-        </div>
-      </main>
-    );
+    redirect('https://bookup.uz');
   }
 
   return (

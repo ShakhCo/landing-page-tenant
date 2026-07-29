@@ -57,4 +57,5 @@ export const dict: ResultDict = {
   reviewCommentLabel: 'Комментарий (необязательно)',
   reviewSubmit: 'Отправить',
   reviewThanks: 'Спасибо за ваш отзыв!',
+  startedNotice: "Время записи уже наступило — изменить или отменить её больше нельзя.",
 };

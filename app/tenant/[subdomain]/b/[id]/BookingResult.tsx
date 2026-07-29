@@ -3,7 +3,7 @@
 import { useEffect, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Check, ChevronLeft, ChevronRight, MapPin, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
 import { formatBranchAddress, localized, mediaUrl, type LocalizedText, type PublicBookingView, type PublicTenant, type TenantLocale } from '@/lib/tenant';
 import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
@@ -484,10 +484,7 @@ export function BookingResult({
               <BadgeCheck className="size-5 fill-blue-500 text-card" />
             </h1>
             {address && (
-              <p className="mt-2 flex items-center justify-center gap-1 text-sm text-muted-foreground">
-                <MapPin className="size-4 shrink-0" />
-                <span>{address}</span>
-              </p>
+              <p className="mt-2 text-center text-sm text-muted-foreground">{address}</p>
             )}
           </div>
         </div>
@@ -566,6 +563,13 @@ export function BookingResult({
           </span>
           <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency, dict)}</span>
         </div>
+
+        {/* Started but still open — explain why the manage actions are gone. */}
+        {!manageable && (booking.status === 'confirmed' || booking.status === 'pending') && (
+          <div className="mt-5 rounded-xl bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700 dark:text-amber-400">
+            {dict.startedNotice}
+          </div>
+        )}
 
         {/* Manage: borderless list rows — only while the booking is still
             upcoming and open; started/cancelled/completed hide them entirely. */}

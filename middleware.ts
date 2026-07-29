@@ -8,6 +8,14 @@ const ROOT_HOSTS = new Set(['bookup.uz', 'www.bookup.uz', 'localhost', '127.0.0.
  *  at the edge instead of routing it into the tenant page + backend lookup. */
 const VALID_SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/;
 
+/** Real single-segment routes on the apex host — everything else that looks
+ *  like a DNS label is treated as a business short link (win-back SMS uses
+ *  `bookup.uz/<subdomain>`) and bounced to that subdomain. Keep in sync when a
+ *  new top-level apex route is added. */
+const APEX_PATHS = new Set([
+  'oz', 'ru', 'en', 'b', 'business', 'narxlar', 'instagram-connected', 'tenant', 'www',
+]);
+
 /**
  * Extract a tenant subdomain from the Host header, or null for the main site.
  * Prod:  `<sub>.bookup.uz`  ·  Dev: `<sub>.localhost`.
@@ -48,6 +56,18 @@ export function middleware(req: NextRequest) {
     const home = url.clone();
     home.pathname = '/';
     return NextResponse.redirect(home);
+  }
+
+  // Business short link `bookup.uz/<subdomain>` (used by the win-back SMS):
+  // a single DNS-label segment that isn't a real apex route → bounce to the
+  // tenant's own site so it opens the booking page.
+  const seg = url.pathname.split('/').filter(Boolean);
+  if (seg.length === 1 && VALID_SUBDOMAIN.test(seg[0]) && !APEX_PATHS.has(seg[0])) {
+    const base = host.split(':')[0].replace(/^www\./, '');
+    const dest = url.clone();
+    dest.hostname = `${seg[0]}.${base}`;
+    dest.pathname = '/';
+    return NextResponse.redirect(dest, 307);
   }
 
   return NextResponse.next();

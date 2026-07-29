@@ -61,6 +61,7 @@ export const dict = {
   reviewCommentLabel: 'Izoh (ixtiyoriy)',
   reviewSubmit: 'Yuborish',
   reviewThanks: 'Bahoyingiz uchun rahmat!',
+  startedNotice: "Yozuv vaqti allaqachon boshlangan — uni endi o'zgartirish yoki bekor qilish mumkin emas.",
 };
 
 export type ResultDict = typeof dict;
