@@ -1,15 +1,20 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
 
 /**
- * Cloudflare Turnstile widget (invisible/managed) that gates the OTP-send step.
- * Renders nothing and reports a null token when no site key is configured, so
- * the booking flow keeps working before Turnstile is switched on (the backend
- * fails open too). Mostly invisible for real users; only bots see friction.
+ * Cloudflare Turnstile widget (invisible/managed) for the OTP-send step.
+ *
+ * Turnstile tokens are SINGLE-USE and expire, so instead of holding one
+ * auto-solved token in state (which fails the second time it's sent), we expose
+ * an imperative `getToken()`: it resets the widget and awaits a fresh solve,
+ * guaranteeing a brand-new token per OTP request. Renders nothing / resolves
+ * null when no site key is configured (backend fails open too).
  */
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 const SCRIPT_SRC = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+
+export type TurnstileHandle = { getToken: () => Promise<string | null> };
 
 type TurnstileApi = {
   render: (
@@ -20,7 +25,6 @@ type TurnstileApi = {
       'expired-callback'?: () => void;
       'error-callback'?: () => void;
       appearance?: 'always' | 'execute' | 'interaction-only';
-      theme?: 'auto' | 'light' | 'dark';
       size?: 'normal' | 'flexible' | 'compact';
     },
   ) => string;
@@ -51,48 +55,89 @@ function loadScript(): Promise<void> {
   return window.__turnstileLoading;
 }
 
-export function Turnstile({
-  onToken,
-  className,
-}: {
-  /** Fresh token on solve, null on mount/expiry/error (caller sends what it has). */
-  onToken: (token: string | null) => void;
-  className?: string;
-}) {
-  const boxRef = useRef<HTMLDivElement | null>(null);
-  const widgetId = useRef<string | null>(null);
-  const onTokenRef = useRef(onToken);
-  onTokenRef.current = onToken;
+export const Turnstile = forwardRef<TurnstileHandle, { className?: string }>(
+  function Turnstile({ className }, ref) {
+    const boxRef = useRef<HTMLDivElement | null>(null);
+    const widgetId = useRef<string | null>(null);
+    const latest = useRef<string | null>(null);
+    // Resolvers waiting for the next fresh token.
+    const waiters = useRef<((t: string | null) => void)[]>([]);
 
-  useEffect(() => {
-    if (!SITE_KEY) {
-      onTokenRef.current(null);
-      return;
-    }
-    let cancelled = false;
-    void loadScript().then(() => {
-      if (cancelled || !boxRef.current || !window.turnstile) return;
-      widgetId.current = window.turnstile.render(boxRef.current, {
-        sitekey: SITE_KEY!,
-        appearance: 'interaction-only',
-        size: 'flexible',
-        callback: (token) => onTokenRef.current(token),
-        'expired-callback': () => onTokenRef.current(null),
-        'error-callback': () => onTokenRef.current(null),
-      });
-    });
-    return () => {
-      cancelled = true;
-      if (widgetId.current && window.turnstile) {
-        try {
-          window.turnstile.remove(widgetId.current);
-        } catch {
-          // already gone
-        }
+    const deliver = (token: string | null) => {
+      latest.current = token;
+      if (token) {
+        const pending = waiters.current;
+        waiters.current = [];
+        pending.forEach((w) => w(token));
       }
     };
-  }, []);
 
-  if (!SITE_KEY) return null;
-  return <div ref={boxRef} className={className} />;
-}
+    useEffect(() => {
+      if (!SITE_KEY) return;
+      let cancelled = false;
+      void loadScript().then(() => {
+        if (cancelled || !boxRef.current || !window.turnstile) return;
+        widgetId.current = window.turnstile.render(boxRef.current, {
+          sitekey: SITE_KEY!,
+          appearance: 'interaction-only',
+          size: 'flexible',
+          callback: (t) => deliver(t),
+          'expired-callback': () => {
+            latest.current = null;
+          },
+          'error-callback': () => {
+            latest.current = null;
+          },
+        });
+      });
+      return () => {
+        cancelled = true;
+        if (widgetId.current && window.turnstile) {
+          try {
+            window.turnstile.remove(widgetId.current);
+          } catch {
+            // already gone
+          }
+        }
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useImperativeHandle(
+      ref,
+      () => ({
+        getToken: () =>
+          new Promise<string | null>((resolve) => {
+            if (!SITE_KEY) {
+              resolve(null);
+              return;
+            }
+            let settled = false;
+            const finish = (t: string | null) => {
+              if (settled) return;
+              settled = true;
+              resolve(t);
+            };
+            waiters.current.push(finish);
+            // Reset for a fresh single-use token; the callback resolves us.
+            latest.current = null;
+            try {
+              if (widgetId.current && window.turnstile) window.turnstile.reset(widgetId.current);
+            } catch {
+              // widget not ready — the safety timeout will resolve
+            }
+            // Safety net: never hang the OTP button.
+            setTimeout(() => {
+              const i = waiters.current.indexOf(finish);
+              if (i >= 0) waiters.current.splice(i, 1);
+              finish(latest.current);
+            }, 8000);
+          }),
+      }),
+      [],
+    );
+
+    if (!SITE_KEY) return null;
+    return <div ref={boxRef} className={className} />;
+  },
+);

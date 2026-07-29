@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useRef, useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Check, ChevronLeft, ChevronRight, CalendarClock, CalendarX2, CalendarPlus, X, Send, BadgeCheck } from 'lucide-react';
@@ -9,7 +9,7 @@ import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
 import { ReviewBlock } from './ReviewBlock';
-import { Turnstile } from '@/components/Turnstile';
+import { Turnstile, type TurnstileHandle } from '@/components/Turnstile';
 
 /** Optional cancellation reasons — stable slugs for the backend, localized labels for the UI. */
 const CANCEL_REASONS: { slug: string; label: LocalizedText }[] = [
@@ -119,8 +119,8 @@ export function BookingResult({
   const [otpStep, setOtpStep] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
-  // Turnstile token for the cancel OTP send (bot gate).
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // Turnstile for the cancel OTP send (fresh token per send).
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const [resendIn, setResendIn] = useState(0);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
@@ -225,7 +225,8 @@ export function BookingResult({
 
   // Send the cancel OTP and switch the cancel view to the code entry.
   const beginCancelOtp = async () => {
-    const r = await requestCancelOtpAction(subdomain, booking.id, turnstileToken);
+    const token = (await turnstileRef.current?.getToken()) ?? null;
+    const r = await requestCancelOtpAction(subdomain, booking.id, token);
     if (!r.ok) {
       setNotice(r.error);
       return;
@@ -431,7 +432,7 @@ export function BookingResult({
           invisible unless a challenge is needed. */}
       {manageable && (
         <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-[70] flex justify-center">
-          <Turnstile onToken={setTurnstileToken} />
+          <Turnstile ref={turnstileRef} />
         </div>
       )}
       {/* ===== Completed → review card on top, focused, no business hero ===== */}

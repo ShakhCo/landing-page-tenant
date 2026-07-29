@@ -9,7 +9,7 @@ import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
 import { ServiceMonogram } from '../ServiceMonogram';
-import { Turnstile } from '@/components/Turnstile';
+import { Turnstile, type TurnstileHandle } from '@/components/Turnstile';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'confirm'];
@@ -156,9 +156,9 @@ export function BookingFlow({
   const [confirmOpen, setConfirmOpen] = useState(false);
   // "Individual narx" explainer modal (variable-priced services).
   const [individualInfo, setIndividualInfo] = useState(false);
-  // Cloudflare Turnstile token — gates the OTP-send step against bots. null
-  // until the (mostly invisible) widget solves; forwarded to the OTP actions.
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  // Cloudflare Turnstile — gates the OTP-send step against bots. getToken()
+  // mints a fresh single-use token per send.
+  const turnstileRef = useRef<TurnstileHandle>(null);
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -412,7 +412,8 @@ export function BookingFlow({
     if (rescheduleId) {
       setError(null);
       setBusy(true);
-      const r = await requestRescheduleOtpAction(subdomain, rescheduleId, turnstileToken);
+      const token = (await turnstileRef.current?.getToken()) ?? null;
+      const r = await requestRescheduleOtpAction(subdomain, rescheduleId, token);
       setBusy(false);
       if (r.ok) {
         setMaskedPhone(r.maskedPhone);
@@ -427,7 +428,8 @@ export function BookingFlow({
     if (phone.length !== 9) return false;
     setError(null);
     setBusy(true);
-    const r = await requestOtpAction(`+998${phone}`, undefined, turnstileToken);
+    const token = (await turnstileRef.current?.getToken()) ?? null;
+    const r = await requestOtpAction(`+998${phone}`, undefined, token);
     setBusy(false);
     if (r.ok) {
       setIsNewCustomer(r.isNewCustomer);
@@ -1286,7 +1288,7 @@ export function BookingFlow({
           invisible unless a challenge is needed, then shown bottom-center. */}
       {(step === 'confirm' || confirmOpen) && (
         <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-[70] flex justify-center">
-          <Turnstile onToken={setTurnstileToken} />
+          <Turnstile ref={turnstileRef} />
         </div>
       )}
 
