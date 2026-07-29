@@ -28,6 +28,7 @@ function mapErrorCode(code: string): string {
     BRANCH_NOT_FOUND: "Filial topilmadi.",
     OFFERING_NOT_FOUND: "Tanlangan xizmat hozir mavjud emas.",
     RESOURCE_NOT_FOUND: "Tanlangan mutaxassis yoki resurs mavjud emas.",
+    TURNSTILE_FAILED: "Tekshiruvdan o'tib bo'lmadi. Sahifani yangilab, qayta urinib ko'ring.",
   };
   return map[code] || "Xatolik yuz berdi. Iltimos, birozdan so'ng qayta urinib ko'ring.";
 }
