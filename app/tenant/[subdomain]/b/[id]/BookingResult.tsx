@@ -9,6 +9,7 @@ import type { ResultDict } from '@/lib/dictionaries/result';
 import { cancelBookingAction, requestCancelOtpAction } from './actions';
 import { OtpInput } from '../../booking/OtpInput';
 import { ReviewBlock } from './ReviewBlock';
+import { Turnstile } from '@/components/Turnstile';
 
 /** Optional cancellation reasons — stable slugs for the backend, localized labels for the UI. */
 const CANCEL_REASONS: { slug: string; label: LocalizedText }[] = [
@@ -118,6 +119,8 @@ export function BookingResult({
   const [otpStep, setOtpStep] = useState(false);
   const [maskedPhone, setMaskedPhone] = useState('');
   const [otpCode, setOtpCode] = useState('');
+  // Turnstile token for the cancel OTP send (bot gate).
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
   const { business, booking } = data;
   const branch = tenant?.branches?.[0] ?? null;
@@ -222,7 +225,7 @@ export function BookingResult({
 
   // Send the cancel OTP and switch the cancel view to the code entry.
   const beginCancelOtp = async () => {
-    const r = await requestCancelOtpAction(subdomain, booking.id);
+    const r = await requestCancelOtpAction(subdomain, booking.id, turnstileToken);
     if (!r.ok) {
       setNotice(r.error);
       return;
@@ -424,6 +427,13 @@ export function BookingResult({
   const avatarUrl = tenant?.business?.avatarUrl ?? null;
   return (
     <div className="pb-16">
+      {/* Bot gate for the cancel OTP — mounts only for a cancellable booking,
+          invisible unless a challenge is needed. */}
+      {manageable && (
+        <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-[70] flex justify-center">
+          <Turnstile onToken={setTurnstileToken} />
+        </div>
+      )}
       {/* ===== Completed → review card on top, focused, no business hero ===== */}
       {isCompleted ? (
         <div className="mx-auto max-w-xl px-4 pt-4 sm:px-6">

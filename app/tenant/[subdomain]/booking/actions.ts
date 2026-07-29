@@ -109,11 +109,15 @@ export async function logoutAction(): Promise<void> {
 export async function requestOtpAction(
   phone: string,
   purpose?: 'login' | 'booking',
+  turnstileToken?: string | null,
 ): Promise<{ ok: true; isNewCustomer: boolean } | { ok: false; error: string }> {
   try {
     const res = await serverFetch(`${API_BASE}/public/otp/request`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(turnstileToken ? { 'cf-turnstile-response': turnstileToken } : {}),
+      },
       body: JSON.stringify({ phone, purpose }),
     });
     if (!res.ok) return { ok: false, error: await errorMessage(res) };
@@ -128,11 +132,16 @@ export async function requestOtpAction(
 export async function requestRescheduleOtpAction(
   subdomain: string,
   bookingId: string,
+  turnstileToken?: string | null,
 ): Promise<{ ok: true; maskedPhone: string } | { ok: false; error: string }> {
   try {
     const res = await serverFetch(
       `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(bookingId)}/reschedule/otp`,
-      { method: 'POST', cache: 'no-store' },
+      {
+        method: 'POST',
+        cache: 'no-store',
+        ...(turnstileToken ? { headers: { 'cf-turnstile-response': turnstileToken } } : {}),
+      },
     );
     if (!res.ok) return { ok: false, error: await errorMessage(res) };
     const body = (await res.json().catch(() => ({}))) as { maskedPhone?: string };

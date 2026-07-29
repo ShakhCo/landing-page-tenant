@@ -16,14 +16,16 @@ const CSP = [
   "object-src 'none'",
   "form-action 'self'",
   "frame-ancestors 'none'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+  // challenges.cloudflare.com hosts the Turnstile widget script.
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://challenges.cloudflare.com",
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob: https:",
   "font-src 'self' data:",
   // wss:// is needed for the booking page's live-refresh WebSocket — CSP
   // connect-src governs WebSockets, and https: does NOT cover wss:.
-  "connect-src 'self' https://apis.automations.uz wss://apis.automations.uz",
-  "frame-src https://maps.google.com https://www.google.com",
+  "connect-src 'self' https://apis.automations.uz wss://apis.automations.uz https://challenges.cloudflare.com",
+  // Turnstile renders its (interactive) challenge inside an iframe.
+  "frame-src https://maps.google.com https://www.google.com https://challenges.cloudflare.com",
 ].join("; ");
 
 const SECURITY_HEADERS = [

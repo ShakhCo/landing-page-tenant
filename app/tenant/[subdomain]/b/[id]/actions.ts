@@ -49,11 +49,16 @@ async function clearSession(jar: Awaited<ReturnType<typeof cookies>>) {
 export async function requestCancelOtpAction(
   subdomain: string,
   id: string,
+  turnstileToken?: string | null,
 ): Promise<{ ok: true; maskedPhone: string } | { ok: false; error: string }> {
   try {
     const res = await serverFetch(
       `${API_BASE}/public/tenants/${encodeURIComponent(subdomain)}/bookings/${encodeURIComponent(id)}/cancel/otp`,
-      { method: 'POST', cache: 'no-store' },
+      {
+        method: 'POST',
+        cache: 'no-store',
+        ...(turnstileToken ? { headers: { 'cf-turnstile-response': turnstileToken } } : {}),
+      },
     );
     if (!res.ok) {
       let code = '';

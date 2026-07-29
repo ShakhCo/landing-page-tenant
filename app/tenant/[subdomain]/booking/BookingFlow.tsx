@@ -9,6 +9,7 @@ import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
 import { ServiceMonogram } from '../ServiceMonogram';
+import { Turnstile } from '@/components/Turnstile';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'confirm'];
@@ -155,6 +156,9 @@ export function BookingFlow({
   const [confirmOpen, setConfirmOpen] = useState(false);
   // "Individual narx" explainer modal (variable-priced services).
   const [individualInfo, setIndividualInfo] = useState(false);
+  // Cloudflare Turnstile token — gates the OTP-send step against bots. null
+  // until the (mostly invisible) widget solves; forwarded to the OTP actions.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -408,7 +412,7 @@ export function BookingFlow({
     if (rescheduleId) {
       setError(null);
       setBusy(true);
-      const r = await requestRescheduleOtpAction(subdomain, rescheduleId);
+      const r = await requestRescheduleOtpAction(subdomain, rescheduleId, turnstileToken);
       setBusy(false);
       if (r.ok) {
         setMaskedPhone(r.maskedPhone);
@@ -423,7 +427,7 @@ export function BookingFlow({
     if (phone.length !== 9) return false;
     setError(null);
     setBusy(true);
-    const r = await requestOtpAction(`+998${phone}`);
+    const r = await requestOtpAction(`+998${phone}`, undefined, turnstileToken);
     setBusy(false);
     if (r.ok) {
       setIsNewCustomer(r.isNewCustomer);
@@ -1277,6 +1281,14 @@ export function BookingFlow({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Turnstile (bot gate) mounts while the confirm/OTP step is active —
+          invisible unless a challenge is needed, then shown bottom-center. */}
+      {(step === 'confirm' || confirmOpen) && (
+        <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-[70] flex justify-center">
+          <Turnstile onToken={setTurnstileToken} />
+        </div>
+      )}
 
       {/* "Individual narx" explainer — a big centered modal. */}
       <AnimatePresence>
