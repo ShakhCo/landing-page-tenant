@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { User, LogOut, ChevronDown, ChevronLeft, ChevronRight, X, CalendarDays, Clock } from 'lucide-react';
 import type { TenantDict } from '@/lib/dictionaries/tenant';
@@ -79,6 +80,11 @@ export function AccountMenu({
   const [resendIn, setResendIn] = useState(0); // seconds left before a new code can be sent
   // Turnstile — gates the login OTP send against bots (fresh token per send).
   const turnstileRef = useRef<TurnstileHandle>(null);
+  // Portal overlays to <body>: this menu can be rendered inside the sticky
+  // header, whose backdrop-blur becomes the containing block for `fixed`
+  // children — which would clip the modal/drawer to the header's box.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   const reset = () => {
     setOpen(false);
@@ -470,7 +476,7 @@ export function AccountMenu({
   if (customerPhone) {
     return (
       <>
-      {drawer}
+      {mounted && drawer ? createPortal(drawer, document.body) : null}
       <div className="relative">
         <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className={PILL}>
           <User size={16} className="text-muted-foreground" />
@@ -514,7 +520,7 @@ export function AccountMenu({
         <span>{dict.login}</span>
       </button>
 
-      {open && (
+      {open && mounted && createPortal(
         <div className="fixed inset-0 z-[100] flex items-start justify-center overflow-y-auto p-4 sm:items-center">
           <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={reset} />
           <div
@@ -629,7 +635,8 @@ export function AccountMenu({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );
