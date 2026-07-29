@@ -8,7 +8,6 @@ import type { TenantDict } from '@/lib/dictionaries/tenant';
 import { localized, type MyBooking, type MyBookingsResult } from '@/lib/tenant';
 import { OtpInput } from './booking/OtpInput';
 import { requestOtpAction, loginAction, logoutAction, myBookingsAction } from './booking/actions';
-import { Turnstile, type TurnstileHandle } from '@/components/Turnstile';
 
 const UZ_MONTHS = ['yan', 'fev', 'mar', 'apr', 'may', 'iyn', 'iyl', 'avg', 'sen', 'okt', 'noy', 'dek'];
 
@@ -78,8 +77,6 @@ export function AccountMenu({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0); // seconds left before a new code can be sent
-  // Turnstile — gates the login OTP send against bots (fresh token per send).
-  const turnstileRef = useRef<TurnstileHandle>(null);
   // Portal overlays to <body>: this menu can be rendered inside the sticky
   // header, whose backdrop-blur becomes the containing block for `fixed`
   // children — which would clip the modal/drawer to the header's box.
@@ -417,8 +414,7 @@ export function AccountMenu({
     setBusy(true);
     setError(null);
     try {
-      const token = (await turnstileRef.current?.getToken()) ?? null;
-      const r = await requestOtpAction(`+998${digits}`, 'login', token);
+      const r = await requestOtpAction(`+998${digits}`, 'login');
       setBusy(false);
       if (r.ok) {
         setSent(true);
@@ -597,8 +593,6 @@ export function AccountMenu({
                     {dict.phoneLabel}
                   </label>
                 </div>
-                {/* Bot gate for the login OTP send — invisible unless challenged. */}
-                <Turnstile ref={turnstileRef} className="mt-4 flex justify-center empty:mt-0" />
                 <button
                   type="button"
                   onClick={sendCode}

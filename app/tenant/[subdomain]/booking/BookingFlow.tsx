@@ -9,7 +9,6 @@ import type { BookingDict } from '@/lib/dictionaries/booking';
 import { getAvailabilityAction, requestOtpAction, requestRescheduleOtpAction, createBookingAction } from './actions';
 import { OtpInput } from './OtpInput';
 import { ServiceMonogram } from '../ServiceMonogram';
-import { Turnstile, type TurnstileHandle } from '@/components/Turnstile';
 
 type Step = 'services' | 'staff' | 'time' | 'confirm' | 'done';
 const FLOW: Step[] = ['services', 'staff', 'time', 'confirm'];
@@ -156,9 +155,6 @@ export function BookingFlow({
   const [confirmOpen, setConfirmOpen] = useState(false);
   // "Individual narx" explainer modal (variable-priced services).
   const [individualInfo, setIndividualInfo] = useState(false);
-  // Cloudflare Turnstile — gates the OTP-send step against bots. getToken()
-  // mints a fresh single-use token per send.
-  const turnstileRef = useRef<TurnstileHandle>(null);
   const { business } = tenant;
   const branches = tenant.branches ?? [];
   const services = tenant.services ?? [];
@@ -412,8 +408,7 @@ export function BookingFlow({
     if (rescheduleId) {
       setError(null);
       setBusy(true);
-      const token = (await turnstileRef.current?.getToken()) ?? null;
-      const r = await requestRescheduleOtpAction(subdomain, rescheduleId, token);
+      const r = await requestRescheduleOtpAction(subdomain, rescheduleId);
       setBusy(false);
       if (r.ok) {
         setMaskedPhone(r.maskedPhone);
@@ -428,8 +423,7 @@ export function BookingFlow({
     if (phone.length !== 9) return false;
     setError(null);
     setBusy(true);
-    const token = (await turnstileRef.current?.getToken()) ?? null;
-    const r = await requestOtpAction(`+998${phone}`, undefined, token);
+    const r = await requestOtpAction(`+998${phone}`);
     setBusy(false);
     if (r.ok) {
       setIsNewCustomer(r.isNewCustomer);
@@ -1283,14 +1277,6 @@ export function BookingFlow({
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Turnstile (bot gate) mounts while the confirm/OTP step is active —
-          invisible unless a challenge is needed, then shown bottom-center. */}
-      {(step === 'confirm' || confirmOpen) && (
-        <div className="pointer-events-auto fixed inset-x-0 bottom-4 z-[70] flex justify-center">
-          <Turnstile ref={turnstileRef} />
-        </div>
-      )}
 
       {/* "Individual narx" explainer — a big centered modal. */}
       <AnimatePresence>
