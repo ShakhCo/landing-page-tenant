@@ -19,6 +19,7 @@ export const dict: TenantDict = {
   noServices: 'No services yet.',
   perHour: '/hr',
   som: "so'm",
+  individual: 'Individual price',
   hour: 'h',
   minute: 'min',
   days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],

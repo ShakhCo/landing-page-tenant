@@ -520,10 +520,13 @@ export function BookingResult({
               // Hourly services show their rate ("…/soat") so the pricing mode is
               // visible; the actual charge is in the Jami row. Fixed → flat price.
               const svc = tenant?.services?.find((s) => s.id === it.offeringId) ?? null;
+              const mode = it.pricingMode ?? svc?.pricingMode;
               const itemPrice =
-                svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
-                  ? `${money(svc.ratePerHour, business.currency, dict)}${dict.perHour}`
-                  : money(it.price, business.currency, dict);
+                mode === 'variable' && it.price === 0
+                  ? dict.individual
+                  : svc?.pricingMode === 'time_rate' && svc.ratePerHour != null
+                    ? `${money(svc.ratePerHour, business.currency, dict)}${dict.perHour}`
+                    : money(it.price, business.currency, dict);
               return (
                 <div key={`${it.offeringId}-${i}`} className="flex items-baseline justify-between gap-4 text-[15px]">
                   <span className="text-muted-foreground">{localized(it.name as LocalizedText | null, dict.itemFallback, locale)}</span>
@@ -561,7 +564,11 @@ export function BookingResult({
           <span className="text-muted-foreground">
             {dict.total}{(elapsedMin ?? durationMin) ? ` · ${fmtDuration((elapsedMin ?? durationMin)!, dict)}` : ''}
           </span>
-          <span className="text-right text-lg font-bold text-foreground">{money(liveTotal ?? total, business.currency, dict)}</span>
+          <span className="text-right text-lg font-bold text-foreground">
+            {booking.items.some((it) => (it.pricingMode ?? tenant?.services?.find((s) => s.id === it.offeringId)?.pricingMode) === 'variable' && it.price === 0)
+              ? dict.individual
+              : money(liveTotal ?? total, business.currency, dict)}
+          </span>
         </div>
 
         {/* Started but still open — explain why the manage actions are gone. */}

@@ -12,6 +12,7 @@ export const dict: ResultDict = {
   booked: 'Booked',
 
   som: "so'm",
+  individual: 'Individual price',
   perHour: '/hr',
   durHour: 'h',
   durMin: 'min',

@@ -28,6 +28,7 @@ export const dict = {
 
   // money / duration
   som: "so'm",
+  individual: 'Individual narx',
   perHour: '/soat',
   durHour: 'soat',
   durMin: 'daq',

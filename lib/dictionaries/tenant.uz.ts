@@ -23,6 +23,7 @@ export const dict = {
   noServices: "Hozircha xizmatlar yo'q.",
   perHour: '/soat',
   som: "so'm",
+  individual: 'Individual narx',
   hour: 'soat',
   minute: 'daqiqa',
   days: ['Dushanba', 'Seshanba', 'Chorshanba', 'Payshanba', 'Juma', 'Shanba', 'Yakshanba'],

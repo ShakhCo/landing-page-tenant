@@ -580,9 +580,11 @@ export function TenantView({
               {visible.map((s) => {
                 const name = localized(s.name as LocalizedText, '', locale);
                 const price =
-                  s.pricingMode === 'time_rate'
-                    ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
-                    : s.price != null ? money(s.price, business.currency, dict.som) : '';
+                  s.pricingMode === 'variable'
+                    ? dict.individual
+                    : s.pricingMode === 'time_rate'
+                      ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
+                      : s.price != null ? money(s.price, business.currency, dict.som) : '';
                 const inner = (
                   <>
                     {s.photoUrl ? (
@@ -833,9 +835,11 @@ export function TenantView({
                       {staffServices.map((s) => {
                         const name = localized(s.name as LocalizedText, '', locale);
                         const price =
-                          s.pricingMode === 'time_rate'
-                            ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
-                            : s.price != null ? money(s.price, business.currency, dict.som) : '';
+                          s.pricingMode === 'variable'
+                            ? dict.individual
+                            : s.pricingMode === 'time_rate'
+                              ? s.ratePerHour != null ? `${money(s.ratePerHour, business.currency, dict.som)}${dict.perHour}` : ''
+                              : s.price != null ? money(s.price, business.currency, dict.som) : '';
                         return (
                           <div key={s.id} className="rounded-2xl border border-foreground/10 bg-card p-5">
                             <div className="flex items-start justify-between gap-3">

@@ -21,6 +21,7 @@ export const dict: BookingDict = {
   noSlots: 'No free time on this day.',
 
   som: "so'm",
+  individual: 'Individual price',
   perHour: '/hr',
   durHour: 'h',
   durMin: 'min',

@@ -50,12 +50,18 @@ function dur(min: number, dict: BookingDict) {
 function isUnitService(s: { pricingMode: string }) {
   return s.pricingMode === 'time_rate';
 }
-/** Per-service price label: hourly rate for a unit/time-rate service, flat price for fixed. */
+// Variable ("har xil") services book alone too — the price is shown as
+// "Individual" and settled with the owner at the venue.
+function isSoloService(s: { pricingMode: string }) {
+  return s.pricingMode === 'time_rate' || s.pricingMode === 'variable';
+}
+/** Per-service price label: hourly rate for a unit/time-rate service, flat price for fixed, "Individual" for variable. */
 function priceLabel(
   s: { pricingMode: string; ratePerHour: number | null; price: number | null },
   currency: string,
   dict: BookingDict,
 ) {
+  if (s.pricingMode === 'variable') return dict.individual;
   return s.pricingMode === 'time_rate'
     ? s.ratePerHour != null ? `${money(s.ratePerHour, currency, dict)}${dict.perHour}` : ''
     : s.price != null ? money(s.price, currency, dict) : '';
@@ -245,6 +251,8 @@ export function BookingFlow({
 
   const selected = services.filter((s) => selectedIds.includes(s.id));
   const hourly = selected.some(isUnitService); // time-rate (unit or staff) booking
+  // A variable ("har xil") service books alone; its total shows as "Individual".
+  const variable = selected.some((s) => s.pricingMode === 'variable');
   const eligibleStaff = staff.filter((st) => selectedIds.every((id) => st.offeringIds.includes(id)));
   const resourcesAreAssets = eligibleStaff.length > 0 && eligibleStaff.every((r) => r.type === 'asset');
   const selectedStaff = staff.find((st) => st.id === staffId) ?? null;
@@ -270,9 +278,11 @@ export function BookingFlow({
   // Hourly: the duration stepper lives on the time step — before the user has
   // seen it, summaries show the rate ("…/soat"), not a presumed 1-hour total.
   const durationKnown = !hourly || step === 'time' || step === 'confirm' || step === 'done';
-  const summaryPrice = durationKnown
-    ? money(totalPrice, business.currency, dict)
-    : `${money(ratePerHour, business.currency, dict)}${dict.perHour}`;
+  const summaryPrice = variable
+    ? dict.individual
+    : durationKnown
+      ? money(totalPrice, business.currency, dict)
+      : `${money(ratePerHour, business.currency, dict)}${dict.perHour}`;
 
   // 10-minute grid aligned to the hour (…:00, :10, …) for both fixed and hourly services.
   const allSlots = hourly
@@ -371,20 +381,20 @@ export function BookingFlow({
   const toggleService = (id: string) => {
     const svc = services.find((s) => s.id === id);
     if (!svc) return;
-    if (isUnitService(svc)) {
-      // Unit / time-rate service is exclusive — select it alone and skip the
-      // multi-service page straight to the unit/time picker.
+    if (isSoloService(svc)) {
+      // Unit / time-rate AND variable services are exclusive — select alone and
+      // (for time-rate) skip straight to the unit/time picker.
       setSelectedIds([id]);
       advance([id]);
       return;
     }
-    // Fixed service: replace any unit selection, otherwise multi-toggle.
+    // Fixed service: replace any solo (unit/variable) selection, else multi-toggle.
     setSelectedIds((prev) => {
-      const prevHasUnit = prev.some((pid) => {
+      const prevHasSolo = prev.some((pid) => {
         const p = services.find((s) => s.id === pid);
-        return p ? isUnitService(p) : false;
+        return p ? isSoloService(p) : false;
       });
-      if (prevHasUnit) return [id];
+      if (prevHasSolo) return [id];
       return prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id];
     });
   };
@@ -544,7 +554,7 @@ export function BookingFlow({
             ))}
             <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-bold text-foreground">
               <span>{dict.total}</span>
-              <span>{money(totalPrice, business.currency, dict)}</span>
+              <span>{variable ? dict.individual : money(totalPrice, business.currency, dict)}</span>
             </div>
           </div>
         </div>

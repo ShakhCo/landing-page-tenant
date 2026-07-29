@@ -13,6 +13,7 @@ export const dict = {
   booked: 'Band qilindi',
 
   som: "so'm",
+  individual: 'Individual narx',
   perHour: '/soat',
   durHour: 'soat',
   durMin: 'daqiqa',

@@ -12,6 +12,8 @@ export const dict: ResultDict = {
   booked: 'Забронировано',
 
   som: 'сум',
+
+  individual: 'Индивидуальная цена',
   perHour: '/час',
   durHour: 'ч',
   durMin: 'мин',
