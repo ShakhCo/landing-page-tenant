@@ -68,6 +68,16 @@ jobs:
           NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://apis.automations.uz/v1' }}
           NEW_API_ORIGIN: ${{ vars.NEW_API_ORIGIN || 'https://apis.automations.uz' }}
 
+      # OpenNext writes the ISR cache with no expiry and a fresh key prefix per
+      # build, so every deploy orphans the last one. Sweep the dead builds now
+      # that we know which one just went live. Never fails the deploy.
+      - name: Prune stale ISR cache entries
+        continue-on-error: true
+        run: node scripts/prune-kv-cache.mjs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
       # Smoke test: did the new version boot and start serving? Any HTTP answer
       # below 500 proves the Worker is up and routing — a runner IP can be
       # challenged by Cloudflare (403) without production being unhealthy, so
