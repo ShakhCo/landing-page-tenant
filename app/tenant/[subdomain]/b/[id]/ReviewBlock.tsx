@@ -9,6 +9,10 @@ import { submitReviewAction } from './actions';
 export function ReviewBlock({
   subdomain,
   bookingId,
+  offeringId = null,
+  resourceId = null,
+  serviceName,
+  staffName,
   dict,
   initial,
   businessName,
@@ -17,10 +21,15 @@ export function ReviewBlock({
 }: {
   subdomain: string;
   bookingId: string;
+  /** The service being reviewed (per-service review target). */
+  offeringId?: string | null;
+  resourceId?: string | null;
+  serviceName?: string | null;
+  staffName?: string | null;
   dict: ResultDict;
-  /** Existing review state for this booking; null when no row yet. */
+  /** Existing review state for this service; null when no row yet. */
   initial: { submitted: boolean; rating: number | null; comment: string | null; submittedAt: string | null } | null;
-  /** Shown as a quiet subtitle so a standalone review card has context. */
+  /** Fallback subtitle when there's no service/staff context. */
   businessName?: string;
   /** Preformatted "when the review was left" (parent owns tz/locale). */
   submittedAtLabel?: string;
@@ -28,6 +37,9 @@ export function ReviewBlock({
   className?: string;
 }) {
   const router = useRouter();
+  const context = serviceName
+    ? `${serviceName}${staffName ? ` · ${staffName}` : ''}`
+    : businessName;
   const submitted = !!initial?.submitted;
   const [rating, setRating] = useState(initial?.rating ?? 0);
   const [hover, setHover] = useState(0);
@@ -66,7 +78,10 @@ export function ReviewBlock({
     if (rating < 1 || busy) return;
     setBusy(true);
     setError(null);
-    const r = await submitReviewAction(subdomain, bookingId, rating, comment);
+    const r = await submitReviewAction(subdomain, bookingId, rating, comment, {
+      offeringId,
+      resourceId,
+    });
     if (r.ok) { setDone(true); router.refresh(); return; }
     setBusy(false);
     setError(r.error);
@@ -75,7 +90,7 @@ export function ReviewBlock({
   if (done) {
     return (
       <div className={`${className} rounded-2xl border border-foreground/10 bg-card p-5`}>
-        {/* {businessName && <p className="text-sm text-muted-foreground">{businessName}</p>} */}
+        {context && <p className="text-sm text-muted-foreground">{context}</p>}
         <p className="mt-0.5 text-[15px] font-bold text-foreground">{dict.reviewThanks}</p>
         <div className="mt-3"><Stars readOnly /></div>
         {(initial?.comment || comment) && (
@@ -90,7 +105,7 @@ export function ReviewBlock({
 
   return (
     <div className={`${className} rounded-2xl border border-foreground/10 bg-card p-5`}>
-      {businessName && <p className="text-sm text-muted-foreground">{businessName}</p>}
+      {context && <p className="text-sm text-muted-foreground">{context}</p>}
       <p className="mt-0.5 text-[15px] font-bold text-foreground">{dict.reviewTitle}</p>
       <div className="mt-3"><Stars /></div>
       <label className="mt-4 block text-sm text-muted-foreground">{dict.reviewCommentLabel}</label>

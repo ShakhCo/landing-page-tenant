@@ -177,7 +177,16 @@ export interface PublicBookingView {
       endAt?: string | null;
       price: number;
     }>;
-    review?: { submitted: boolean; rating: number | null; comment: string | null; submittedAt: string | null } | null;
+    /** Per-service reviews — one per service whose staff enabled reviews. Join
+     *  each to an item by (offeringId, resourceId) for the service + staff name. */
+    reviews?: Array<{
+      offeringId: string | null;
+      resourceId: string | null;
+      submitted: boolean;
+      rating: number | null;
+      comment: string | null;
+      submittedAt: string | null;
+    }>;
   };
 }
 

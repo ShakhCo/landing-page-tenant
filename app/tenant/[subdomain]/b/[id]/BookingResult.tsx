@@ -178,11 +178,11 @@ export function BookingResult({
   const isCompleted = booking.status === 'completed';
   // "When the review was left" — formatted in the business timezone, same
   // compact shape as the title ("18 Iyun, 13:30").
-  let reviewWhen: string | undefined;
-  if (booking.review?.submittedAt) {
-    const p = dateParts(booking.review.submittedAt, business.timezone, dict);
-    reviewWhen = `${p.day} ${p.mon}, ${p.time}`;
-  }
+  const reviewWhenOf = (submittedAt: string | null): string | undefined => {
+    if (!submittedAt) return undefined;
+    const p = dateParts(submittedAt, business.timezone, dict);
+    return `${p.day} ${p.mon}, ${p.time}`;
+  };
 
   // Only an upcoming, still-open booking can be rescheduled or cancelled.
   const manageable =
@@ -436,15 +436,45 @@ export function BookingResult({
           >
             <ChevronLeft size={22} />
           </button>
-          <ReviewBlock
-            subdomain={subdomain}
-            bookingId={booking.id}
-            dict={dict}
-            initial={booking.review ?? null}
-            businessName={business.name}
-            submittedAtLabel={reviewWhen}
-            className="mt-4"
-          />
+          {(booking.reviews ?? []).length > 0 ? (
+            <div className="mt-4 flex flex-col gap-4">
+              {(booking.reviews ?? []).map((rev, i) => {
+                const item = booking.items.find(
+                  (it) =>
+                    it.offeringId === rev.offeringId &&
+                    (it.resourceId ?? null) === rev.resourceId,
+                );
+                return (
+                  <ReviewBlock
+                    key={`${rev.offeringId ?? 'x'}:${rev.resourceId ?? 'x'}:${i}`}
+                    subdomain={subdomain}
+                    bookingId={booking.id}
+                    offeringId={rev.offeringId}
+                    resourceId={rev.resourceId}
+                    serviceName={
+                      item ? localized(item.name as LocalizedText | null, dict.itemFallback, locale) : null
+                    }
+                    staffName={item?.resourceName ?? null}
+                    dict={dict}
+                    initial={{
+                      submitted: rev.submitted,
+                      rating: rev.rating,
+                      comment: rev.comment,
+                      submittedAt: rev.submittedAt,
+                    }}
+                    businessName={business.name}
+                    submittedAtLabel={reviewWhenOf(rev.submittedAt)}
+                    className=""
+                  />
+                );
+              })}
+            </div>
+          ) : (
+            // No reviewable services (no assigned staff enabled reviews) — just a thank-you.
+            <div className="mt-4 rounded-2xl border border-foreground/10 bg-card p-5">
+              <p className="text-[15px] font-bold text-foreground">{dict.reviewThanks}</p>
+            </div>
+          )}
         </div>
       ) : /* ===== Identity header — same map hero as the tenant home ===== */
       branch ? (

@@ -138,6 +138,7 @@ export async function submitReviewAction(
   bookingId: string,
   rating: number,
   comment: string,
+  target: { offeringId: string | null; resourceId: string | null },
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     const res = await serverFetch(
@@ -145,7 +146,12 @@ export async function submitReviewAction(
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ rating, comment: comment.trim() || undefined }),
+        body: JSON.stringify({
+          rating,
+          comment: comment.trim() || undefined,
+          offeringId: target.offeringId,
+          resourceId: target.resourceId,
+        }),
       },
     );
     if (!res.ok) return { ok: false, error: await errorMessage(res) };
