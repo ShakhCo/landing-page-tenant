@@ -168,8 +168,11 @@ export async function createBookingAction(
   if (!res.ok) {
     const { code, message } = await readError(res);
     // Stale/expired session → clear it and tell the UI to fall back to OTP.
+    // Must overwrite with the SAME domain/path the cookie was set with — a bare
+    // delete(name) can't match the `.bookup.uz`-scoped cookie, so it would
+    // survive and loop on INVALID_SESSION.
     if (code === 'INVALID_SESSION') {
-      jar.delete(SESSION_COOKIE);
+      jar.set(SESSION_COOKIE, '', { ...(await sessionCookieOpts()), maxAge: 0 });
       return { ok: false, error: message, needsOtp: true };
     }
     // Code locked after too many wrong guesses → the UI must reset it and let
@@ -215,7 +218,9 @@ export async function myBookingsAction(
     // still thinks the customer is logged in — clear the stale cookie so a
     // reload drops to the logged-out state and they can re-authenticate.
     if (res.status === 401) {
-      jar.delete(SESSION_COOKIE);
+      // Overwrite with matching domain/path (bare delete can't clear the
+      // `.bookup.uz`-scoped cookie), else the page stays "logged in" and loops.
+      jar.set(SESSION_COOKIE, '', { ...(await sessionCookieOpts()), maxAge: 0 });
       return { ok: false, needsLogin: true };
     }
     if (!res.ok) return { ok: false };
