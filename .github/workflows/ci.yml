@@ -1,0 +1,93 @@
+name: CI
+
+# Every push to main runs the suite, and only a green run deploys the Worker.
+# Cloudflare's own Git integration must stay OFF for this to mean anything —
+# it deploys on push regardless of whether anything passed.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  # A newer push supersedes an in-flight run, so an older commit can never
+  # deploy over a newer one.
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: typecheck · tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # The dependency tree needs --legacy-peer-deps (React 19 vs some peer
+      # ranges), so `npm ci` alone would fail here.
+      - name: Install
+        run: npm ci --legacy-peer-deps
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Tests
+        run: npx vitest run --reporter=default --reporter=json --outputFile=.artifacts/vitest.json
+
+      # Every test that ran, by name, in the run summary — so a green tick is
+      # readable as "these things were checked" rather than just a count.
+      - name: Test summary
+        if: always()
+        run: node scripts/test-summary.mjs
+
+  deploy:
+    name: deploy to production
+    needs: test # ← the gate: a red suite never reaches this job
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci --legacy-peer-deps
+
+      # Builds the Next app through OpenNext and ships it to the Worker.
+      # Runtime secrets (INTERNAL_FORWARD_SECRET, NEW_API_HMAC_SECRET) are
+      # Worker secrets set out of band — `deploy` leaves them alone.
+      - name: Build and deploy
+        run: npx opennextjs-cloudflare build && npx opennextjs-cloudflare deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          NEXT_PUBLIC_API_BASE_URL: ${{ vars.NEXT_PUBLIC_API_BASE_URL || 'https://apis.automations.uz/v1' }}
+          NEW_API_ORIGIN: ${{ vars.NEW_API_ORIGIN || 'https://apis.automations.uz' }}
+
+      # Smoke test: did the new version boot and start serving? Any HTTP answer
+      # below 500 proves the Worker is up and routing — a runner IP can be
+      # challenged by Cloudflare (403) without production being unhealthy, so
+      # only a 5xx or no answer at all counts as a failed deploy.
+      - name: Verify production is answering
+        run: |
+          for i in $(seq 1 10); do
+            code=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 https://bookup.uz/ || echo "000")
+            if [ "$code" != "000" ] && [ "$code" -lt 500 ]; then
+              echo "live (HTTP $code)"; exit 0
+            fi
+            echo "attempt $i: HTTP $code"; sleep 5
+          done
+          echo "deployed, but production never answered below 500"; exit 1
+
+      - name: Deploy summary
+        if: always()
+        run: |
+          {
+            echo "## Deploy"
+            echo
+            echo "\`${{ github.sha }}\` → https://bookup.uz"
+          } >> "$GITHUB_STEP_SUMMARY"
