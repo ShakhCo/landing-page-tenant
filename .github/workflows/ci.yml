@@ -26,10 +26,10 @@ jobs:
           node-version: 24
           cache: npm
 
-      # The dependency tree needs --legacy-peer-deps (React 19 vs some peer
-      # ranges), so `npm ci` alone would fail here.
+      # `npm ci` mirrors the lockfile exactly, so a lockfile that drifted out of
+      # step with package.json fails here rather than breaking a deploy later.
       - name: Install
-        run: npm ci --legacy-peer-deps
+        run: npm ci
 
       - name: Typecheck
         run: npx tsc --noEmit
@@ -55,7 +55,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      - run: npm ci --legacy-peer-deps
+      - run: npm ci
 
       # Builds the Next app through OpenNext and ships it to the Worker.
       # Runtime secrets (INTERNAL_FORWARD_SECRET, NEW_API_HMAC_SECRET) are
