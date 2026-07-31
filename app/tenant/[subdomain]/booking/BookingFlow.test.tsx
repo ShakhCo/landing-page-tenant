@@ -167,6 +167,39 @@ describe('BookingFlow — choosing what to book', () => {
     expect(getAvailability).not.toHaveBeenCalled();
   });
 
+  it('never re-asks for a specialist the customer already chose', async () => {
+    // Entering from a specialist's card: their name is on the modal the button
+    // was tapped in, so asking again is a dead step.
+    renderFlow(
+      { initialServiceIds: ['off-cut'], scopedStaffId: 'res-b' },
+      tenant({
+        staff: [member('res-a', 'Aziz', ['off-cut']), member('res-b', 'Bobur', ['off-cut'])],
+      } as Partial<PublicTenant>)
+    );
+
+    await waitFor(() => expect(getAvailability).toHaveBeenCalled());
+    // Straight to the times, on THAT specialist.
+    expect(getAvailability.mock.calls[0][3]).toBe('res-b');
+    expect(await screen.findByText('10:00')).toBeInTheDocument();
+    expect(screen.queryByText('Aziz')).not.toBeInTheDocument();
+  });
+
+  it('books onto the scoped specialist', async () => {
+    const ui = userEvent.setup();
+    renderFlow(
+      { initialServiceIds: ['off-cut'], scopedStaffId: 'res-b', hasSession: true },
+      tenant({
+        staff: [member('res-a', 'Aziz', ['off-cut']), member('res-b', 'Bobur', ['off-cut'])],
+      } as Partial<PublicTenant>)
+    );
+
+    await pickFirstSlot(ui);
+    await clickText(ui, dict.actBook);
+
+    await waitFor(() => expect(createBooking).toHaveBeenCalled());
+    expect(createBooking.mock.calls[0][1].items[0]).toMatchObject({ resourceId: 'res-b' });
+  });
+
   it('refuses a combination no single specialist can perform', async () => {
     const ui = userEvent.setup();
     renderFlow(

@@ -858,7 +858,10 @@ export function TenantView({
                               </div>
                               {canBook && (
                                 <Link
-                                  href={`/booking?services=${s.id.slice(0, 8)}`}
+                                  // Booking a service FROM a specialist's card:
+                                  // carry the specialist too, or the flow asks
+                                  // the customer to pick one they already chose.
+                                  href={`/booking?services=${s.id.slice(0, 8)}&staff=${staffDetail.id.slice(0, 8)}`}
                                   className="shrink-0 rounded-xl border-[1.5px] border-foreground px-5 py-2 text-sm font-bold text-foreground transition-colors hover:bg-foreground/5"
                                 >
                                   {dict.bookShort}
