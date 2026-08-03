@@ -49,3 +49,10 @@ next-env.d.ts
 
 # CI test reports
 .artifacts
+
+# Not needed to run the app
+/AUDIT_FINDINGS.md
+/docs/
+/Dockerfile
+/docker-compose.yml
+/.dockerignore
