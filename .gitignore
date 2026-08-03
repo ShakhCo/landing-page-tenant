@@ -56,3 +56,5 @@ next-env.d.ts
 /Dockerfile
 /docker-compose.yml
 /.dockerignore
+/AGENTS.md
+/CLAUDE.md
